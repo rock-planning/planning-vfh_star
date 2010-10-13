@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name:VFH Star
 Description: A package for local path planning
 Version: @PROJECT_VERSION@
-Libs: -L${libdir} -lvfh_star
+Libs: -L${libdir} -lvfh_star -lenvire
 Cflags: -I${includedir}
 

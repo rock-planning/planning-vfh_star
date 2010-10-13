@@ -18,12 +18,19 @@ pkg_check_modules(BASE_TYPES REQUIRED "base-types")
 INCLUDE_DIRECTORIES(${BASE_TYPES_INCLUDE_DIRS})
 LINK_DIRECTORIES(${BASE_TYPES_LIBRARY_DIRS})
 
+pkg_check_modules(ENVIRE REQUIRED "envire")
+INCLUDE_DIRECTORIES(${ENVIRE_INCLUDE_DIRS})
+LINK_DIRECTORIES(${ENVIRE_LIBRARY_DIRS})
 
 ADD_LIBRARY(vfh_star SHARED
 	    VFHStar.cpp
+	    TraversabilityGrid.cpp
+	    ElevationGrid.cpp
+	    TraversabilityMapGenerator.cpp
+	    VFH.cpp
 	   )
 
-target_link_libraries(vfh_star ${BASE_LIBRARIES})
+target_link_libraries(vfh_star ${BASE_LIBRARIES}  ${ENVIRE_LIBRARIES} )
 
 add_executable(vfh_star_test VFHStarTest.cpp)
 target_link_libraries(vfh_star_test vfh_star)
@@ -33,7 +40,13 @@ ADD_CUSTOM_TARGET(doc doxygen Doxyfile)
 INSTALL(TARGETS vfh_star
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib)
-INSTALL(FILES VFHStar.h
+INSTALL(FILES 	VFHStar.h
+		VFH.h
+		Grid.h
+		ElevationGrid.h
+		TraversabilityGrid.h
+		TraversabilityMapGenerator.h
+		DebugTypes.h
 	DESTINATION include/vfh_star)
 
 CONFIGURE_FILE(vfh_star.pc.in vfh_star.pc @ONLY)
