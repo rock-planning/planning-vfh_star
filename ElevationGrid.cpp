@@ -7,6 +7,8 @@ ElevationEntry::ElevationEntry()
     max = -std::numeric_limits< double >::max();
  
     interpolated = false;
+    sum = 0;
+    count = 0;
     median = 0;
 }
 
@@ -20,12 +22,10 @@ void ElevationEntry::addHeightMeasurement(double measurement)
     
     heights.push_back(measurement);
 
-    median = 0;
-    for(std::vector<double>::const_iterator it = heights.begin(); it != heights.end(); it++) {
-	median += *it;
-    }
-    
-    median /= heights.size();
+    sum += measurement;
+    count++;
+        
+    median = sum / count;
 }
 
 void ElevationEntry::setMaximumHeight(double measurement)

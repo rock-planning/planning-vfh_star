@@ -31,6 +31,8 @@ class ElevationEntry {
     private:
 	std::vector<double> heights;
 	bool interpolated;
+	double sum;
+	int count;
 	double median;
 	double min;
 	double max;
