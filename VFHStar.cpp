@@ -16,6 +16,9 @@ std::vector< double > VFHStar::getDirectionsFromIntervals(const std::vector< std
     
     double size = intervals.size();
     
+    if(heading < 0)
+	heading += 2*M_PI;
+    
     std::cout << "Interval vector size " << size << std::endl;
     
     std::cout << "Heading is " << heading << std::endl;
