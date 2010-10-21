@@ -66,6 +66,13 @@ std::vector< double > VFHStar::getDirectionsFromIntervals(const std::vector< std
 	    continue;
 	}
 	
+	//special case narrow opening
+	if(start == end)
+	{
+	    ret.push_back(start);
+	    continue;
+	}
+	
 	//both ends of the interval are candidates for travel
 	ret.push_back(start);
 	ret.push_back(end);
