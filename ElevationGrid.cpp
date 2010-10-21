@@ -55,19 +55,19 @@ void ElevationGrid::addLineBetweenPoints(const Eigen::Vector3d &start, const Eig
     if(endInGrid)
 	getEntry(end_g).addHeightMeasurement(end.z());
     
-    Eigen::Vector2f start_gf(start_g.x(), start_g.y());
-    Eigen::Vector2f end_gf(end_g.x(), end_g.y());
+    const Eigen::Vector2f start_gf(start_g.x(), start_g.y());
+    const Eigen::Vector2f end_gf(end_g.x(), end_g.y());
 
     if((!startInGrid && !endInGrid) || start_g == end_g || (start_gf - end_gf).norm() < 2)
 	return;
 
     visual_servoing::Bresenham nextSegmentLine(start_g, end_g);
     
-    Eigen::Vector2f startToEnd = end_gf-start_gf;
+    const Eigen::Vector2f startToEnd = end_gf-start_gf;
     
-    double heightDiff = end.z() - start.z();
+    const double heightDiff = end.z() - start.z();
     
-    double inclination = heightDiff / startToEnd.norm();
+    const double inclination = heightDiff / startToEnd.norm();
 
     Eigen::Vector2i p;
     
@@ -78,8 +78,8 @@ void ElevationGrid::addLineBetweenPoints(const Eigen::Vector3d &start, const Eig
 	
 	if(inGrid(p))
 	{
-	    Eigen::Vector2f pf(p.x(), p.y());
-	    double interpolatedHeight = start.z() + (pf - start_gf).norm() * inclination;
+	    const Eigen::Vector2f pf(p.x(), p.y());
+	    const double interpolatedHeight = start.z() + (pf - start_gf).norm() * inclination;
 	    getEntry(p).setMaximumHeight(interpolatedHeight);	    
 	}
     }
