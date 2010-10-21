@@ -211,7 +211,7 @@ double VFHStar::angleDiff(const double &a1, const double &a2) const
 
 double VFHStar::getHeurestic(const TreeNode &node, double headingDirection, double headingWeight, double orientationWeight, double directionWeight) const
 {
-    return orientationWeight * angleDiff(headingDirection,  getHeading(node.getParent()->getPose().orientation)) + directionWeight * angleDiff(headingDirection, node.getParent()->getDirection());
+    return orientationWeight * angleDiff(headingDirection,  getHeading(node.getPose().orientation)) + directionWeight * angleDiff(headingDirection, node.getParent()->getDirection());
 };
 
 double VFHStar::getCostForNode(const TreeNode& curNode, double headingDirection, bool primary, double headingWeight, double orientationWeight, double directionWeight) const
