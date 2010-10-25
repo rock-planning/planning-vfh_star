@@ -27,7 +27,7 @@ class VFH
 	
 	const VFHDebugData &getDebugData();	
     private:
-	void generateHistogram(std::vector< double > &histogram, const base::Pose &curPose, double senseRadius, double obstacleSafetyDist, double robotWidth) const;
+	void generateHistogram(std::vector< double > &histogram, const base::Pose &curPose, double senseRadius, double obstacleSafetyDist, double robotRadius) const;
 	
 	void getBinaryHistogram(const std::vector< double > &histogram, std::vector< bool > &binHistogram, double lowThreshold, double highThreshold) const;
 	

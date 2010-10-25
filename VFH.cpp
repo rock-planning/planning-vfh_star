@@ -50,7 +50,7 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(const ba
 
     double angularResoultion = 2*M_PI / histogram.size();
     
-    generateHistogram(histogram, curPose, senseRadius, obstacleSafetyDist, robotWidth);
+    generateHistogram(histogram, curPose, senseRadius, obstacleSafetyDist, robotWidth / 2.0);
 
     //we ignore one obstacle
     getBinaryHistogram(histogram, bHistogram, 2, 3);
@@ -128,7 +128,7 @@ double normalize(double ang)
     return ang;
 }
 
-void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double senseRadius, double obstacleSafetyDist, double robotWidth) const
+void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double senseRadius, double obstacleSafetyDist, double robotRadius) const
 {
     const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
     
@@ -228,11 +228,11 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 		//in case we are allready hit the obstacle, we set distToRobot
 		//to (robotWidth + obstacleSafetyDist) which results in a 90 degree masking
 		//of the area where the collided obstable is
-		if((robotWidth + obstacleSafetyDist) > distToRobot)
-		    distToRobot = (robotWidth + obstacleSafetyDist);
+		if((robotRadius + obstacleSafetyDist) > distToRobot)
+		    distToRobot = (robotRadius + obstacleSafetyDist);
 		
 		//boundary of obstacle including robot width and safety distance
-		double y_t = asin((robotWidth + obstacleSafetyDist) / distToRobot);
+		double y_t = asin((robotRadius + obstacleSafetyDist) / distToRobot);
 		
 		//add to histogramm
 		int s = (angleToObstace - y_t) / dirResolution;
