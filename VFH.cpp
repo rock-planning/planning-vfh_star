@@ -10,11 +10,11 @@ VFH::VFH(const envire::Grid< Traversability >* trGrid)
     traversabillityGrid = trGrid;
     
     senseRadius = 0.9;
-    obstacleSafetyDist = 0.05;
-    robotWidth = 0.5;
-
-
+    histogramSize = 90;
+    narrowThreshold = 10;
 }
+
+
 
 void addDir(std::vector< std::pair<double, double> > &drivableDirections, double angularResoultion, int narrowThreshold, int start, int end, int histSize)
 {
@@ -39,14 +39,12 @@ void addDir(std::vector< std::pair<double, double> > &drivableDirections, double
     }    
 }
 
-std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(const base::Pose& curPose, VFHDebugData* dd) const
+std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(const base::Pose& curPose, const double& obstacleSafetyDist, const double& robotWidth, vfh_star::VFHDebugData* dd) const
 {
     std::vector< std::pair<double, double> > drivableDirections;
     std::vector<double> histogram;
     std::vector<bool> bHistogram;
 
-    int histogramSize = 90;
-    
     //4 degree steps
     histogram.resize(histogramSize);
 
@@ -57,12 +55,10 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(const ba
     //we ignore one obstacle
     getBinaryHistogram(histogram, bHistogram, 2, 3);
     
-    int narrowThreshold = 10;
-    
     int start = -1;
     int end = -1;
     int firstEnd = bHistogram.size();
-    for(int i = 0; i < bHistogram.size(); i++) 
+    for(unsigned int i = 0; i < bHistogram.size(); i++) 
     {
 	if(bHistogram[i] && start < 0)   
 	{	    

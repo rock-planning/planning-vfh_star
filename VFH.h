@@ -23,11 +23,9 @@ class VFH
 {
     public:
 	VFH(const envire::Grid<Traversability> *trGrid);
-	virtual std::vector< std::pair<double, double> > getNextPossibleDirections(const base::Pose& curPose, VFHDebugData* dd) const;
+	virtual std::vector< std::pair<double, double> > getNextPossibleDirections(const base::Pose& curPose, const double &obstacleSafetyDist, const double &robotWidth, VFHDebugData* dd) const;
 	
-	const VFHDebugData &getDebugData();
-	
-	
+	const VFHDebugData &getDebugData();	
     private:
 	void generateHistogram(std::vector< double > &histogram, const base::Pose &curPose, double senseRadius, double obstacleSafetyDist, double robotWidth) const;
 	
@@ -38,8 +36,8 @@ class VFH
 	bool debugActive;
 	VFHDebugData debugData;
 	double senseRadius;
-	double obstacleSafetyDist;
-	double robotWidth;
+	int narrowThreshold;
+	int histogramSize;
 };
 
 }
