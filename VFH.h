@@ -38,6 +38,8 @@ class VFH
 	double senseRadius;
 	int narrowThreshold;
 	int histogramSize;
+	double lowThreshold;
+	double highThreshold;
 };
 
 }

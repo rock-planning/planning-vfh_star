@@ -12,6 +12,8 @@ VFH::VFH(const envire::Grid< Traversability >* trGrid)
     senseRadius = 0.9;
     histogramSize = 90;
     narrowThreshold = 10;
+    lowThreshold = 6;
+    highThreshold = 8;
 }
 
 
@@ -53,7 +55,7 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(const ba
     generateHistogram(histogram, curPose, senseRadius, obstacleSafetyDist, robotWidth / 2.0);
 
     //we ignore one obstacle
-    getBinaryHistogram(histogram, bHistogram, 2, 3);
+    getBinaryHistogram(histogram, bHistogram, lowThreshold, highThreshold);
     
     int start = -1;
     int end = -1;
