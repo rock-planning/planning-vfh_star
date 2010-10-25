@@ -79,7 +79,7 @@ class VFHStar
 	* This method returns possible directions where 
 	* the robot can drive to, from the given position
 	**/
-	virtual std::vector< std::pair<double, double> > getNextPossibleDirections(const base::Pose &curPose) const = 0;
+	virtual std::vector< std::pair<double, double> > getNextPossibleDirections(const base::Pose &curPose, const double &obstacleSafetyDist, const double &robotWidth) const = 0;
 
 	/**
 	* This function returns a pose in which the robot would

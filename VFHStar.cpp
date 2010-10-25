@@ -133,7 +133,7 @@ std::vector< base::Waypoint > VFHStar::getTrajectory(const base::Pose& start, do
 	    break;
 	
 	//get possible ways to go for node
-	std::vector< std::pair<double, double> > driveIntervals = getNextPossibleDirections(curNode->getPose());
+	std::vector< std::pair<double, double> > driveIntervals = getNextPossibleDirections(curNode->getPose(), obstacleSafetyDist, robotWidth);
 
 	std::vector<double> driveDirection = getDirectionsFromIntervals(driveIntervals, heading);
 	
