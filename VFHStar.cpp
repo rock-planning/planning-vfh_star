@@ -6,6 +6,22 @@ VFHStar::VFHStar()
 {
     stepDistance = 0.1;
     maxTreeDepth = 5;
+    discountFactor = 0.8;
+    headingWeight = 5;
+    orientationWeight = 2;
+    directionWeight = 2;
+    obstacleSafetyDist = 0.05;
+    robotWidth = 0.25;
+}
+
+void VFHStar::setObstacleSafetyDistance(const double &distance)
+{
+    obstacleSafetyDist = distance;
+}
+
+void VFHStar::setRobotWidth(const double &width)
+{
+    robotWidth = width;
 }
 
 std::vector< double > VFHStar::getDirectionsFromIntervals(const std::vector< std::pair< double, double > >& intervals, double heading)
@@ -87,12 +103,6 @@ std::vector< base::Waypoint > VFHStar::getTrajectory(const base::Pose& start, do
     std::vector< base::Waypoint > finalTrajectory; 
     Tree tree;
     double lastDirection = lastDrivenDirection;
-    
-    double discountFactor = 0.8;
-    
-    double headingWeight = 5;
-    double orientationWeight = 2;
-    double directionWeight = 2;
     
     bool primaryNode = true;
     
@@ -176,16 +186,14 @@ std::vector< base::Waypoint > VFHStar::getTrajectory(const base::Pose& start, do
 	pNode = pNode->getParent();
     }
     
-    //FIXME this is a bad place for this parameter
-    double obstacleSafetyDist = 0.05;
     base::Waypoint wp;
     for(std::vector<base::Pose>::reverse_iterator it = tmp.rbegin(); it != tmp.rend(); it++) 
     {
 	wp.heading = it->orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
 	wp.position = it->position;
 	wp.tol_position = obstacleSafetyDist;
-	//TODO make a parameter
-	wp.tol_heading = 0.1;
+	//we don't know anythin about the heading tolerance
+	wp.tol_heading = std::numeric_limits< double >::signaling_NaN();
 	finalTrajectory.push_back(wp);
     }
     

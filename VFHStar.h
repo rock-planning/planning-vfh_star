@@ -62,7 +62,10 @@ class VFHStar
 	VFHStar();
 
 	std::vector<base::Waypoint> getTrajectory(const base::Pose& start, double heading, double lastDrivenDirection);
-
+	
+	void setObstacleSafetyDistance(const double &distance);
+	void setRobotWidth(const double &width);
+	
 	virtual ~VFHStar();
     private:
 	double getHeading(const Eigen::Quaterniond &orientation) const;
@@ -91,7 +94,14 @@ class VFHStar
 	
 	///maximum depth of search tree
 	int maxTreeDepth;
-    
+	
+	double discountFactor;
+	double headingWeight;
+	double orientationWeight;
+	double directionWeight;
+	double obstacleSafetyDist;
+	double robotWidth;
+	
 };
 
 #endif // VFHSTAR_H
