@@ -8,5 +8,5 @@
     <license>LGPL v2 or later</license>
 
     <depend package="base" />
-    <depend package="envire" />
+    <depend package="slam/envire" />
 </package>
