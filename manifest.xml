@@ -1,0 +1,12 @@
+<package>
+    <description brief="implementation of the VFH* local planning algorithm">
+    </description>
+    <author>Janosch Machowinski/janosch.machowinsk@dfki.de</author>
+    <copyright>
+        DFKI/robotik@dfki.de
+    </copyright>
+    <license>LGPL v2 or later</license>
+
+    <depend package="base" />
+    <depend package="envire" />
+</package>
