@@ -7,6 +7,6 @@
     </copyright>
     <license>LGPL v2 or later</license>
 
-    <depend package="base" />
+    <depend package="base/types" />
     <depend package="slam/envire" />
 </package>
