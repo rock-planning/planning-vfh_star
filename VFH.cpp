@@ -41,7 +41,9 @@ void addDir(std::vector< std::pair<double, double> > &drivableDirections, double
     }    
 }
 
-std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(const base::Pose& curPose, const double& obstacleSafetyDist, const double& robotWidth, vfh_star::VFHDebugData* dd) const
+std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
+        const base::Pose& curPose, double obstacleSafetyDist, double robotWidth,
+        vfh_star::VFHDebugData* dd) const
 {
     std::vector< std::pair<double, double> > drivableDirections;
     std::vector<double> histogram;
