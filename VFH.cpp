@@ -109,7 +109,8 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(const ba
     
     if(dd) 
     {
-	dd->histogram = bHistogram;
+        dd->histogram.resize(bHistogram.size());
+	copy(bHistogram.begin(), bHistogram.end(), dd->histogram.begin());
 	dd->obstacleSafetyDist = obstacleSafetyDist;
 	dd->pose = curPose;
 	dd->robotWidth = robotWidth;

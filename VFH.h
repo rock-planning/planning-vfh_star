@@ -13,7 +13,7 @@ class VFHDebugData
 {
     public:
 	base::Pose pose;
-	std::vector< bool > histogram;
+	std::vector< uint8_t > histogram;
 	double senseRadius;
 	double obstacleSafetyDist;
 	double robotWidth;
