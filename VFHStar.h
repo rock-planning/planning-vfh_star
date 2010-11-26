@@ -61,7 +61,8 @@ class VFHStar
     public:
 	VFHStar();
 
-	std::vector<base::Waypoint> getTrajectory(const base::Pose& start, double heading, double lastDrivenDirection);
+	std::vector<base::Waypoint> getTrajectory(const base::Pose& start,
+                double heading, double lastDrivenDirection);
 	
 	void setObstacleSafetyDistance(const double &distance);
 	void setRobotWidth(const double &width);
@@ -79,7 +80,10 @@ class VFHStar
 	* This method returns possible directions where 
 	* the robot can drive to, from the given position
 	**/
-	virtual std::vector< std::pair<double, double> > getNextPossibleDirections(const base::Pose &curPose, const double &obstacleSafetyDist, const double &robotWidth) const = 0;
+	virtual std::vector< std::pair<double, double> > getNextPossibleDirections(
+                const base::Pose &curPose,
+                double obstacleSafetyDist,
+                double robotWidth) const = 0;
 
 	/**
 	* This function returns a pose in which the robot would
@@ -87,7 +91,9 @@ class VFHStar
 	* This method should take the robot driving constrains
 	* into account. 
 	*/
-	virtual base::Pose getProjectedPose(const base::Pose &curPose, const double &heading,  const double &distance) const = 0;
+	virtual base::Pose getProjectedPose(const base::Pose &curPose,
+                double heading,
+                double distance) const = 0;
 		
 	///step size of forward projection
 	double stepDistance;
