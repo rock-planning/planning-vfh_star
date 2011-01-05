@@ -29,12 +29,24 @@ std::vector<base::Waypoint> VFHStar::getTrajectory(base::Pose const& start, doub
     return TreeSearch::getTrajectory(start);
 }
 
+double VFHStar::algebraicDistanceToGoalLine(const base::Position& pos) const
+{
+    return (targetLinePoint - pos).dot(targetLineNormal);
+}
+
+bool VFHStar::isTerminalNode(const TreeNode& node) const
+{
+    double d = algebraicDistanceToGoalLine(node.getPose().position);
+    return d <= 0;
+}
+
 double VFHStar::getHeuristic(const TreeNode &node) const
 {
-    // double d_to_goal = distanceWeight * (targetLinePoint - node.getPose().position).dot(targetLineNormal);
-    // int steps = ceil(d_to_goal / stepDistance);
-    int steps = (maxTreeDepth - node.getDepth());
+    double d_to_goal = algebraicDistanceToGoalLine(node.getPose().position);
+    if (d_to_goal < 0)
+        return 0;
 
+    int steps = ceil(d_to_goal / stepDistance);
     double result = 0;
     while (steps-- > 0)
         result = result * discountFactor + 1;

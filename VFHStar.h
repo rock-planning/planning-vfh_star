@@ -22,6 +22,10 @@ class VFHStar : public TreeSearch
 
 
     protected:
+        /** Returns true if \c node is behind the goal line
+         */
+        virtual bool isTerminalNode(const TreeNode& node) const;
+
         /** Returns the estimated cost from the given node to the optimal node
          * reachable from that node. Note that this estimate must be a minorant,
          * i.e. must be smaller or equal than the actual value
@@ -32,6 +36,11 @@ class VFHStar : public TreeSearch
          * include a cost of "being at" \c node as well
          */
         virtual double getCostForNode(const TreeNode& node) const;
+
+        /** Returns the algebraic distance from \c pos to the goal line. If
+         * the returned distance is negative, it means we crossed it.
+         */
+        double algebraicDistanceToGoalLine(const base::Position& pos) const;
 };
 } // vfh_star namespace
 
