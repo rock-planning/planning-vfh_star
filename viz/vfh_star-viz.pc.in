@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: vfh_star-viz
+Description: vizKit plugin for the vfh_star library
+Depends: vfh_star @vfh_star-viz_PKGCONFIG_DEPS@
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lvfh_star-viz
+Cflags: -I${includedir}
+
