@@ -88,7 +88,7 @@ std::vector< base::Waypoint > TreeSearch::getTrajectory(const base::Pose& start)
                 }
                 std::cout << std::endl;*/
 
-        std::cout << expandCandidates.size() << " candidates in queue\n";
+        // std::cout << expandCandidates.size() << " candidates in queue\n";
 
             // get the cheapest node for expansion
         curNode = expandCandidates.begin()->second;
@@ -97,7 +97,7 @@ std::vector< base::Waypoint > TreeSearch::getTrajectory(const base::Pose& start)
 
 
         base::Position p = curNode->getPose().position;
-        std::cout << "opened " << p.x() << ", " << p.y() << ", " << p.z() << " direction=" << curNode->getDirection() << "\n    depth=" << curNode->getDepth() << " cost=" << curNode->getCost() << " heuristic= " << curNode->getHeuristic() << "\n";
+        //std::cout << "opened " << p.x() << ", " << p.y() << ", " << p.z() << " direction=" << curNode->getDirection() << "\n    depth=" << curNode->getDepth() << " cost=" << curNode->getCost() << " heuristic= " << curNode->getHeuristic() << "\n";
         if (isTerminalNode(*curNode))
             break;
 
