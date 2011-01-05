@@ -117,6 +117,11 @@ class TreeSearch
         Eigen::Vector3d targetLinePoint;
         Eigen::Vector3d targetLineNormal;
 
+        /** Returns true if the given node is a terminal node, i.e. if it
+         * reached the goal
+         */
+        virtual bool isTerminalNode(const TreeNode& node) const = 0;
+
         /** Returns the estimated cost from the given node to the optimal node
          * reachable from that node. Note that this estimate must be a minorant,
          * i.e. must be smaller or equal than the actual value

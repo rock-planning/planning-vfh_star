@@ -98,7 +98,7 @@ std::vector< base::Waypoint > TreeSearch::getTrajectory(const base::Pose& start)
 
         base::Position p = curNode->getPose().position;
         std::cout << "opened " << p.x() << ", " << p.y() << ", " << p.z() << " direction=" << curNode->getDirection() << "\n    depth=" << curNode->getDepth() << " cost=" << curNode->getCost() << " heuristic= " << curNode->getHeuristic() << "\n";
-        if(curNode->getDepth() >= maxTreeDepth)
+        if (isTerminalNode(*curNode))
             break;
 
         //get possible ways to go for node
