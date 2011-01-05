@@ -23,6 +23,7 @@ INCLUDE_DIRECTORIES(${ENVIRE_INCLUDE_DIRS})
 LINK_DIRECTORIES(${ENVIRE_LIBRARY_DIRS})
 
 ADD_LIBRARY(vfh_star SHARED
+	    TreeSearch.cpp
 	    VFHStar.cpp
 	    TraversabilityGrid.cpp
 	    ElevationGrid.cpp
