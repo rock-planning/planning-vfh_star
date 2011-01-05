@@ -3,7 +3,6 @@
 
 #include <base/pose.h>
 #include <base/waypoint.h>
-#include <Eigen/StdVector>
 #include <vector>
 #include <list>
 

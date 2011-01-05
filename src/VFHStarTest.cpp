@@ -23,7 +23,7 @@ std::vector< std::pair< double, double > > StarTest::getNextPossibleDirections(c
 //     fakeDirs.push_back(0);
     fakeDirs.push_back(std::make_pair(-2*M_PI/10.0, -M_PI/10.0) );
     fakeDirs.push_back(std::make_pair(-2*M_PI/4.0, -M_PI/4.0));
-    fakeDirs.push_back(std::make_pair(-M_PI/4.0, M_PI/4.0));
+    fakeDirs.push_back(std::make_pair(M_PI/4.0, 2 * M_PI/4.0));
     
     return fakeDirs;
 }
@@ -59,6 +59,13 @@ int main()
     {
 	std::cout << "  " << it->position.transpose() << std::endl;
     }
+
+    for (int i = 0; i < 100; ++i)
+    {
+        std::cerr << i << std::endl;
+        std::vector<base::Waypoint> trajectory = t.getTrajectory(start, mainHeading);
+    }
     
     return 0;
 }
+

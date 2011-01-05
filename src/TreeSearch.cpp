@@ -206,7 +206,6 @@ void Tree::setRootNode(TreeNode* root)
 }
 void Tree::addChild(TreeNode* parent, TreeNode* child)
 {
-    parent->children.push_back(child);
     child->parent = parent;
     child->depth  = parent->depth + 1;
     nodes.push_back(child);

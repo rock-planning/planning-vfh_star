@@ -1,12 +1,21 @@
 <package>
-    <description brief="implementation of the VFH* local planning algorithm">
-    </description>
-    <author>Janosch Machowinski/janosch.machowinsk@dfki.de</author>
-    <copyright>
-        DFKI/robotik@dfki.de
-    </copyright>
-    <license>LGPL v2 or later</license>
-
-    <depend package="base/types" />
-    <depend package="slam/envire" />
+  <description brief="">
+  
+  </description>
+  <author>/</author>
+  <license></license>
+  <url>http://</url>
+  <logo>http://</logo>
+ <!--
+   To add any dependencies use the depend tag
+  <depend package="dummy-dependency-0" />
+	...
+  <depend package="dummy-dependency-n-1" />
+  <depend package="dummy-dependency-n" />
+-->
+<!--DEPEND-ENTRY-->
+  <versioncontrol type="git" url="" />
+  <export>
+    <cpp cflags="" lflags="" />
+  </export>
 </package>

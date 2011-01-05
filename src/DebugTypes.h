@@ -1,9 +1,7 @@
 #ifndef VFH_DEBUG_TYPES_H
 #define VFH_DEBUG_TYPES_H
 
-#ifndef __orogen
 #include <stdint.h>
-#endif	
 
 namespace vfh_star {
 
