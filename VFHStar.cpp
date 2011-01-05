@@ -78,9 +78,6 @@ double VFHStar::getCostForNode(const TreeNode& curNode) const
         cPart = angleDiff(direction, curNode.getParent()->getDirection());
     }
 
-    std::cerr << direction << " " << mainHeading << " " << aPart << std::endl;
-    std::cerr << stepDistance << " " << bPart << std::endl;
-    
     return a * aPart + b * bPart + c * cPart;
 }
 
