@@ -170,6 +170,36 @@ Tree::~Tree()
 {
 }
 
+Tree::Tree(Tree const& other)
+{
+    *this = other;
+}
+
+Tree& Tree::operator = (Tree const& other)
+{
+    if (this == &other)
+        return *this;
+
+    nodes.clear();
+
+    std::map<TreeNode const*, TreeNode*> node_map;
+    for (std::list<TreeNode*>::const_iterator it = other.nodes.begin();
+            it != other.nodes.end(); ++it)
+    {
+        TreeNode* orig_node = *it;
+        TreeNode* new_node =
+            new TreeNode(orig_node->getPose(), orig_node->getDirection());
+        new_node->setCost(orig_node->getCost());
+        new_node->setHeuristic(orig_node->getHeuristic());
+        new_node->setHeadingTolerance(orig_node->getHeadingTolerance());
+        new_node->setPositionTolerance(orig_node->getPositionTolerance());
+
+        node_map.insert( std::make_pair(orig_node, new_node) );
+        addChild(node_map[orig_node->getParent()], new_node);
+    }
+    return *this;
+}
+
 std::vector<base::Waypoint> Tree::buildTrajectoryTo(TreeNode const* node) const
 {
     int size = node->getDepth() + 1;

@@ -59,6 +59,10 @@ class Tree
     public:
 	Tree();
 	~Tree();
+
+        Tree(Tree const& other);
+        Tree& operator = (Tree const& other);
+
 	void addChild(TreeNode *parent, TreeNode *child);
 	void removeChild(TreeNode *parent, TreeNode *child);
 	
