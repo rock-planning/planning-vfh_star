@@ -267,6 +267,11 @@ void Tree::clear()
     nodes.clear();
 }
 
+std::list<TreeNode*> const& Tree::getNodes() const
+{
+    return nodes;
+}
+
 void Tree::verifyHeuristicConsistency(const TreeNode* from) const
 {
     bool alright = true;

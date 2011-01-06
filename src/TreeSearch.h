@@ -77,6 +77,7 @@ class Tree
         int getSize() const;
         void clear();
         void verifyHeuristicConsistency(const TreeNode* from) const;
+        std::list<TreeNode*> const& getNodes() const;
 
     private:
         std::list<TreeNode*> nodes;
