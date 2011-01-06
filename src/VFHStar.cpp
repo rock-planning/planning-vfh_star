@@ -7,9 +7,16 @@ using namespace Eigen;
 
 VFHStar::VFHStar()
 {
-    mainHeadingWeight = 100;
-    distanceWeight    = 1;
-    turningWeight     = 0;
+}
+
+const VFHStarConfiguration& VFHStar::getCostConfiguration() const
+{
+    return cost_conf;
+}
+
+void VFHStar::setCostConfiguration(const VFHStarConfiguration& conf)
+{
+    cost_conf = conf;
 }
 
 std::vector<base::Waypoint> VFHStar::getTrajectory(base::Pose const& start, double mainHeading)
@@ -20,7 +27,7 @@ std::vector<base::Waypoint> VFHStar::getTrajectory(base::Pose const& start, doub
     this->targetLineNormal =
         Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitY();
     this->targetLinePoint  =
-        start.position + targetLineNormal * stepDistance * maxTreeDepth;
+        start.position + targetLineNormal * search_conf.stepDistance * search_conf.searchDepth;
 
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
@@ -46,11 +53,11 @@ double VFHStar::getHeuristic(const TreeNode &node) const
     if (d_to_goal < 0)
         return 0;
 
-    int steps = ceil(d_to_goal / stepDistance);
+    int steps = ceil(d_to_goal / search_conf.stepDistance);
     double result = 0;
     while (steps-- > 0)
-        result = result * discountFactor + 1;
-    return result * discountFactor * stepDistance * distanceWeight;
+        result = result * search_conf.discountFactor + 1;
+    return result * search_conf.discountFactor * search_conf.stepDistance * cost_conf.distanceWeight;
 }
 
 double VFHStar::getCostForNode(const TreeNode& curNode) const
@@ -64,9 +71,9 @@ double VFHStar::getCostForNode(const TreeNode& curNode) const
     * direction means the direction that was selected, in the previouse step, thus leading to this node
     */
 
-    const double a = mainHeadingWeight;
-    const double b = distanceWeight;
-    const double c = turningWeight;
+    const double a = cost_conf.mainHeadingWeight;
+    const double b = cost_conf.distanceWeight;
+    const double c = cost_conf.turningWeight;
     
     const double direction = curNode.getDirection();
     

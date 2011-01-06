@@ -5,29 +5,33 @@
 
 using namespace vfh_star;
 
+TreeSearchConfiguration::TreeSearchConfiguration()
+    : stepDistance(0.5)
+    , searchDepth(5)
+    , angularSampling(20)
+    , discountFactor(0.8)
+    , obstacleSafetyDistance(0.1)
+    , robotWidth(0.5) {}
+
 TreeSearch::TreeSearch()
 {
-    stepDistance       = 0.1;
-    maxTreeDepth       = 5;
-    angularSampling    = 2 * M_PI / 100;
-    discountFactor     = 0.8;
-    obstacleSafetyDist = 0.05;
-    robotWidth         = 0.25;
 }
 
-void TreeSearch::setObstacleSafetyDistance(const double &distance)
+void TreeSearch::setSearchConfiguration(const TreeSearchConfiguration& conf)
 {
-    obstacleSafetyDist = distance;
+    this->search_conf = conf;
 }
 
-void TreeSearch::setRobotWidth(const double &width)
+const TreeSearchConfiguration& TreeSearch::getSearchConfiguration() const
 {
-    robotWidth = width;
+    return search_conf;
 }
 
 TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::AngleIntervals& intervals)
 {
     std::vector< double > ret;
+
+    double angularSampling = 2 * M_PI / search_conf.angularSampling;
     
     // double size = intervals.size();
     // std::cout << "Interval vector size " << size << std::endl;
@@ -104,12 +108,12 @@ std::vector< base::Waypoint > TreeSearch::getTrajectory(const base::Pose& start)
         //get possible ways to go for node
         AngleIntervals driveIntervals =
             getNextPossibleDirections(curNode->getPose(),
-                    obstacleSafetyDist, robotWidth);
+                    search_conf.obstacleSafetyDistance, search_conf.robotWidth);
 
         Angles driveDirection =
             getDirectionsFromIntervals(driveIntervals);
 
-        double curDiscount = pow(discountFactor, curNode->getDepth());
+        double curDiscount = pow(search_conf.discountFactor, curNode->getDepth());
 
         //expand node
         for(Angles::const_iterator it = driveDirection.begin(); it != driveDirection.end(); it++)
@@ -117,7 +121,7 @@ std::vector< base::Waypoint > TreeSearch::getTrajectory(const base::Pose& start)
             const double curDirection(*it);
 
             //generate new node
-            base::Pose newPose = getProjectedPose(curNode->getPose(), curDirection, stepDistance);
+            base::Pose newPose = getProjectedPose(curNode->getPose(), curDirection, search_conf.stepDistance);
             TreeNode *newNode = new TreeNode(newPose, curDirection);
 
             //add Node to tree
@@ -128,7 +132,7 @@ std::vector< base::Waypoint > TreeSearch::getTrajectory(const base::Pose& start)
 
             nodeCost = curDiscount * nodeCost;
             newNode->setCost(curNode->getCost() + nodeCost);
-            newNode->setPositionTolerance(obstacleSafetyDist);
+            newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
             newNode->setHeadingTolerance(std::numeric_limits< double >::signaling_NaN());
 
             //heuristic

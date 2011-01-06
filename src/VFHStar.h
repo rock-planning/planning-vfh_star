@@ -4,6 +4,18 @@
 #include "TreeSearch.h"
 
 namespace vfh_star {
+struct VFHStarConfiguration
+{
+    double mainHeadingWeight;
+    double distanceWeight;
+    double turningWeight;
+
+    VFHStarConfiguration()
+        : mainHeadingWeight(1)
+        , distanceWeight(1)
+        , turningWeight(1) {}
+};
+
 class VFHStar : public TreeSearch
 {
     public:
@@ -11,15 +23,15 @@ class VFHStar : public TreeSearch
 
         std::vector<base::Waypoint> getTrajectory(base::Pose const& start, double mainHeading);
 
+        void setCostConfiguration(const VFHStarConfiguration& config);
+        const VFHStarConfiguration& getCostConfiguration() const;
+
     private:
         double angleDiff(const double &a1, const double &a2) const;
         double getMotionDirection(const Eigen::Vector3d &start, const Eigen::Vector3d &end) const;
 
         double mainHeading;
-        double mainHeadingWeight;
-        double distanceWeight;
-        double turningWeight;
-
+        VFHStarConfiguration cost_conf;
 
     protected:
         /** Returns true if \c node is behind the goal line
