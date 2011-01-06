@@ -5,6 +5,7 @@
 #include <base/waypoint.h>
 #include <vector>
 #include <list>
+#include <base/eigen.h>
 
 namespace vfh_star {
 class TreeNode
@@ -91,8 +92,6 @@ struct TreeSearchConfiguration {
 class TreeSearch
 {
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
         typedef std::vector<double> Angles;
         typedef std::vector< std::pair<double, double> > AngleIntervals;
 
@@ -105,7 +104,7 @@ class TreeSearch
         Tree const& getTree() const;
 	
 	virtual ~TreeSearch();
-        static double getHeading(const Eigen::Quaterniond &orientation);
+        static double getHeading(const base::Orientation &orientation);
 
     protected:
 	Angles getDirectionsFromIntervals(const AngleIntervals& intervals);
@@ -114,8 +113,8 @@ class TreeSearch
         Tree tree;
         TreeSearchConfiguration search_conf;
 	
-        Eigen::Vector3d targetLinePoint;
-        Eigen::Vector3d targetLineNormal;
+        base::Vector3d targetLinePoint;
+        base::Vector3d targetLineNormal;
 
         /** Returns true if the given node is a terminal node, i.e. if it
          * reached the goal
