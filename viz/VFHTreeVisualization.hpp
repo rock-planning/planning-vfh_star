@@ -19,6 +19,8 @@ namespace vizkit
         virtual osg::ref_ptr<osg::Node> createMainNode();
         virtual void updateMainNode(osg::Node* node);
         virtual void updateDataIntern(vfh_star::Tree const& plan);
+
+        std::pair<double, double> computeColorMapping() const;
         
     private:
         struct Data;
