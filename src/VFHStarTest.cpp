@@ -50,7 +50,7 @@ int main()
     double mainHeading = 0;
 
     std::vector<base::Waypoint> trajectory = t.getWaypoints(start, mainHeading, 5);
-    std::cout << "Starting from " << start.position.transpose() << " with heading " << vfh_star::VFHStar::getHeading(start.orientation) << " in direction of " << mainHeading << std::endl;
+    std::cout << "Starting from " << start.position.transpose() << " with heading " << start.getYaw() << " in direction of " << mainHeading << std::endl;
     
     std::cout << "Resulting tree is " << t.getTree().getSize() << std::endl;
 

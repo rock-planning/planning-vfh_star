@@ -101,7 +101,7 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
     std::multimap<double, TreeNode *> expandCandidates;
 
     tree.clear();
-    TreeNode *curNode = new TreeNode(start, TreeSearch::getHeading(start.orientation));
+    TreeNode *curNode = new TreeNode(start, start.getYaw());
     tree.setRootNode(curNode);
 
     expandCandidates.insert(std::make_pair(0, curNode));
@@ -182,11 +182,6 @@ const Tree& TreeSearch::getTree() const
     return tree;
 }
 
-double TreeSearch::getHeading(const Eigen::Quaterniond &orientation)
-{
-    return orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
-}
-
 TreeSearch::~TreeSearch()
 {
 
@@ -241,7 +236,7 @@ std::vector<base::Waypoint> Tree::buildTrajectoryTo(TreeNode const* node) const
     {
         base::Pose p = node->getPose();
         base::Waypoint& wp = result[size-1-i];
-        wp.heading  = TreeSearch::getHeading(p.orientation);
+        wp.heading  = p.getYaw();
         wp.position = p.position;
         wp.tol_position = node->getPositionTolerance();
         wp.tol_heading  = node->getHeadingTolerance();

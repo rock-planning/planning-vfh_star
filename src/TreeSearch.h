@@ -123,7 +123,6 @@ class TreeSearch
         Tree const& getTree() const;
 	
 	virtual ~TreeSearch();
-        static double getHeading(const base::Orientation &orientation);
 
     protected:
 	Angles getDirectionsFromIntervals(const AngleIntervals& intervals);
