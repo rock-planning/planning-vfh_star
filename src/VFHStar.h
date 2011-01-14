@@ -34,6 +34,9 @@ class VFHStar : public TreeSearch
         double mainHeading;
         VFHStarConf cost_conf;
 
+        base::Vector3d targetLinePoint;
+        base::Vector3d targetLineNormal;
+
     protected:
         /** Returns true if \c node is behind the goal line
          */

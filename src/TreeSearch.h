@@ -131,9 +131,6 @@ class TreeSearch
         Tree tree;
         TreeSearchConf search_conf;
 	
-        base::Vector3d targetLinePoint;
-        base::Vector3d targetLineNormal;
-
         /** Returns true if the given node is a terminal node, i.e. if it
          * reached the goal
          */
