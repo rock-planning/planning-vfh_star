@@ -38,6 +38,8 @@ pair<double, double> VFHTreeVisualization::computeColorMapping() const
     // NOTE: we assume that nodes is not empty. This is checked by
     // updateMainNode
     list<TreeNode*> const& nodes = p->data.getNodes();
+    if (nodes.empty())
+        return make_pair(0, 0);
 
     double min_cost, max_cost;
     min_cost = max_cost = nodes.front()->getCost();
@@ -52,6 +54,9 @@ pair<double, double> VFHTreeVisualization::computeColorMapping() const
             max_cost = c;
     }
 
+
+    if (max_cost == 0)
+        return make_pair(0, 0);
 
     return make_pair(1.0/max_cost, -min_cost);
 }
