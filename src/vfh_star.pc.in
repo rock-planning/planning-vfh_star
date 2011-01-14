@@ -3,8 +3,9 @@ exec_prefix=@CMAKE_INSTALL_PREFIX@
 libdir=${prefix}/lib
 includedir=${prefix}/include
 
-Name: @PROJECT_NAME@
+Name: @TARGET_NAME@
 Description: @PROJECT_DESCRIPTION@
+Requires: @DEPS_PKGCONFIG@
 Version: @PROJECT_VERSION@
-Libs: -L${libdir} -l@PROJECT_NAME@
+Libs: -L${libdir} -l@TARGET_NAME@
 Cflags: -I${includedir}
