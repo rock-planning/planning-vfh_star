@@ -6,7 +6,8 @@
 using namespace vfh_star;
 
 TreeSearchConf::TreeSearchConf()
-    : stepDistance(0.5)
+    : maxTreeSize(0)
+    , stepDistance(0.5)
     , angularSampling(20)
     , discountFactor(0.8)
     , obstacleSafetyDistance(0.1)
@@ -105,8 +106,12 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
 
     expandCandidates.insert(std::make_pair(0, curNode));
     
+    int max_depth = search_conf.maxTreeSize;
     while(!expandCandidates.empty()) 
     {
+        if (max_depth > 0 && tree.getSize() > max_depth)
+            return std::vector<base::Waypoint>();
+
         /*	std::cout << "Possible expandable nodes" << std::endl;
                 for(std::multimap<double, TreeNode *>::iterator it = expandCandidates.begin(); it != expandCandidates.end(); it++)
                 {
