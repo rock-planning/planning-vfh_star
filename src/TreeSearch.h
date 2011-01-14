@@ -80,6 +80,11 @@ class Tree
         std::list<TreeNode*> const& getNodes() const;
 
     private:
+        /** A tree might get quite big, in which case calling nodes.size() is
+         * really not efficient. Since it is trivial to keep the size uptodate,
+         * just do it
+         */
+        int size; 
         std::list<TreeNode*> nodes;
 };
 

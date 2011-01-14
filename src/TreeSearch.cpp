@@ -193,6 +193,7 @@ TreeSearch::~TreeSearch()
 }
 
 Tree::Tree()
+    : size(0)
 {
 }
 
@@ -205,12 +206,13 @@ Tree::Tree(Tree const& other)
     *this = other;
 }
 
+
 Tree& Tree::operator = (Tree const& other)
 {
     if (this == &other)
         return *this;
 
-    nodes.clear();
+    clear();
 
     std::map<TreeNode const*, TreeNode*> node_map;
     for (std::list<TreeNode*>::const_iterator it = other.nodes.begin();
@@ -267,12 +269,15 @@ void Tree::setRootNode(TreeNode* root)
         throw std::runtime_error("trying to change the root node of an non-empty tree");
 
     nodes.push_front(root);
+    size++;
 }
 void Tree::addChild(TreeNode* parent, TreeNode* child)
 {
     child->parent = parent;
     child->depth  = parent->depth + 1;
     parent->is_leaf = false;
+    nodes.push_back(child);
+    size++;
 }
 
 TreeNode *Tree::getParent(TreeNode* child)
@@ -282,7 +287,7 @@ TreeNode *Tree::getParent(TreeNode* child)
 
 int Tree::getSize() const
 {
-    return nodes.size();
+    return size;
 }
 
 void Tree::clear()
@@ -290,6 +295,7 @@ void Tree::clear()
     for (std::list<TreeNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
         delete *it;
     nodes.clear();
+    size = 0;
 }
 
 std::list<TreeNode*> const& Tree::getNodes() const
