@@ -3,8 +3,9 @@
 
 #include <Eigen/Core>
 
+namespace vfh_star
+{
 template <class T, int size, int resolution>
-
 class Grid
 {
     public:
@@ -166,5 +167,6 @@ class Grid
 	
 	Eigen::Vector3d gridPosition;
 };
+}
 
 #endif // GRID_H

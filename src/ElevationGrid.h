@@ -5,6 +5,8 @@
 #include <Eigen/Core>
 #include <vector>
 
+namespace vfh_star
+{
 class ElevationEntry {
     public:
 	ElevationEntry();
@@ -49,5 +51,6 @@ class ElevationGrid: public Grid<ElevationEntry, 600, 6>
 	
     private:
 };
+}
 
 #endif // ELEVATIONGRID_H

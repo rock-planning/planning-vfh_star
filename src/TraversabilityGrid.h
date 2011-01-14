@@ -4,6 +4,8 @@
 #include "Grid.h"
 #include "ElevationGrid.h"
 
+namespace vfh_star
+{
 enum Traversability {
     UNCLASSIFIED = 0,
     TRAVERSABLE = 1,
@@ -14,9 +16,10 @@ enum Traversability {
 class TraversabilityGrid: public Grid<Traversability, 600, 6>
 {
     public:
-	TraversabilityGrid();
-	
-	void updateFromElevationGrid(const ElevationGrid &eg);
+        TraversabilityGrid();
+        
+        void updateFromElevationGrid(const ElevationGrid &eg);
 };
+}
 
 #endif // TRAVERSABILITYGRID_H

@@ -4,7 +4,7 @@
 #include <Eigen/Geometry>
 
 
-namespace visual_servoing {
+namespace vfh_star {
 
 class Bresenham {
     public:

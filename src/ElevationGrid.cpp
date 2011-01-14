@@ -1,6 +1,8 @@
 #include "ElevationGrid.h"
 #include "Bresenham.h"
 
+using namespace vfh_star;
+
 ElevationEntry::ElevationEntry()
 {
     min = std::numeric_limits< double >::max();
@@ -61,7 +63,7 @@ void ElevationGrid::addLineBetweenPoints(const Eigen::Vector3d &start, const Eig
     if((!startInGrid && !endInGrid) || start_g == end_g || (start_gf - end_gf).norm() < 2)
 	return;
 
-    visual_servoing::Bresenham nextSegmentLine(start_g, end_g);
+    vfh_star::Bresenham nextSegmentLine(start_g, end_g);
     
     const Eigen::Vector2f startToEnd = end_gf-start_gf;
     
