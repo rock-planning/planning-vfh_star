@@ -84,7 +84,7 @@ class Tree
         std::list<TreeNode*> nodes;
 };
 
-struct TreeSearchConfiguration {
+struct TreeSearchConf {
     double stepDistance; //! the distance in meters between two steps in the search
     int searchDepth; //! the search horizon. The search will look for a path from the current pose to stepDistance * searchDepth meters in the chosen direction
     int angularSampling; //! the maximum number of directions to be samples
@@ -92,7 +92,7 @@ struct TreeSearchConfiguration {
     double obstacleSafetyDistance; //! the margin distance between the robot and the obstacles
     double robotWidth; //! the radius of the circle used to model the robot
 
-    TreeSearchConfiguration();
+    TreeSearchConf();
 };
 
 class TreeSearch
@@ -114,8 +114,8 @@ class TreeSearch
          */
         std::vector<base::Waypoint> getWaypoints(const base::Pose& start);
 	
-	void setSearchConfiguration(const TreeSearchConfiguration& conf);
-        const TreeSearchConfiguration& getSearchConfiguration() const;
+	void setSearchConf(const TreeSearchConf& conf);
+        const TreeSearchConf& getSearchConf() const;
         Tree const& getTree() const;
 	
 	virtual ~TreeSearch();
@@ -126,7 +126,7 @@ class TreeSearch
 
         // The tree generated at the last call to getTrajectory
         Tree tree;
-        TreeSearchConfiguration search_conf;
+        TreeSearchConf search_conf;
 	
         base::Vector3d targetLinePoint;
         base::Vector3d targetLineNormal;

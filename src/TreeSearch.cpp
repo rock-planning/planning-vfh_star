@@ -5,7 +5,7 @@
 
 using namespace vfh_star;
 
-TreeSearchConfiguration::TreeSearchConfiguration()
+TreeSearchConf::TreeSearchConf()
     : stepDistance(0.5)
     , searchDepth(5)
     , angularSampling(20)
@@ -17,12 +17,12 @@ TreeSearch::TreeSearch()
 {
 }
 
-void TreeSearch::setSearchConfiguration(const TreeSearchConfiguration& conf)
+void TreeSearch::setSearchConf(const TreeSearchConf& conf)
 {
     this->search_conf = conf;
 }
 
-const TreeSearchConfiguration& TreeSearch::getSearchConfiguration() const
+const TreeSearchConf& TreeSearch::getSearchConf() const
 {
     return search_conf;
 }

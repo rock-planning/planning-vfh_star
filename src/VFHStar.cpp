@@ -9,12 +9,12 @@ VFHStar::VFHStar()
 {
 }
 
-const VFHStarConfiguration& VFHStar::getCostConfiguration() const
+const VFHStarConf& VFHStar::getCostConf() const
 {
     return cost_conf;
 }
 
-void VFHStar::setCostConfiguration(const VFHStarConfiguration& conf)
+void VFHStar::setCostConf(const VFHStarConf& conf)
 {
     cost_conf = conf;
 }
