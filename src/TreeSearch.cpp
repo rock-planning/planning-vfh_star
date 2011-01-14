@@ -137,8 +137,13 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
             getNextPossibleDirections(curNode->getPose(),
                     search_conf.obstacleSafetyDistance, search_conf.robotWidth);
 
+        if (driveIntervals.empty())
+            continue;
+
         Angles driveDirection =
             getDirectionsFromIntervals(driveIntervals);
+        if (driveDirection.empty())
+            continue;
 
         double curDiscount = pow(search_conf.discountFactor, curNode->getDepth());
 
