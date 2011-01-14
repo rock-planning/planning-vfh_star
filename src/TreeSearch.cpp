@@ -7,7 +7,6 @@ using namespace vfh_star;
 
 TreeSearchConf::TreeSearchConf()
     : stepDistance(0.5)
-    , searchDepth(5)
     , angularSampling(20)
     , discountFactor(0.8)
     , obstacleSafetyDistance(0.1)

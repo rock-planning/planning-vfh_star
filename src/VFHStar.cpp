@@ -32,7 +32,7 @@ std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, doubl
     this->targetLineNormal =
         Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitY();
     this->targetLinePoint  =
-        start.position + targetLineNormal * search_conf.stepDistance * search_conf.searchDepth;
+        start.position + targetLineNormal * horizon;
 
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;

@@ -86,7 +86,6 @@ class Tree
 
 struct TreeSearchConf {
     double stepDistance; //! the distance in meters between two steps in the search
-    int searchDepth; //! the search horizon. The search will look for a path from the current pose to stepDistance * searchDepth meters in the chosen direction
     int angularSampling; //! the maximum number of directions to be samples
     double discountFactor; //! the cost discount factor applied on the cost of nodes at depth D + 1 w.r.t. the node at depth D
     double obstacleSafetyDistance; //! the margin distance between the robot and the obstacles
