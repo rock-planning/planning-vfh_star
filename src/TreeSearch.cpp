@@ -144,8 +144,11 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
             const double curDirection(*it);
 
             //generate new node
-            base::Pose newPose = getProjectedPose(curNode->getPose(), curDirection, search_conf.stepDistance);
-            TreeNode *newNode = new TreeNode(newPose, curDirection);
+            std::pair<base::Pose, bool> projected = getProjectedPose(curNode->getPose(), curDirection, search_conf.stepDistance);
+            if (!projected.second)
+                continue;
+
+            TreeNode *newNode = new TreeNode(projected.first, curDirection);
 
             //add Node to tree
             tree.addChild(curNode, newNode);

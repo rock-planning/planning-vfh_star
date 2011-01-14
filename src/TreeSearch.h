@@ -164,7 +164,7 @@ class TreeSearch
 	* This method should take the robot driving constrains
 	* into account. 
 	*/
-	virtual base::Pose getProjectedPose(const base::Pose &curPose,
+	virtual std::pair<base::Pose, bool> getProjectedPose(const base::Pose &curPose,
                 double heading,
                 double distance) const = 0;
 };
