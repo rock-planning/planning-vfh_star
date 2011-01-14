@@ -99,6 +99,7 @@ struct TreeSearchConf {
     TreeSearchConf();
 };
 
+/** The basic search algorithm used for planning */
 class TreeSearch
 {
     public:
