@@ -38,8 +38,8 @@ class TreeNode
         void setHeadingTolerance(double tol);
 	
     private:
-	std::vector<TreeNode *> children;
 	TreeNode *parent;
+        bool is_leaf;
 	
 	///pose of the node, note the orientation of the node and the direction may differ, 
 	///because of kinematic constrains of the robot
@@ -66,8 +66,7 @@ class Tree
 
 	void addChild(TreeNode *parent, TreeNode *child);
 	void removeChild(TreeNode *parent, TreeNode *child);
-	
-	const std::vector<TreeNode *> &getChildren(TreeNode *parent);
+
 	TreeNode *getParent(TreeNode *child);
 	TreeNode *getRootNode();
 

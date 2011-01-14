@@ -272,12 +272,7 @@ void Tree::addChild(TreeNode* parent, TreeNode* child)
 {
     child->parent = parent;
     child->depth  = parent->depth + 1;
-    nodes.push_back(child);
-}
-
-const std::vector<TreeNode *>& Tree::getChildren(TreeNode* parent)
-{
-    return parent->children;
+    parent->is_leaf = false;
 }
 
 TreeNode *Tree::getParent(TreeNode* child)
@@ -332,7 +327,16 @@ TreeNode::TreeNode(): parent(this), direction(0), cost(0), heuristic(0), depth(0
 
 }
 
-TreeNode::TreeNode(const base::Pose& pose, double dir): parent(this), pose(pose), direction(dir), cost(0), heuristic(0), depth(0), positionTolerance(0), headingTolerance(0)
+TreeNode::TreeNode(const base::Pose& pose, double dir)
+    : parent(this)
+    , is_leaf(true)
+    , pose(pose)
+    , direction(dir)
+    , cost(0)
+    , heuristic(0)
+    , depth(0)
+    , positionTolerance(0)
+    , headingTolerance(0)
 {
 
 }
@@ -384,7 +388,7 @@ bool TreeNode::isRoot() const
 
 bool TreeNode::isLeaf() const
 {
-    return children.empty();
+    return is_leaf;
 }
 
 double TreeNode::getDirection() const
