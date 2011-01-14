@@ -3,6 +3,7 @@
 
 #include <base/pose.h>
 #include <base/waypoint.h>
+#include <base/geometry/spline.h>
 #include <vector>
 #include <list>
 #include <base/eigen.h>
@@ -102,7 +103,16 @@ class TreeSearch
 
 	TreeSearch();
 
-	std::vector<base::Waypoint> getTrajectory(const base::Pose& start);
+        static base::geometry::Spline<3> waypointsToSpline(const std::vector<base::Waypoint>& waypoints);
+
+        /** This is a version of getWaypoints where the returned set of
+         * waypoints is converted into a spline
+         */
+        base::geometry::Spline<3> getTrajectory(const base::Pose& start);
+
+        /** Computes the optimal path as a set of waypoints
+         */
+        std::vector<base::Waypoint> getWaypoints(const base::Pose& start);
 	
 	void setSearchConfiguration(const TreeSearchConfiguration& conf);
         const TreeSearchConfiguration& getSearchConfiguration() const;

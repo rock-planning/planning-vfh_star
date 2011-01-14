@@ -2,7 +2,7 @@ rock_library(vfh_star
     SOURCES
         ElevationGrid.cpp Grid.cpp TraversabilityGrid.cpp TraversabilityMapGenerator.cpp
         TreeSearch.cpp VFH.cpp VFHStar.cpp
-    DEPS_PKGCONFIG base-types envire
+    DEPS_PKGCONFIG base-lib envire
     HEADERS
         Bresenham.h DebugTypes.h ElevationGrid.h Grid.h TraversabilityGrid.h
         TraversabilityMapGenerator.h TreeSearch.h VFH.h VFHStar.h)

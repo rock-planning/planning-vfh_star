@@ -49,7 +49,7 @@ int main()
     start.orientation = Eigen::Quaterniond::Identity();
     double mainHeading = 0;
 
-    std::vector<base::Waypoint> trajectory = t.getTrajectory(start, mainHeading);
+    std::vector<base::Waypoint> trajectory = t.getWaypoints(start, mainHeading, 5);
     std::cout << "Starting from " << start.position.transpose() << " with heading " << vfh_star::VFHStar::getHeading(start.orientation) << " in direction of " << mainHeading << std::endl;
     
     std::cout << "Resulting tree is " << t.getTree().getSize() << std::endl;
@@ -63,7 +63,7 @@ int main()
     for (int i = 0; i < 100; ++i)
     {
         std::cerr << i << std::endl;
-        std::vector<base::Waypoint> trajectory = t.getTrajectory(start, mainHeading);
+        std::vector<base::Waypoint> trajectory = t.getWaypoints(start, mainHeading, 5);
     }
     
     return 0;

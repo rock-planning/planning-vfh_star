@@ -19,7 +19,12 @@ void VFHStar::setCostConfiguration(const VFHStarConfiguration& conf)
     cost_conf = conf;
 }
 
-std::vector<base::Waypoint> VFHStar::getTrajectory(base::Pose const& start, double mainHeading)
+base::geometry::Spline<3> VFHStar::getTrajectory(base::Pose const& start, double mainHeading, double horizon)
+{
+    return TreeSearch::waypointsToSpline(getWaypoints(start, mainHeading, horizon));
+}
+
+std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, double mainHeading, double horizon)
 {
     this->mainHeading = mainHeading;
 
@@ -33,7 +38,7 @@ std::vector<base::Waypoint> VFHStar::getTrajectory(base::Pose const& start, doub
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
     std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
 
-    return TreeSearch::getTrajectory(start);
+    return TreeSearch::getWaypoints(start);
 }
 
 double VFHStar::algebraicDistanceToGoalLine(const base::Position& pos) const

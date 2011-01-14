@@ -73,7 +73,30 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::Angl
     return ret;
 }
 
-std::vector< base::Waypoint > TreeSearch::getTrajectory(const base::Pose& start)
+base::geometry::Spline<3> TreeSearch::waypointsToSpline(const std::vector<base::Waypoint>& waypoints)
+{
+    if (waypoints.empty())
+        return base::geometry::Spline<3>();
+
+    std::vector<base::Vector3d> as_points;
+    for(std::vector<base::Waypoint>::const_iterator it = waypoints.begin();
+            it != waypoints.end(); it++)
+        as_points.push_back(it->position);
+
+    base::geometry::Spline<3> spline;
+    spline.interpolate(as_points);
+    return spline;
+}
+
+base::geometry::Spline<3> TreeSearch::getTrajectory(const base::Pose& start)
+{
+    std::vector<base::Waypoint> waypoints =
+        getWaypoints(start);
+
+    return waypointsToSpline(waypoints);
+}
+
+std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
 {
     std::multimap<double, TreeNode *> expandCandidates;
 
