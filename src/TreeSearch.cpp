@@ -124,6 +124,10 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
             // get the cheapest node for expansion
         curNode = expandCandidates.begin()->second;
         expandCandidates.erase(expandCandidates.begin());
+
+        if (!validateNode(*curNode))
+            continue;
+
         // 	 std::cout << "Expanding node with dir " << curNode->getDirection() << " cost " << curNode->getCost() << " depth is " << curNode->getDepth() << " pos " << curNode->getPose().position.transpose() << " heading " << curNode->getDirection() << std::endl;
 
 
@@ -180,6 +184,11 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
 
     tree.verifyHeuristicConsistency(curNode);
     return tree.buildTrajectoryTo(curNode);
+}
+
+bool TreeSearch::validateNode(const TreeNode& node) const
+{
+    return true;
 }
 
 const Tree& TreeSearch::getTree() const

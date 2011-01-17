@@ -168,6 +168,17 @@ class TreeSearch
 	virtual std::pair<base::Pose, bool> getProjectedPose(const base::Pose &curPose,
                 double heading,
                 double distance) const = 0;
+
+        /**
+         * This function is called to validate a node that has previously been
+         * projected with getProjectedPose. It will get called only on nodes
+         * that get developped, so it called a lot less than getProjectedPose.
+         * Overload it only if it makes sense that some expensive tests in
+         * getProjectedPose get moved there.
+         *
+         * The default implementation returns true (valid).
+         */
+        virtual bool validateNode(const TreeNode& node) const;
 };
 } // vfh_star namespace
 
