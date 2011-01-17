@@ -15,6 +15,14 @@ namespace vizkit
         VFHTreeVisualization();
         ~VFHTreeVisualization();
 
+        enum COST_MODE
+        {
+            SHOW_COST, SHOW_HEURISTICS, SHOW_BOTH
+        };
+
+        void setCostMode(COST_MODE mode);
+        void removeLeaves(bool enable);
+
     protected:
         virtual osg::ref_ptr<osg::Node> createMainNode();
         virtual void updateMainNode(osg::Node* node);

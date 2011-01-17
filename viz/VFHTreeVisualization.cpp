@@ -13,6 +13,17 @@ struct VFHTreeVisualization::Data {
     //
     // Making a copy is required because of how OSG works
     vfh_star::Tree data;
+
+    // If true, only the nodes that are not eaves will be displayed
+    // (true by default)
+    bool removeLeaves;
+
+    // If true, the color will depend on the heuristics, otherwise on the
+    // actual node cost is displayed. False by default
+    VFHTreeVisualization::COST_MODE costMode;
+
+    Data()
+        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST) {}
 };
 
 
@@ -26,11 +37,34 @@ VFHTreeVisualization::~VFHTreeVisualization()
     delete p;
 }
 
+void VFHTreeVisualization::setCostMode(COST_MODE mode)
+{
+    p->costMode = mode;
+    setDirty();
+}
+
+void VFHTreeVisualization::removeLeaves(bool enable)
+{
+    p->removeLeaves = enable;
+    setDirty();
+}
+
 osg::ref_ptr<osg::Node> VFHTreeVisualization::createMainNode()
 {
     // Geode is a common node used for vizkit plugins. It allows to display
     // "arbitrary" geometries
     return new osg::Geode();
+}
+
+static double getDisplayCost(VFHTreeVisualization::COST_MODE mode, vfh_star::TreeNode const& node)
+{
+    if (mode == VFHTreeVisualization::SHOW_COST)
+        return node.getCost();
+    if (mode == VFHTreeVisualization::SHOW_HEURISTICS)
+        return node.getHeuristic();
+    if (mode == VFHTreeVisualization::SHOW_BOTH)
+        return node.getHeuristicCost();
+    return 0;
 }
 
 pair<double, double> VFHTreeVisualization::computeColorMapping() const
@@ -42,12 +76,13 @@ pair<double, double> VFHTreeVisualization::computeColorMapping() const
         return make_pair(0, 0);
 
     double min_cost, max_cost;
-    min_cost = max_cost = nodes.front()->getCost();
+    min_cost = max_cost = getDisplayCost(p->costMode, *nodes.front());
     
     for (list<TreeNode*>::const_iterator it = nodes.begin();
             it != nodes.end(); ++it)
     {
-        double c = (*it)->getCost();
+        double c = getDisplayCost(p->costMode, **it);
+
         if (c < min_cost)
             min_cost = c;
         if (c > max_cost)
@@ -70,26 +105,46 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     if (nodes.empty())
         return;
 
+    std::cerr << "vfh_viz: " << nodes.size() << " nodes in tree" << std::endl;
     osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
 
     // Gets the mapping from cost to color
     double cost_a, cost_b;
     boost::tie(cost_a, cost_b) = computeColorMapping();
-    std::cerr << "cost mapping: " << cost_a << " " << cost_b << std::endl;
+    std::cerr << "vfh_viz: cost mapping " << cost_a << " " << cost_b << std::endl;
 
     // Create the color and vertex arrays
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
-    for(list<TreeNode*>::const_iterator it = nodes.begin();
-            it != nodes.end(); it++)
+
+    std::set<TreeNode const*> enabled_nodes;
+    if (p->removeLeaves)
+    {
+        for(list<TreeNode*>::const_iterator it = nodes.begin();
+                it != nodes.end(); it++)
+        {
+            enabled_nodes.insert((*it)->getParent());
+        }
+    }
+    else
+    {
+        for(list<TreeNode*>::const_iterator it = nodes.begin();
+                it != nodes.end(); it++)
+            enabled_nodes.insert(*it);
+    }
+
+    for(set<TreeNode const*>::const_iterator it = enabled_nodes.begin();
+            it != enabled_nodes.end(); ++it)
     {
         TreeNode const* node = (*it);
+
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
 	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
 	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
 
-        double cost = node->getCost();
+        double cost = getDisplayCost(this->p->costMode, *node);
+
         double red = cost_a * (cost + cost_b);
         double green = 1.0 - red;
         double blue = 0.5;
