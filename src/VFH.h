@@ -6,18 +6,10 @@
 #include <vector>
 #include <base/pose.h>
 
+#include <vfh_star/Types.h>
+
 namespace vfh_star
 {
-
-    class VFHDebugData
-    {
-    public:
-        base::Pose pose;
-        std::vector< uint8_t > histogram;
-        double senseRadius;
-        double obstacleSafetyDist;
-        double robotWidth;
-    };
 
     class VFH
     {

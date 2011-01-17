@@ -4,18 +4,6 @@
 #include "TreeSearch.h"
 
 namespace vfh_star {
-struct VFHStarConf
-{
-    double mainHeadingWeight;
-    double distanceWeight;
-    double turningWeight;
-
-    VFHStarConf()
-        : mainHeadingWeight(1)
-        , distanceWeight(1)
-        , turningWeight(1) {}
-};
-
 class VFHStar : public TreeSearch
 {
     public:

@@ -5,7 +5,7 @@ rock_library(vfh_star
     DEPS_PKGCONFIG base-lib envire
     HEADERS
         Bresenham.h DebugTypes.h ElevationGrid.h Grid.h TraversabilityGrid.h
-        TraversabilityMapGenerator.h TreeSearch.h VFH.h VFHStar.h)
+        TraversabilityMapGenerator.h TreeSearch.h VFH.h VFHStar.h Types.h)
 
 rock_executable(vfh_star_test VFHStarTest.cpp
     DEPS vfh_star)

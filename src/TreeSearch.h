@@ -8,6 +8,8 @@
 #include <list>
 #include <base/eigen.h>
 
+#include <vfh_star/Types.h>
+
 namespace vfh_star {
 class TreeNode
 {
@@ -86,17 +88,6 @@ class Tree
          */
         int size; 
         std::list<TreeNode*> nodes;
-};
-
-struct TreeSearchConf {
-    int maxTreeSize;
-    double stepDistance; //! the distance in meters between two steps in the search
-    int angularSampling; //! the maximum number of directions to be samples
-    double discountFactor; //! the cost discount factor applied on the cost of nodes at depth D + 1 w.r.t. the node at depth D
-    double obstacleSafetyDistance; //! the margin distance between the robot and the obstacles
-    double robotWidth; //! the radius of the circle used to model the robot
-
-    TreeSearchConf();
 };
 
 /** The basic search algorithm used for planning */
