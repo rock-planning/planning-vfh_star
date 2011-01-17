@@ -7,6 +7,7 @@
 #include <vector>
 #include <list>
 #include <base/eigen.h>
+#include <kdtree++/kdtree.hpp>
 
 #include <vfh_star/Types.h>
 
@@ -137,7 +138,8 @@ class TreeSearch
         /** Returns the cost of travelling from \c node's parent to \c node
          * itself. It might include a cost of "being at" \c node as well
          */
-	virtual double getCostForNode(const TreeNode& node) const = 0;
+	virtual double getCostForNode(const base::Pose& p,
+                double direction, const TreeNode& parentNode) const = 0;
 
 	/**
 	* This method returns possible directions where 
@@ -170,6 +172,16 @@ class TreeSearch
          * The default implementation returns true (valid).
          */
         virtual bool validateNode(const TreeNode& node) const;
+
+    private:
+        struct TreeNodePositionAccessor
+        {
+            typedef double result_type;
+            double operator ()(TreeNode const* node, int i) const
+            { return node->getPose().position[i]; }
+        };
+        typedef KDTree::KDTree<3, TreeNode const*, TreeNodePositionAccessor> NNSearch;
+        NNSearch kdtree;
 };
 } // vfh_star namespace
 

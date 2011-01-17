@@ -65,7 +65,7 @@ double VFHStar::getHeuristic(const TreeNode &node) const
     return result * search_conf.discountFactor * search_conf.stepDistance * cost_conf.distanceWeight;
 }
 
-double VFHStar::getCostForNode(const TreeNode& curNode) const
+double VFHStar::getCostForNode(const base::Pose& pose, double direction, const TreeNode& parentNode) const
 {
     /**
     * cost is build from three factors:
@@ -80,15 +80,9 @@ double VFHStar::getCostForNode(const TreeNode& curNode) const
     const double b = cost_conf.distanceWeight;
     const double c = cost_conf.turningWeight;
     
-    const double direction = curNode.getDirection();
-    
     double aPart = angleDiff(direction, mainHeading);
-    double bPart = 0, cPart = 0;
-    if(!curNode.isRoot())
-    {
-        bPart = (curNode.getPose().position - curNode.getParent()->getPose().position).norm();
-        cPart = angleDiff(direction, curNode.getParent()->getDirection());
-    }
+    double bPart = (pose.position - parentNode.getPose().position).norm();
+    double cPart = angleDiff(direction, parentNode.getDirection());
 
     return a * aPart + b * bPart + c * cPart;
 }

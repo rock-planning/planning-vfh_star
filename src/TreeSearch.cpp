@@ -101,8 +101,10 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
     std::multimap<double, TreeNode *> expandCandidates;
 
     tree.clear();
+    kdtree.clear();
     TreeNode *curNode = new TreeNode(start, start.getYaw());
     tree.setRootNode(curNode);
+    kdtree.insert(curNode);
 
     expandCandidates.insert(std::make_pair(0, curNode));
     
@@ -161,22 +163,44 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
             if (!projected.second)
                 continue;
 
-            TreeNode *newNode = new TreeNode(projected.first, curDirection);
+            //compute cost for it
+            double nodeCost = curDiscount * getCostForNode(projected.first, curDirection, *curNode);
+
+            // Check that we are not doing the same work multiple times. Node
+            // that we want to keep a tree structure, so we skip nodes only if
+            // they do not provide a shorter path than what's already existing
+            //
+            // searchNode should be used only for the search !
+            TreeNode searchNode(projected.first, curDirection);
+            double identity_threshold = search_conf.stepDistance / 5;
+            std::pair<NNSearch::const_iterator, double> this_nn =
+                kdtree.find_nearest(&searchNode, identity_threshold);
+            if (this_nn.first != kdtree.end())
+            {
+                TreeNode const* closest_node   = *(this_nn.first);
+                if (closest_node->getCost() <= nodeCost)
+                {
+                    TreeNode const* closest_parent = closest_node->getParent();
+                    double parent_d = (closest_parent->getPose().position - curNode->getPose().position).norm();
+                    if (parent_d < identity_threshold)
+                        continue;
+                }
+            }
+
 
             //add Node to tree
+            TreeNode *newNode = new TreeNode(projected.first, curDirection);
             tree.addChild(curNode, newNode);
-
-            //compute cost for it
-            double nodeCost = getCostForNode(*newNode);
-
-            nodeCost = curDiscount * nodeCost;
             newNode->setCost(curNode->getCost() + nodeCost);
             newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
             newNode->setHeadingTolerance(std::numeric_limits< double >::signaling_NaN());
-
-            //heuristic
             newNode->setHeuristic(curDiscount * getHeuristic(*newNode));
+
+            // Add it to the expand list
             expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
+
+            // And add it to the kdtree
+            kdtree.insert(newNode);
 
             // 	    std::cout << "Adding node for direction " << *it << " cost " << newNode->getCost() << " depth is " << newNode->getDepth() << " pos " << curNode->getPose().position.transpose() << " heading " << curNode->getDirection() << std::endl;
         }
