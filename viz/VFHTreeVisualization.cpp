@@ -104,6 +104,13 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     if (nodes.empty())
         return;
 
+    if (p->costMode == VFHTreeVisualization::SHOW_COST)
+        std::cerr << "vfh_viz: displaying cost" << std::endl;
+    else if (p->costMode == VFHTreeVisualization::SHOW_HEURISTICS)
+        std::cerr << "vfh_viz: displaying heuristic" << std::endl;
+    else if (p->costMode == VFHTreeVisualization::SHOW_BOTH)
+        std::cerr << "vfh_viz: displaying cost+heuristic" << std::endl;
+
     std::cerr << "vfh_viz: " << nodes.size() << " nodes in tree" << std::endl;
     osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
 
