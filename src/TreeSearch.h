@@ -81,6 +81,8 @@ class Tree
         void clear();
         void verifyHeuristicConsistency(const TreeNode* from) const;
         std::list<TreeNode*> const& getNodes() const;
+        void setFinalNode(TreeNode* node);
+        TreeNode* getFinalNode() const;
 
     private:
         /** A tree might get quite big, in which case calling nodes.size() is
@@ -88,7 +90,12 @@ class Tree
          * just do it
          */
         int size; 
+
+        /** The set of tree nodes */
         std::list<TreeNode*> nodes;
+
+        /** The final node (0 if none has been found) */
+        TreeNode* final_node;
 };
 
 /** The basic search algorithm used for planning */
@@ -110,6 +117,11 @@ class TreeSearch
         /** Computes the optimal path as a set of waypoints
          */
         std::vector<base::Waypoint> getWaypoints(const base::Pose& start);
+
+        /** Generates a search tree that reaches the desired goal, and returns
+         * the goal node
+         */
+        TreeNode const* compute(const base::Pose& start);
 	
 	void setSearchConf(const TreeSearchConf& conf);
         const TreeSearchConf& getSearchConf() const;

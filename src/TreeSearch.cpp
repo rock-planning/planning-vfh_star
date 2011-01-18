@@ -96,7 +96,7 @@ base::geometry::Spline<3> TreeSearch::getTrajectory(const base::Pose& start)
     return waypointsToSpline(waypoints);
 }
 
-std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
+TreeNode const* TreeSearch::compute(const base::Pose& start)
 {
     std::multimap<double, TreeNode *> expandCandidates;
 
@@ -112,7 +112,7 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
     while(!expandCandidates.empty()) 
     {
         if (max_depth > 0 && tree.getSize() > max_depth)
-            return std::vector<base::Waypoint>();
+            return 0;
 
         /*	std::cout << "Possible expandable nodes" << std::endl;
                 for(std::multimap<double, TreeNode *>::iterator it = expandCandidates.begin(); it != expandCandidates.end(); it++)
@@ -136,7 +136,10 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
         base::Position p = curNode->getPose().position;
         //std::cout << "opened " << p.x() << ", " << p.y() << ", " << p.z() << " direction=" << curNode->getDirection() << "\n    depth=" << curNode->getDepth() << " cost=" << curNode->getCost() << " heuristic= " << curNode->getHeuristic() << "\n";
         if (isTerminalNode(*curNode))
+        {
+            tree.setFinalNode(curNode);
             break;
+        }
 
         //get possible ways to go for node
         AngleIntervals driveIntervals =
@@ -206,8 +209,22 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
         }
     }
 
-    tree.verifyHeuristicConsistency(curNode);
-    return tree.buildTrajectoryTo(curNode);
+    curNode = tree.getFinalNode();
+    if (curNode)
+    {
+        tree.verifyHeuristicConsistency(curNode);
+        return curNode;
+    }
+    return 0;
+}
+
+std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
+{
+    TreeNode const* curNode = compute(start);
+    if (curNode)
+        return tree.buildTrajectoryTo(curNode);
+    else
+        return std::vector<base::Waypoint>();
 }
 
 bool TreeSearch::validateNode(const TreeNode& node) const
@@ -227,6 +244,7 @@ TreeSearch::~TreeSearch()
 
 Tree::Tree()
     : size(0)
+    , final_node(0)
 {
 }
 
@@ -262,6 +280,8 @@ Tree& Tree::operator = (Tree const& other)
         node_map.insert( std::make_pair(orig_node, new_node) );
         addChild(node_map[orig_node->getParent()], new_node);
     }
+    if (other.getFinalNode())
+        setFinalNode(node_map[other.getFinalNode()]);
     return *this;
 }
 
@@ -304,6 +324,17 @@ void Tree::setRootNode(TreeNode* root)
     nodes.push_front(root);
     size++;
 }
+
+TreeNode* Tree::getFinalNode() const
+{
+    return final_node;
+}
+
+void Tree::setFinalNode(TreeNode* node)
+{
+    final_node = node;
+}
+
 void Tree::addChild(TreeNode* parent, TreeNode* child)
 {
     child->parent = parent;
@@ -328,6 +359,7 @@ void Tree::clear()
     for (std::list<TreeNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
         delete *it;
     nodes.clear();
+    final_node = 0;
     size = 0;
 }
 
