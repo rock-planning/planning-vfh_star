@@ -67,18 +67,17 @@ static double getDisplayCost(VFHTreeVisualization::COST_MODE mode, vfh_star::Tre
     return 0;
 }
 
-pair<double, double> VFHTreeVisualization::computeColorMapping() const
+pair<double, double> VFHTreeVisualization::computeColorMapping(std::set<TreeNode const*> const& nodes) const
 {
     // NOTE: we assume that nodes is not empty. This is checked by
     // updateMainNode
-    list<TreeNode*> const& nodes = p->data.getNodes();
     if (nodes.empty())
         return make_pair(0, 0);
 
     double min_cost, max_cost;
-    min_cost = max_cost = getDisplayCost(p->costMode, *nodes.front());
+    min_cost = max_cost = getDisplayCost(p->costMode, **nodes.begin());
     
-    for (list<TreeNode*>::const_iterator it = nodes.begin();
+    for (std::set<TreeNode const*>::const_iterator it = nodes.begin();
             it != nodes.end(); ++it)
     {
         double c = getDisplayCost(p->costMode, **it);
@@ -108,11 +107,6 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     std::cerr << "vfh_viz: " << nodes.size() << " nodes in tree" << std::endl;
     osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
 
-    // Gets the mapping from cost to color
-    double cost_a, cost_b;
-    boost::tie(cost_a, cost_b) = computeColorMapping();
-    std::cerr << "vfh_viz: cost mapping " << cost_a << " " << cost_b << std::endl;
-
     // Create the color and vertex arrays
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
@@ -132,6 +126,11 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
                 it != nodes.end(); it++)
             enabled_nodes.insert(*it);
     }
+
+    // Gets the mapping from cost to color
+    double cost_a, cost_b;
+    boost::tie(cost_a, cost_b) = computeColorMapping(enabled_nodes);
+    std::cerr << "vfh_viz: cost mapping " << cost_a << " " << cost_b << std::endl;
 
     for(set<TreeNode const*>::const_iterator it = enabled_nodes.begin();
             it != enabled_nodes.end(); ++it)
