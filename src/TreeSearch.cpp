@@ -3,13 +3,14 @@
 #include <map>
 #include <stdexcept>
 
+
 using namespace vfh_star;
 
 TreeSearchConf::TreeSearchConf()
     : maxTreeSize(0)
     , stepDistance(0.5)
     , angularSampling(20)
-    , discountFactor(0.8)
+    , discountFactor(1.0)
     , obstacleSafetyDistance(0.1)
     , robotWidth(0.5) {}
 
