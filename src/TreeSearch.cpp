@@ -42,30 +42,28 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::Angl
 	double start = (it->first);
 	double end  = (it->second);
 
-	//std::cout << "  sampling interval: start " << start << " end " << end << " with step=" << angularSampling << std::endl;
+        double intervalOpening, intervalSize;
 
 	// Special case, wrapping interval
 	if (start > end)
 	{
-            double intervalOpening = end + 2 * M_PI - start;
-            double intervalSize = floor(intervalOpening / angularSampling);
-            double delta = (intervalOpening - (intervalSize * angularSampling)) / 2;
-            for (int i = 0; i < intervalSize; ++i)
-            {
-                double angle = start + delta + i * angularSampling;
-                if (angle > 2 * M_PI)
-                    ret.push_back(angle - 2 * M_PI);
-                else
-                    ret.push_back(angle);
-            }
+            intervalOpening = end + 2 * M_PI - start;
+            intervalSize = floor(intervalOpening / angularSampling);
 	}
         else
         {
-            double intervalOpening = end - start;
-            double intervalSize = floor(intervalOpening / angularSampling);
-            double delta = (intervalOpening - (intervalSize * angularSampling)) / 2;
-            for (int i = 0; i < intervalSize; ++i)
-                ret.push_back(start + delta + i * angularSampling);
+            intervalOpening = end - start;
+            intervalSize = floor(intervalOpening / angularSampling);
+        }
+
+        double delta = (intervalOpening - (intervalSize * angularSampling)) / 2;
+        for (int i = 0; i < intervalSize; ++i)
+        {
+            double angle = start + delta + i * angularSampling;
+            if (angle > 2 * M_PI)
+                ret.push_back(angle - 2 * M_PI);
+            else
+                ret.push_back(angle);
         }
     }
 
