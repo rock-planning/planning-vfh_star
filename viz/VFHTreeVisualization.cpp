@@ -3,6 +3,7 @@
 #include <osg/Geode>
 #include <osg/Point>
 #include <boost/tuple/tuple.hpp>
+#include <osg/LineWidth>
 
 using namespace vizkit;
 using namespace std;
@@ -95,52 +96,58 @@ pair<double, double> VFHTreeVisualization::computeColorMapping(std::set<TreeNode
     return make_pair(1.0/max_cost, -min_cost);
 }
 
-void VFHTreeVisualization::updateMainNode ( osg::Node* node )
+osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, double color_a, double color_b)
 {
-    osg::Geode* geode = static_cast<osg::Geode*>(node);
-    while(geode->removeDrawables(0));
-
-    list<TreeNode*> const& nodes = p->data.getNodes();
-    if (nodes.empty())
-        return;
-
-    if (p->costMode == VFHTreeVisualization::SHOW_COST)
-        std::cerr << "vfh_viz: displaying cost" << std::endl;
-    else if (p->costMode == VFHTreeVisualization::SHOW_HEURISTICS)
-        std::cerr << "vfh_viz: displaying heuristic" << std::endl;
-    else if (p->costMode == VFHTreeVisualization::SHOW_BOTH)
-        std::cerr << "vfh_viz: displaying cost+heuristic" << std::endl;
-
-    std::cerr << "vfh_viz: " << nodes.size() << " nodes in tree" << std::endl;
-    osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
+    osg::Geometry* geom = new osg::Geometry;
 
     // Create the color and vertex arrays
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
 
-    std::set<TreeNode const*> enabled_nodes;
-    if (p->removeLeaves)
+    while (!node->isRoot())
     {
-        for(list<TreeNode*>::const_iterator it = nodes.begin();
-                it != nodes.end(); it++)
-        {
-            enabled_nodes.insert((*it)->getParent());
-        }
-    }
-    else
-    {
-        for(list<TreeNode*>::const_iterator it = nodes.begin();
-                it != nodes.end(); it++)
-            enabled_nodes.insert(*it);
-    }
+        base::Position parent_p = node->getParent()->getPose().position;
+        base::Position p = node->getPose().position;
+	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.5));
+	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.5));
 
-    // Gets the mapping from cost to color
-    double cost_a, cost_b;
-    boost::tie(cost_a, cost_b) = computeColorMapping(enabled_nodes);
-    std::cerr << "vfh_viz: cost mapping " << cost_a << " " << cost_b << std::endl;
+        double cost = getDisplayCost(this->p->costMode, *node);
 
-    for(set<TreeNode const*>::const_iterator it = enabled_nodes.begin();
-            it != enabled_nodes.end(); ++it)
+        double red = color_a * (cost + color_b) / 2 + 0.5;
+        double green = 1.0 - red;
+        double blue = 0.5;
+        double alpha = 1.0;
+	colors->push_back(osg::Vec4(red, green, blue, alpha));
+
+        node = node->getParent();
+    }
+    geom->setColorArray(colors);
+    geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
+    geom->setVertexArray(vertices);
+
+    // Draw the vertices as points
+    osg::ref_ptr<osg::DrawArrays> drawArrays =
+        new osg::DrawArrays( osg::PrimitiveSet::LINES, 0, vertices->size() );
+    geom->addPrimitiveSet(drawArrays.get());
+
+    // Finally, setup the point attributes
+    osg::ref_ptr<osg::LineWidth> lw = new osg::LineWidth();
+    lw->setWidth(10.0);
+    geom->getOrCreateStateSet()->setAttribute( lw, osg::StateAttribute::ON );
+
+    return geom;
+}
+
+osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> const& nodes, double color_a, double color_b)
+{
+    osg::Geometry* geom = new osg::Geometry;
+
+    // Create the color and vertex arrays
+    osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+    osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
+
+    for(set<TreeNode const*>::const_iterator it = nodes.begin();
+            it != nodes.end(); ++it)
     {
         TreeNode const* node = (*it);
 
@@ -151,7 +158,7 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
 
         double cost = getDisplayCost(this->p->costMode, *node);
 
-        double red = cost_a * (cost + cost_b);
+        double red = color_a * (cost + color_b);
         double green = 1.0 - red;
         double blue = 0.5;
         double alpha = 1.0;
@@ -173,7 +180,54 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     point->setMinSize( 0.2 );
     point->setMaxSize( 5.0 );
     geom->getOrCreateStateSet()->setAttribute( point, osg::StateAttribute::ON );
-    geode->addDrawable(geom);
+
+    return geom;
+}
+
+void VFHTreeVisualization::updateMainNode ( osg::Node* node )
+{
+    osg::Geode* geode = static_cast<osg::Geode*>(node);
+    while(geode->removeDrawables(0));
+
+    list<TreeNode*> const& nodes = p->data.getNodes();
+    if (nodes.empty())
+        return;
+
+    if (p->costMode == VFHTreeVisualization::SHOW_COST)
+        std::cerr << "vfh_viz: displaying cost" << std::endl;
+    else if (p->costMode == VFHTreeVisualization::SHOW_HEURISTICS)
+        std::cerr << "vfh_viz: displaying heuristic" << std::endl;
+    else if (p->costMode == VFHTreeVisualization::SHOW_BOTH)
+        std::cerr << "vfh_viz: displaying cost+heuristic" << std::endl;
+
+    std::cerr << "vfh_viz: " << nodes.size() << " nodes in tree" << std::endl;
+    std::set<TreeNode const*> enabled_nodes;
+    if (p->removeLeaves)
+    {
+        for(list<TreeNode*>::const_iterator it = nodes.begin();
+                it != nodes.end(); it++)
+        {
+            enabled_nodes.insert((*it)->getParent());
+        }
+    }
+    else
+    {
+        for(list<TreeNode*>::const_iterator it = nodes.begin();
+                it != nodes.end(); it++)
+            enabled_nodes.insert(*it);
+    }
+    // Add the final node regardless of the leaf mode
+    if (p->data.getFinalNode())
+        enabled_nodes.insert(p->data.getFinalNode());
+
+    // Gets the mapping from cost to color
+    double cost_a, cost_b;
+    boost::tie(cost_a, cost_b) = computeColorMapping(enabled_nodes);
+    std::cerr << "vfh_viz: cost mapping " << cost_a << " " << cost_b << std::endl;
+
+    geode->addDrawable(createTreeNode(enabled_nodes, cost_a, cost_b));
+    if (p->data.getFinalNode())
+        geode->addDrawable(createSolutionNode(p->data.getFinalNode(), cost_a, cost_b));
 }
 
 void VFHTreeVisualization::updateDataIntern(vfh_star::Tree const& value)
