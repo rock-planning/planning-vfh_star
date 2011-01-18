@@ -9,7 +9,9 @@ using namespace vfh_star;
 TreeSearchConf::TreeSearchConf()
     : maxTreeSize(0)
     , stepDistance(0.5)
-    , angularSampling(20)
+    , angularSamplingMin(2 * M_PI / 50)
+    , angularSamplingMax(2 * M_PI / 20)
+    , angularSamplingNominalCount(4)
     , discountFactor(1.0)
     , obstacleSafetyDistance(0.1)
     , robotWidth(0.5) {}
@@ -32,7 +34,9 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::Angl
 {
     std::vector< double > ret;
 
-    double angularSampling = 2 * M_PI / search_conf.angularSampling;
+    double minStep = search_conf.angularSamplingMin;
+    double maxStep = search_conf.angularSamplingMax;
+    int minNodes = search_conf.angularSamplingNominalCount;
     
     // double size = intervals.size();
     // std::cout << "Interval vector size " << size << std::endl;
@@ -42,24 +46,27 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::Angl
 	double start = (it->first);
 	double end  = (it->second);
 
-        double intervalOpening, intervalSize;
+        double intervalOpening;
 
 	// Special case, wrapping interval
 	if (start > end)
-	{
             intervalOpening = end + 2 * M_PI - start;
-            intervalSize = floor(intervalOpening / angularSampling);
-	}
         else
-        {
             intervalOpening = end - start;
-            intervalSize = floor(intervalOpening / angularSampling);
-        }
 
-        double delta = (intervalOpening - (intervalSize * angularSampling)) / 2;
+        double step = 0;
+        if (intervalOpening / minNodes < minStep)
+            step = minStep;
+        else if (intervalOpening / minNodes > maxStep)
+            step = maxStep;
+        else
+            step = intervalOpening / minNodes;
+
+        int intervalSize = floor(intervalOpening / step);
+        double delta = (intervalOpening - (intervalSize * step)) / 2;
         for (int i = 0; i < intervalSize; ++i)
         {
-            double angle = start + delta + i * angularSampling;
+            double angle = start + delta + i * step;
             if (angle > 2 * M_PI)
                 ret.push_back(angle - 2 * M_PI);
             else
