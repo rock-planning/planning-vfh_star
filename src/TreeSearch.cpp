@@ -161,7 +161,9 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             const double curDirection(*it);
 
             //generate new node
-            std::pair<base::Pose, bool> projected = getProjectedPose(curNode->getPose(), curDirection, search_conf.stepDistance);
+            std::pair<base::Pose, bool> projected =
+                getProjectedPose(curNode->getPose(), curDirection,
+                        search_conf.stepDistance);
             if (!projected.second)
                 continue;
 
