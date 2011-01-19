@@ -6,8 +6,8 @@ class StarTest: public vfh_star::VFHStar
 {
     public:
 	StarTest();
-	virtual std::vector< std::pair< double, double > > getNextPossibleDirections(const base::Pose& curPose, double obstacleSafetyDist, double robotWidth) const;
-	virtual std::pair<base::Pose, bool> getProjectedPose(const base::Pose& curPose, double heading, double distance) const;
+	virtual std::vector< std::pair< double, double > > getNextPossibleDirections(const vfh_star::TreeNode& curNode, double obstacleSafetyDist, double robotWidth) const;
+	virtual std::pair<base::Pose, bool> getProjectedPose(const vfh_star::TreeNode& curNode, double heading, double distance) const;
 };
 
 StarTest::StarTest()
@@ -17,7 +17,7 @@ StarTest::StarTest()
 
 
 
-std::vector< std::pair< double, double > > StarTest::getNextPossibleDirections(const base::Pose& curPose, double obstacleSafetyDist, double robotWidth) const
+std::vector< std::pair< double, double > > StarTest::getNextPossibleDirections(const vfh_star::TreeNode& curNode, double obstacleSafetyDist, double robotWidth) const
 {
     std::vector< std::pair< double, double > > fakeDirs;
 //     fakeDirs.push_back(0);
@@ -28,14 +28,14 @@ std::vector< std::pair< double, double > > StarTest::getNextPossibleDirections(c
     return fakeDirs;
 }
 
-std::pair<base::Pose, bool> StarTest::getProjectedPose(const base::Pose& curPose, double heading, double distance) const
+std::pair<base::Pose, bool> StarTest::getProjectedPose(const vfh_star::TreeNode& curNode, double heading, double distance) const
 {
     //super omnidirectional robot
     Vector3d p(0, distance, 0);
     
     base::Pose ret;
     ret.orientation = AngleAxisd(heading, Vector3d::UnitZ());
-    ret.position = curPose.position + ret.orientation * p;
+    ret.position = curNode.getPose().position + ret.orientation * p;
 
     return std::make_pair(ret, true);
 }

@@ -148,7 +148,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 
         //get possible ways to go for node
         AngleIntervals driveIntervals =
-            getNextPossibleDirections(curNode->getPose(),
+            getNextPossibleDirections(*curNode,
                     search_conf.obstacleSafetyDistance, search_conf.robotWidth);
 
         if (driveIntervals.empty())
@@ -168,7 +168,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 
             //generate new node
             std::pair<base::Pose, bool> projected =
-                getProjectedPose(curNode->getPose(), curDirection,
+                getProjectedPose(*curNode, curDirection,
                         search_conf.stepDistance);
             if (!projected.second)
                 continue;
@@ -344,7 +344,6 @@ void Tree::reserve(int size)
 
 TreeNode* Tree::createNode(base::Pose const& pose, double dir)
 {
-    size++;
     if (!free_nodes.empty())
     {
         nodes.splice(nodes.end(), free_nodes, free_nodes.begin());
@@ -357,6 +356,8 @@ TreeNode* Tree::createNode(base::Pose const& pose, double dir)
     n->pose = pose;
     n->direction = dir;
     n->parent = n;
+    n->index  = size;
+    ++size;
     return n;
 }
 
@@ -424,7 +425,7 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
         throw std::runtime_error("the chosen heuristic is not a minorant");
 }
 
-TreeNode::TreeNode(): parent(this), direction(0), cost(0), heuristic(0), depth(0)
+TreeNode::TreeNode(): parent(this), direction(0), cost(0), heuristic(0), depth(0), index(0)
 {
 
 }
@@ -437,6 +438,7 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
     , cost(0)
     , heuristic(0)
     , depth(0)
+    , index(0)
     , positionTolerance(0)
     , headingTolerance(0)
 {
@@ -496,6 +498,11 @@ bool TreeNode::isLeaf() const
 double TreeNode::getDirection() const
 {
     return direction;
+}
+
+int TreeNode::getIndex() const
+{
+    return index;
 }
 
 double TreeNode::getPositionTolerance() const

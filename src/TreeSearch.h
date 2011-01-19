@@ -29,6 +29,8 @@ class TreeNode
 	double getDirection() const;
 	int getDepth() const;
 
+        int getIndex() const;
+
 	double getCost() const;
 	void setCost(double value);
 	double getHeuristic() const;
@@ -53,6 +55,7 @@ class TreeNode
 	double cost;
 	double heuristic;
 	int depth;
+        int index;
 
         double positionTolerance;
         double headingTolerance;
@@ -166,7 +169,7 @@ class TreeSearch
         * The returned vector is a list of angle intervals
 	**/
 	virtual AngleIntervals getNextPossibleDirections(
-                const base::Pose &curPose,
+                const TreeNode& curNode,
                 double obstacleSafetyDist,
                 double robotWidth) const = 0;
 
@@ -176,7 +179,7 @@ class TreeSearch
 	* This method should take the robot driving constrains
 	* into account. 
 	*/
-	virtual std::pair<base::Pose, bool> getProjectedPose(const base::Pose &curPose,
+	virtual std::pair<base::Pose, bool> getProjectedPose(const TreeNode& curNode,
                 double heading,
                 double distance) const = 0;
 
