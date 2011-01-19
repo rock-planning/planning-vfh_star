@@ -119,16 +119,6 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         if (max_depth > 0 && tree.getSize() > max_depth)
             return 0;
 
-        /*	std::cout << "Possible expandable nodes" << std::endl;
-                for(std::multimap<double, TreeNode *>::iterator it = expandCandidates.begin(); it != expandCandidates.end(); it++)
-                {
-                std::cout << "Node: dir " << it->second->getDirection() << " cost " << it->second->getCost() << "," << it->first << " depth is " << it->second->getDepth() << " Pos " << it->second->getPose().position.transpose() << std::endl;	    
-                }
-                std::cout << std::endl;*/
-
-        // std::cout << expandCandidates.size() << " candidates in queue\n";
-
-            // get the cheapest node for expansion
         curNode = expandCandidates.begin()->second;
         expandCandidates.erase(expandCandidates.begin());
         curNode->candidate_it = expandCandidates.end();
@@ -136,18 +126,14 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         if (!validateNode(*curNode))
             continue;
 
-        // 	 std::cout << "Expanding node with dir " << curNode->getDirection() << " cost " << curNode->getCost() << " depth is " << curNode->getDepth() << " pos " << curNode->getPose().position.transpose() << " heading " << curNode->getDirection() << std::endl;
-
-
         base::Position p = curNode->getPose().position;
-        //std::cout << "opened " << p.x() << ", " << p.y() << ", " << p.z() << " direction=" << curNode->getDirection() << "\n    depth=" << curNode->getDepth() << " cost=" << curNode->getCost() << " heuristic= " << curNode->getHeuristic() << "\n";
         if (isTerminalNode(*curNode))
         {
             tree.setFinalNode(curNode);
             break;
         }
 
-        //get possible ways to go for node
+        // Get possible ways to go out of this node
         AngleIntervals driveIntervals =
             getNextPossibleDirections(*curNode,
                     search_conf.obstacleSafetyDistance, search_conf.robotWidth);
@@ -155,15 +141,16 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         if (driveIntervals.empty())
             continue;
 
-        Angles driveDirection =
+        Angles driveDirections =
             getDirectionsFromIntervals(driveIntervals);
-        if (driveDirection.empty())
+        if (driveDirections.empty())
             continue;
 
         double curDiscount = pow(search_conf.discountFactor, curNode->getDepth());
 
-        //expand node
-        for(Angles::const_iterator it = driveDirection.begin(); it != driveDirection.end(); it++)
+        // Expand the node: add children in the directions returned by
+        // driveDirections
+        for (Angles::const_iterator it = driveDirections.begin(); it != driveDirections.end(); it++)
         {
             const double curDirection(*it);
 
@@ -211,7 +198,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                 }
             }
 
-            //add Node to tree
+            // Finally, create the new node and add it in the tree
             TreeNode *newNode = tree.createChild(curNode, projected.first, curDirection);
             newNode->setCost(curNode->getCost() + nodeCost);
             newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
@@ -223,14 +210,13 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 
             // And add it to the kdtree
             kdtree.insert(newNode);
-
-            // 	    std::cout << "Adding node for direction " << *it << " cost " << newNode->getCost() << " depth is " << newNode->getDepth() << " pos " << curNode->getPose().position.transpose() << " heading " << curNode->getDirection() << std::endl;
         }
     }
 
     curNode = tree.getFinalNode();
     if (curNode)
     {
+        std::cerr << "TreeSearch: found solution at c=" << curNode->getCost() << std::endl;
         tree.verifyHeuristicConsistency(curNode);
         return curNode;
     }
