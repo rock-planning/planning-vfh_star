@@ -189,7 +189,7 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     osg::Geode* geode = static_cast<osg::Geode*>(node);
     while(geode->removeDrawables(0));
 
-    list<TreeNode*> const& nodes = p->data.getNodes();
+    list<TreeNode> const& nodes = p->data.getNodes();
     if (nodes.empty())
         return;
 
@@ -204,17 +204,19 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     std::set<TreeNode const*> enabled_nodes;
     if (p->removeLeaves)
     {
-        for(list<TreeNode*>::const_iterator it = nodes.begin();
+        for(list<TreeNode>::const_iterator it = nodes.begin();
                 it != nodes.end(); it++)
         {
-            enabled_nodes.insert((*it)->getParent());
+            if (!it->isRoot() && !it->getParent()->isRoot())
+                enabled_nodes.insert(it->getParent());
         }
     }
     else
     {
-        for(list<TreeNode*>::const_iterator it = nodes.begin();
+        for(list<TreeNode>::const_iterator it = nodes.begin();
                 it != nodes.end(); it++)
-            enabled_nodes.insert(*it);
+            if (!it->isRoot())
+                enabled_nodes.insert(&(*it));
     }
     // Add the final node regardless of the leaf mode
     if (p->data.getFinalNode())

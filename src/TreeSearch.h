@@ -67,24 +67,27 @@ class Tree
         Tree(Tree const& other);
         Tree& operator = (Tree const& other);
 
-	void addChild(TreeNode *parent, TreeNode *child);
-	void removeChild(TreeNode *parent, TreeNode *child);
+        TreeNode* createRoot(base::Pose const& pose, double dir);
+	TreeNode* createChild(TreeNode *parent, base::Pose const& pose, double dir);
 
 	TreeNode *getParent(TreeNode *child);
 	TreeNode *getRootNode();
-
-	void setRootNode(TreeNode *root);
 
         std::vector<base::Waypoint> buildTrajectoryTo(TreeNode const* leaf) const;
 
         int getSize() const;
         void clear();
+        void reserve();
         void verifyHeuristicConsistency(const TreeNode* from) const;
-        std::list<TreeNode*> const& getNodes() const;
+        std::list<TreeNode> const& getNodes() const;
         void setFinalNode(TreeNode* node);
         TreeNode* getFinalNode() const;
 
+        void reserve(int size);
+
     private:
+        TreeNode* createNode(base::Pose const& pose, double dir);
+
         /** A tree might get quite big, in which case calling nodes.size() is
          * really not efficient. Since it is trivial to keep the size uptodate,
          * just do it
@@ -92,7 +95,10 @@ class Tree
         int size; 
 
         /** The set of tree nodes */
-        std::list<TreeNode*> nodes;
+        std::list<TreeNode> nodes;
+
+        /** The set of tree nodes */
+        std::list<TreeNode> free_nodes;
 
         /** The final node (0 if none has been found) */
         TreeNode* final_node;

@@ -108,8 +108,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 
     tree.clear();
     kdtree.clear();
-    TreeNode *curNode = new TreeNode(start, start.getYaw());
-    tree.setRootNode(curNode);
+    TreeNode *curNode = tree.createRoot(start, start.getYaw());
     kdtree.insert(curNode);
 
     expandCandidates.insert(std::make_pair(0, curNode));
@@ -200,8 +199,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 
 
             //add Node to tree
-            TreeNode *newNode = new TreeNode(projected.first, curDirection);
-            tree.addChild(curNode, newNode);
+            TreeNode *newNode = tree.createChild(curNode, projected.first, curDirection);
             newNode->setCost(curNode->getCost() + nodeCost);
             newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
             newNode->setHeadingTolerance(std::numeric_limits< double >::signaling_NaN());
@@ -274,19 +272,22 @@ Tree& Tree::operator = (Tree const& other)
     clear();
 
     std::map<TreeNode const*, TreeNode*> node_map;
-    for (std::list<TreeNode*>::const_iterator it = other.nodes.begin();
+    for (std::list<TreeNode>::const_iterator it = other.nodes.begin();
             it != other.nodes.end(); ++it)
     {
-        TreeNode* orig_node = *it;
-        TreeNode* new_node =
-            new TreeNode(orig_node->getPose(), orig_node->getDirection());
+        TreeNode const* orig_node = &(*it);
+        TreeNode* new_node;
+        if (orig_node->isRoot())
+            new_node = createRoot(orig_node->getPose(), orig_node->getDirection());
+        else
+            new_node = createChild(node_map[orig_node->getParent()], orig_node->getPose(), orig_node->getDirection());
+
         new_node->setCost(orig_node->getCost());
         new_node->setHeuristic(orig_node->getHeuristic());
         new_node->setHeadingTolerance(orig_node->getHeadingTolerance());
         new_node->setPositionTolerance(orig_node->getPositionTolerance());
 
         node_map.insert( std::make_pair(orig_node, new_node) );
-        addChild(node_map[orig_node->getParent()], new_node);
     }
     if (other.getFinalNode())
         setFinalNode(node_map[other.getFinalNode()]);
@@ -321,16 +322,7 @@ std::vector<base::Waypoint> Tree::buildTrajectoryTo(TreeNode const* node) const
 
 TreeNode* Tree::getRootNode()
 {
-    return nodes.front();
-}
-
-void Tree::setRootNode(TreeNode* root)
-{
-    if (!nodes.empty())
-        throw std::runtime_error("trying to change the root node of an non-empty tree");
-
-    nodes.push_front(root);
-    size++;
+    return &(nodes.front());
 }
 
 TreeNode* Tree::getFinalNode() const
@@ -343,13 +335,46 @@ void Tree::setFinalNode(TreeNode* node)
     final_node = node;
 }
 
-void Tree::addChild(TreeNode* parent, TreeNode* child)
+void Tree::reserve(int size)
 {
+    int diff = free_nodes.size() - size;
+    for (int i = 0; i < diff; ++i)
+        free_nodes.push_back(TreeNode());
+}
+
+TreeNode* Tree::createNode(base::Pose const& pose, double dir)
+{
+    size++;
+    if (!free_nodes.empty())
+    {
+        nodes.splice(nodes.end(), free_nodes, free_nodes.begin());
+        nodes.back() = TreeNode();
+    }
+    else
+        nodes.push_back(TreeNode());
+
+    TreeNode* n = &nodes.back();
+    n->pose = pose;
+    n->direction = dir;
+    n->parent = n;
+    return n;
+}
+
+TreeNode* Tree::createRoot(base::Pose const& pose, double dir)
+{
+    if (!nodes.empty())
+        throw std::runtime_error("trying to create a root node of an non-empty tree");
+
+    return createNode(pose, dir);
+}
+
+TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir)
+{
+    TreeNode* child = createNode(pose, dir);
     child->parent = parent;
     child->depth  = parent->depth + 1;
     parent->is_leaf = false;
-    nodes.push_back(child);
-    size++;
+    return child;
 }
 
 TreeNode *Tree::getParent(TreeNode* child)
@@ -364,14 +389,12 @@ int Tree::getSize() const
 
 void Tree::clear()
 {
-    for (std::list<TreeNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
-        delete *it;
-    nodes.clear();
+    free_nodes.splice(free_nodes.end(), nodes);
     final_node = 0;
     size = 0;
 }
 
-std::list<TreeNode*> const& Tree::getNodes() const
+std::list<TreeNode> const& Tree::getNodes() const
 {
     return nodes;
 }
