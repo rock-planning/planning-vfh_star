@@ -111,7 +111,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     TreeNode *curNode = tree.createRoot(start, start.getYaw());
     kdtree.insert(curNode);
 
-    expandCandidates.insert(std::make_pair(0, curNode));
+    curNode->candidate_it = expandCandidates.insert(std::make_pair(0, curNode));
     
     int max_depth = search_conf.maxTreeSize;
     while(!expandCandidates.empty()) 
@@ -131,6 +131,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             // get the cheapest node for expansion
         curNode = expandCandidates.begin()->second;
         expandCandidates.erase(expandCandidates.begin());
+        curNode->candidate_it = expandCandidates.end();
 
         if (!validateNode(*curNode))
             continue;
@@ -176,11 +177,9 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             //compute cost for it
             double nodeCost = curDiscount * getCostForNode(projected.first, curDirection, *curNode);
 
-            // Check that we are not doing the same work multiple times. Node
-            // that we want to keep a tree structure, so we skip nodes only if
-            // they do not provide a shorter path than what's already existing
+            // Check that we are not doing the same work multiple times.
             //
-            // searchNode should be used only for the search !
+            // searchNode should be used only here !
             TreeNode searchNode(projected.first, curDirection);
             double identity_threshold = search_conf.stepDistance / 5;
             std::pair<NNSearch::const_iterator, double> this_nn =
@@ -190,13 +189,27 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                 TreeNode const* closest_node   = *(this_nn.first);
                 if (closest_node->getCost() <= nodeCost)
                 {
+                    // The existing node is better than this one from a cost
+                    // point of view. Check that the direction is also the same
                     TreeNode const* closest_parent = closest_node->getParent();
                     double parent_d = (closest_parent->getPose().position - curNode->getPose().position).norm();
                     if (parent_d < identity_threshold)
                         continue;
                 }
-            }
+                else if (closest_node->candidate_it != expandCandidates.end())
+                {
+                    TreeNode const* closest_parent = closest_node->getParent();
+                    double parent_d = (closest_parent->getPose().position - curNode->getPose().position).norm();
+                    if (parent_d < identity_threshold)
+                        continue;
 
+                    // The existing node is worse than this one, but we are
+                    // lucky: the node has not been expanded yet. Just remove it
+                    // from expandCandidates
+                    expandCandidates.erase(closest_node->candidate_it);
+                    closest_node->candidate_it = expandCandidates.end();
+                }
+            }
 
             //add Node to tree
             TreeNode *newNode = tree.createChild(curNode, projected.first, curDirection);
@@ -206,7 +219,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             newNode->setHeuristic(curDiscount * getHeuristic(*newNode));
 
             // Add it to the expand list
-            expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
+            newNode->candidate_it = expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
 
             // And add it to the kdtree
             kdtree.insert(newNode);

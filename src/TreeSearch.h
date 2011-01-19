@@ -8,6 +8,7 @@
 #include <list>
 #include <base/eigen.h>
 #include <kdtree++/kdtree.hpp>
+#include <map>
 
 #include <vfh_star/Types.h>
 
@@ -15,6 +16,7 @@ namespace vfh_star {
 class TreeNode
 {
     friend class Tree;
+    friend class TreeSearch;
     public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -59,6 +61,9 @@ class TreeNode
 
         double positionTolerance;
         double headingTolerance;
+
+        // Used by TreeSearch only
+        mutable std::multimap<double, TreeNode *>::iterator candidate_it;
 };
 
 class Tree
