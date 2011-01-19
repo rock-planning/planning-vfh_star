@@ -108,8 +108,8 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     {
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
-	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.5));
-	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.5));
+	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
 
         double cost = getDisplayCost(this->p->costMode, *node);
 
