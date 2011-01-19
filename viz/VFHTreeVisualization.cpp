@@ -200,7 +200,7 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     else if (p->costMode == VFHTreeVisualization::SHOW_BOTH)
         std::cerr << "vfh_viz: displaying cost+heuristic" << std::endl;
 
-    std::cerr << "vfh_viz: " << nodes.size() << " nodes in tree" << std::endl;
+    std::cerr << "vfh_viz: " << p->data.getSize() << " nodes in tree" << std::endl;
     std::set<TreeNode const*> enabled_nodes;
     if (p->removeLeaves)
     {
