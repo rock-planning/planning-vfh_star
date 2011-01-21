@@ -1,21 +1,14 @@
 <package>
-  <description brief="">
-  
+  <description brief="local motion planning and obstacle avoidance based on the
+      VFH* approach">
+  This package contains an implementation of the Vector Field Histogram local
+  obstacle avoidance based on the registration of consecutive laser scans, in 3D.
+  Moreover, it provide a classical tree-based motion planning algorithm and the
+  corresponding VFH* implementation
   </description>
-  <author>/</author>
-  <license></license>
-  <url>http://</url>
-  <logo>http://</logo>
- <!--
-   To add any dependencies use the depend tag
-  <depend package="dummy-dependency-0" />
-	...
-  <depend package="dummy-dependency-n-1" />
-  <depend package="dummy-dependency-n" />
--->
-<!--DEPEND-ENTRY-->
-  <versioncontrol type="git" url="" />
-  <export>
-    <cpp cflags="" lflags="" />
-  </export>
+  <author>Janosch Machowinski/janosch.machowinski@dfki.de</author>
+  <author>Sylvain Joyeux/sylvain.joyeux@dfki.de</author>
+  <license>LGPL v2 or later</license>
+  <depend package="slam/envire" />
+  <depend package="base/types" />
 </package>
