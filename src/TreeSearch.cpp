@@ -421,7 +421,7 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
     }
 
     if (!alright)
-        throw std::runtime_error("the chosen heuristic is not a minorant");
+        std::cerr << "WARN: the chosen heuristic does not seem to be a minorant" << std::endl;
 }
 
 TreeNode::TreeNode(): parent(this), direction(0), cost(0), heuristic(0), depth(0), index(0)
