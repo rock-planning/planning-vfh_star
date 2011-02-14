@@ -23,8 +23,11 @@ struct VFHTreeVisualization::Data {
     // actual node cost is displayed. False by default
     VFHTreeVisualization::COST_MODE costMode;
 
+    bool hasSegment;
+    std::pair< base::Vector3d, base::Vector3d > segment;
+
     Data()
-        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST) {}
+        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false) {}
 };
 
 
@@ -189,6 +192,26 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     osg::Geode* geode = static_cast<osg::Geode*>(node);
     while(geode->removeDrawables(0));
 
+    if (p->hasSegment)
+    {
+        osg::Geometry* geom = new osg::Geometry;
+        osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+        osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
+        base::Vector3d pt = p->segment.first;
+        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+        pt = p->segment.second;
+        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+        colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+
+        geom->setColorArray(colors);
+        geom->setColorBinding( osg::Geometry::BIND_OVERALL );
+        geom->setVertexArray(vertices);
+        osg::ref_ptr<osg::DrawArrays> drawArrays =
+            new osg::DrawArrays( osg::PrimitiveSet::LINES, 0, vertices->size() );
+        geom->addPrimitiveSet(drawArrays.get());
+        geode->addDrawable(geom);
+    }
+
     list<TreeNode> const& nodes = p->data.getNodes();
     if (nodes.empty())
         return;
@@ -235,5 +258,11 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
 void VFHTreeVisualization::updateDataIntern(vfh_star::Tree const& value)
 {
     p->data = value;
+}
+
+void VFHTreeVisualization::updateDataIntern(Segment const& segment)
+{
+    p->segment = segment;
+    p->hasSegment = true;
 }
 
