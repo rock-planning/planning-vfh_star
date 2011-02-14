@@ -129,9 +129,6 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     int max_depth = search_conf.maxTreeSize;
     while(!expandCandidates.empty()) 
     {
-        if (max_depth > 0 && tree.getSize() > max_depth)
-            return 0;
-
         curNode = expandCandidates.begin()->second;
         expandCandidates.erase(expandCandidates.begin());
         curNode->candidate_it = expandCandidates.end();
@@ -139,12 +136,16 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         if (!validateNode(*curNode))
             continue;
 
-        base::Position p = curNode->getPose().position;
-        if (isTerminalNode(*curNode))
+        bool terminal = isTerminalNode(*curNode);
+        if (terminal)
         {
             tree.setFinalNode(curNode);
             break;
         }
+
+        base::Position p = curNode->getPose().position;
+        if (max_depth > 0 && tree.getSize() > max_depth)
+            continue;
 
         // Get possible ways to go out of this node
         AngleIntervals driveIntervals =
