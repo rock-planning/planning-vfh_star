@@ -137,6 +137,19 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             continue;
 
         bool terminal = isTerminalNode(*curNode);
+        if (!curNode->updated_cost && updateCost(*curNode, terminal))
+        {
+            curNode->updated_cost = true;
+
+            double hcost = curNode->getHeuristicCost();
+            if (hcost > expandCandidates.begin()->first)
+            {
+                // reinsert in the candidate queue and start again
+                curNode->candidate_it = expandCandidates.insert(std::make_pair(hcost, curNode));
+                continue;
+            }
+        }
+
         if (terminal)
         {
             tree.setFinalNode(curNode);
@@ -252,6 +265,11 @@ std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
 bool TreeSearch::validateNode(const TreeNode& node) const
 {
     return true;
+}
+
+bool TreeSearch::updateCost(TreeNode& node, bool is_terminal) const
+{
+    return false;
 }
 
 const Tree& TreeSearch::getTree() const
@@ -455,6 +473,7 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
     , heuristic(0)
     , depth(0)
     , index(0)
+    , updated_cost(false)
     , positionTolerance(0)
     , headingTolerance(0)
 {

@@ -58,6 +58,7 @@ class TreeNode
 	double heuristic;
 	int depth;
         int index;
+        bool updated_cost;
 
         double positionTolerance;
         double headingTolerance;
@@ -198,6 +199,18 @@ class TreeSearch
          * The default implementation returns true (valid).
          */
         virtual bool validateNode(const TreeNode& node) const;
+
+        /** This function is called after validateNode to check if the node cost
+         * should be changed. The only valid change is upwards
+         *
+         * The method should return true if the cost has been changed, and false
+         * otherwise. The is_final flag is true if the node is a terminal node
+         * and false otherwise. It might be used to add some heuristic cost on
+         * the final states.
+         *
+         * The default implementation does nothing and returns false
+         */
+        virtual bool updateCost(TreeNode& node, bool is_terminal) const;
 
     private:
         struct TreeNodePositionAccessor
