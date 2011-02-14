@@ -165,6 +165,9 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         // driveDirections
         for (Angles::const_iterator it = driveDirections.begin(); it != driveDirections.end(); it++)
         {
+            if (max_depth > 0 && tree.getSize() >= max_depth)
+                break;
+
             const double curDirection(*it);
 
             //generate new node
