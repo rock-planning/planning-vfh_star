@@ -30,7 +30,7 @@ const TreeSearchConf& TreeSearch::getSearchConf() const
     return search_conf;
 }
 
-TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::AngleIntervals& intervals)
+TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(double curDir, const TreeSearch::AngleIntervals& intervals)
 {
     std::vector< double > ret;
 
@@ -40,6 +40,7 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::Angl
     
     // double size = intervals.size();
     // std::cout << "Interval vector size " << size << std::endl;
+    bool straight = false;
     
     for (AngleIntervals::const_iterator it = intervals.begin(); it != intervals.end(); it++) 
     {
@@ -50,9 +51,19 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::Angl
 
 	// Special case, wrapping interval
 	if (start > end)
+        {
+            if ((curDir > start && curDir < end - 2 * M_PI) || (curDir < end && curDir + 2 * M_PI > start))
+                straight = true;
+
             intervalOpening = end + 2 * M_PI - start;
+        }
         else
+        {
+            if (curDir > start && curDir < end)
+                straight = true;
+
             intervalOpening = end - start;
+        }
 
         double step = 0;
         if (intervalOpening / minNodes < minStep)
@@ -74,6 +85,8 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const TreeSearch::Angl
         }
     }
 
+    if (straight)
+        ret.push_back(curDir);
     //std::cerr << "found " << ret.size() << " possible directions" << std::endl;
     
     return ret;
@@ -142,7 +155,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             continue;
 
         Angles driveDirections =
-            getDirectionsFromIntervals(driveIntervals);
+            getDirectionsFromIntervals(curNode->getDirection(), driveIntervals);
         if (driveDirections.empty())
             continue;
 

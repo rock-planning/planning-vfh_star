@@ -144,7 +144,7 @@ class TreeSearch
 	virtual ~TreeSearch();
 
     protected:
-	Angles getDirectionsFromIntervals(const AngleIntervals& intervals);
+	Angles getDirectionsFromIntervals(double curDir, const AngleIntervals& intervals);
 
         // The tree generated at the last call to getTrajectory
         Tree tree;
