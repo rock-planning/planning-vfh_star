@@ -218,13 +218,14 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                     TreeNode const* closest_parent = closest_node->getParent();
                     double parent_d = (closest_parent->getPose().position - curNode->getPose().position).norm();
                     if (parent_d < identity_threshold)
-                        continue;
-
-                    // The existing node is worse than this one, but we are
-                    // lucky: the node has not been expanded yet. Just remove it
-                    // from expandCandidates
-                    expandCandidates.erase(closest_node->candidate_it);
-                    closest_node->candidate_it = expandCandidates.end();
+                    {
+                        // The existing node is worse than this one, but we are
+                        // lucky: the node has not been expanded yet. Just remove it
+                        // from expandCandidates
+                        expandCandidates.erase(closest_node->candidate_it);
+                        closest_node->candidate_it = expandCandidates.end();
+                        kdtree.erase(this_nn.first);
+                    }
                 }
             }
 
