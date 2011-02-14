@@ -107,10 +107,14 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
 
+    // Used later to represent the initial orientation
+    double step = 0;
     while (!node->isRoot())
     {
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
+        if (step == 0)
+            step = (parent_p - p).norm();
 	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
 	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
 
@@ -124,6 +128,16 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
 
         node = node->getParent();
     }
+
+    // Add a node for the root's direction
+    Eigen::Quaterniond q(Eigen::AngleAxisd(node->getDirection(), Eigen::Vector3d::UnitZ()));
+    base::Vector3d root_dir = q * Eigen::Vector3d::UnitY();
+    base::Position parent_p = node->getPose().position;
+    base::Position p = parent_p - root_dir * step;
+    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+    colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+
     geom->setColorArray(colors);
     geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
     geom->setVertexArray(vertices);
