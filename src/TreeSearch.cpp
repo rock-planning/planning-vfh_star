@@ -134,7 +134,10 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         curNode->candidate_it = expandCandidates.end();
 
         if (!validateNode(*curNode))
+        {
+            curNode->heuristic = -1;
             continue;
+        }
 
         bool terminal = isTerminalNode(*curNode);
         if (!curNode->updated_cost && updateCost(*curNode, terminal))

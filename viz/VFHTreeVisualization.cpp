@@ -84,6 +84,9 @@ pair<double, double> VFHTreeVisualization::computeColorMapping(std::set<TreeNode
     for (std::set<TreeNode const*>::const_iterator it = nodes.begin();
             it != nodes.end(); ++it)
     {
+        if ((*it)->getHeuristic() < 0)
+            continue;
+
         double c = getDisplayCost(p->costMode, **it);
 
         if (c < min_cost)
@@ -173,13 +176,18 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
 	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
 	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
 
-        double cost = getDisplayCost(this->p->costMode, *node);
+        if (node->getHeuristic() < 0) // used to mark invalid nodes
+            colors->push_back(osg::Vec4(0, 0, 0, 1));
+        else
+        {
+            double cost = getDisplayCost(this->p->costMode, *node);
 
-        double red = color_a * (cost + color_b);
-        double green = 1.0 - red;
-        double blue = 0.5;
-        double alpha = 1.0;
-	colors->push_back(osg::Vec4(red, green, blue, alpha));
+            double red = color_a * (cost + color_b);
+            double green = 1.0 - red;
+            double blue = 0.5;
+            double alpha = 1.0;
+            colors->push_back(osg::Vec4(red, green, blue, alpha));
+        }
     }
     geom->setColorArray(colors);
     geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
