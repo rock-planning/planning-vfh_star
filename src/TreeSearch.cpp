@@ -412,6 +412,7 @@ TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir
     TreeNode* child = createNode(pose, dir);
     child->parent = parent;
     child->depth  = parent->depth + 1;
+    child->updated_cost = false;
     parent->is_leaf = false;
     return child;
 }
