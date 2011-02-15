@@ -26,8 +26,10 @@ struct VFHTreeVisualization::Data {
     bool hasSegment;
     std::pair< base::Vector3d, base::Vector3d > segment;
 
+    int treeNodeCount;
+
     Data()
-        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false) {}
+        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0) {}
 };
 
 
@@ -50,6 +52,12 @@ void VFHTreeVisualization::setCostMode(COST_MODE mode)
 void VFHTreeVisualization::removeLeaves(bool enable)
 {
     p->removeLeaves = enable;
+    setDirty();
+}
+
+void VFHTreeVisualization::setMaxNodeCount(int count)
+{
+    p->treeNodeCount = count;
     setDirty();
 }
 
@@ -166,9 +174,13 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
 
+    int count = p->treeNodeCount;
     for(set<TreeNode const*>::const_iterator it = nodes.begin();
             it != nodes.end(); ++it)
     {
+        if (count != 0 && (*it)->getIndex() > count)
+            continue;
+
         TreeNode const* node = (*it);
 
         base::Position parent_p = node->getParent()->getPose().position;

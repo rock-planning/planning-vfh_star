@@ -31,6 +31,7 @@ namespace vizkit
 
         void setCostMode(COST_MODE mode);
         void removeLeaves(bool enable);
+        void setMaxNodeCount(int count);
 
     protected:
         virtual osg::ref_ptr<osg::Node> createMainNode();
