@@ -26,6 +26,12 @@ class TraversabilityMapGenerator
 	    return traversabilityGrid;
 	};
 	
+	/**
+	 * The map is moved if the robot position
+	 * is inside the outer boundary of the map.
+	 * */
+	void setBoundarySize(double size);
+	
     private:
 	
 	/**
@@ -61,6 +67,7 @@ class TraversabilityMapGenerator
 	ElevationGrid interpolatedGrid;
 	TraversabilityGrid traversabilityGrid;
 	Eigen::Transform3d lastBody2Odo;
+	double boundarySize;
 };
 
 }

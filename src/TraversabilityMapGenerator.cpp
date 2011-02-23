@@ -7,12 +7,17 @@ namespace vfh_star {
 
 TraversabilityMapGenerator::TraversabilityMapGenerator()
 {
-
+    boundarySize = 0;
 }
-    
+
+void TraversabilityMapGenerator::setBoundarySize(double size)
+{
+    boundarySize = size;
+}
+
 bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Transform3d& body2Odo, const Eigen::Transform3d& laser2Body)
 {
-    std::cout << "GridMapSegmenter: Got laserScan" << std::endl;
+//     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
     
     Transform3d  body2LastBody(lastBody2Odo.inverse() * body2Odo);
     double distanceBodyToLastBody = body2LastBody.translation().norm();
@@ -31,7 +36,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
 	return false;
     }
 
-    std::cout << "GridMapSegmenter: Next Segmentation" << std::endl;
+    std::cout << "TraversabilityMapGenerator: Next Segmentation" << std::endl;
     
     //interpolate grid
     smoothElevationGrid(laserGrid, interpolatedGrid);
@@ -76,8 +81,13 @@ bool TraversabilityMapGenerator::moveGridIfRobotNearBoundary(ElevationGrid &grid
 {
     Vector3d posInGrid = robotPosition_world - grid.getPosition();
     
-    if(fabs(posInGrid.x()) > grid.getGridSize() / 4.0 || fabs(posInGrid.y()) > grid.getGridSize() / 4.0) {
-	grid.moveGrid(robotPosition_world);
+    double width = grid.getWidth() * grid.getGridResolution() / 2.0;
+    double height = grid.getHeight() * grid.getGridResolution() / 2.0;
+    
+    if(fabs(posInGrid.x()) > width - boundarySize || fabs(posInGrid.y()) > height - boundarySize) {
+	
+	//we assume the robot keeps moving into the same direction
+	grid.moveGrid(robotPosition_world + posInGrid * 2.0 / 3.0);
 
 	return true;
     }
