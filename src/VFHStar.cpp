@@ -96,7 +96,7 @@ double VFHStar::angleDiff(const double &a1, const double &a2) const
 double VFHStar::getMotionDirection(const Vector3d &start, const Vector3d &end) const
 {
     //note, we define y as our zero heading
-    return atan2(end.y() - start.y(), end.x() - end.y()) + M_PI / 2.0;
+    return atan2(end.y() - start.y(), end.x() - start.x()) + M_PI / 2.0;
 }
 
 
