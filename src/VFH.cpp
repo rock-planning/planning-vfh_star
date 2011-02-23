@@ -210,8 +210,11 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 	    {
 		if(!traversabillityGrid->inGrid(rx, ry))
 		{
-		    std::cout << "not in Grid exit" <<std::endl;
-		    exit(0);
+		    std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
+		    std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
+		    std::cout << "Sense size x:" << senseSize << " sense radius" << senseRadius << std::endl;
+		 
+		    throw std::runtime_error("Accessed cell outside of grid");
 		}
 		
 		double angleToObstace = atan2(y, x);
