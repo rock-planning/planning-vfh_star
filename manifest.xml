@@ -11,4 +11,5 @@
   <license>LGPL v2 or later</license>
   <depend package="slam/envire" />
   <depend package="base/types" />
+  <tags>needs_opt</tags>
 </package>
