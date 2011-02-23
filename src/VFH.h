@@ -22,6 +22,11 @@ namespace vfh_star
 
         const VFHDebugData &getDebugData();	
 
+	void setSenseRadius(double radius)
+	{
+	    senseRadius = radius;
+	}
+	
     private:
         void generateHistogram(std::vector< double > &histogram,
                 const base::Pose &curPose,
