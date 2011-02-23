@@ -20,7 +20,7 @@ VFH::VFH(const envire::Grid< Traversability >* trGrid)
 
 void addDir(std::vector< std::pair<double, double> > &drivableDirections, double angularResoultion, int narrowThreshold, int start, int end, int histSize)
 {
-    std::cout << "adding area " << start << " end " << end << " is narrow " << (abs(end-start) < narrowThreshold) <<  std::endl;
+//     std::cout << "adding area " << start << " end " << end << " is narrow " << (abs(end-start) < narrowThreshold) <<  std::endl;
     
     int gapSize = end-start;
     
@@ -66,17 +66,13 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
     {
 	if(bHistogram[i] && start < 0)   
 	{	    
-	    std::cout << "found start " << i << std::endl; 
 	    start = i;
 	}
 	
 	if(!bHistogram[i] && start >= 0)
 	{
-	    std::cout << "found end " << i << std::endl; 
-
 	    if(start == 0)
 	    {
-		std::cout << "found end of first segement " << i << std::endl; 
 		firstEnd = i-1;
 		start = -1;
 		continue;
@@ -91,7 +87,7 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
     
     if(start >= 0)
     {
-	std::cout << "have start " << start << std::endl; 
+// 	std::cout << "have start " << start << std::endl; 
 
 	addDir(drivableDirections, angularResoultion, narrowThreshold, start, firstEnd, histogramSize);
     }
@@ -103,11 +99,11 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
 	}
     }
     
-    std::cout << "Resulting Areas: " << std::endl;
+/*    std::cout << "Resulting Areas: " << std::endl;
     for(std::vector<std::pair<double, double> >::const_iterator it = drivableDirections.begin(); it != drivableDirections.end(); it++)
     {
 	std::cout << "Start " << it->first / M_PI * 180 << " end " << it->second  / M_PI * 180<< std::endl;
-    }
+    }*/
     
     if(dd) 
     {
@@ -155,16 +151,18 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
     const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
     
+/*    std::cout << "Grid pos " << gridPos->getTransform().translation().transpose() << std::endl;
+    std::cout << "to Corener " << toCorner.transpose() << std::endl;
     std::cout << "robotPos " << curPose.position.transpose() << std::endl;
     std::cout << "robotPos in Grid" << robotPosInGrid.transpose() << std::endl;
-    std::cout << "RobotX " << robotX << " Y " << robotY << std::endl;
+    std::cout << "RobotX " << robotX << " Y " << robotY << std::endl;*/
     
     //TODO what happens if scale x an scale y differ...
     int senseSize = senseRadius / traversabillityGrid->getScaleX();
     
-    std::cout << "senseSize " << senseSize << std::endl;
+//     std::cout << "senseSize " << senseSize << std::endl;
     
-/*  Debug code for printing local obstacle map  
+    /*//Debug code for printing local obstacle map  
 
     std::cout <<  std::endl;
 
