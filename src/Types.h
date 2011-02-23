@@ -5,6 +5,7 @@
 #include <base/pose.h>
 #include <vector>
 #include <base/waypoint.h>
+#include <base/time.h>
 
 namespace vfh_star
 {
@@ -23,6 +24,11 @@ namespace vfh_star
         double obstacleSafetyDistance; //! the margin distance between the robot and the obstacles
         double robotWidth; //! the radius of the circle used to model the robot
 
+	/** if two nodes are below this threshhold in position
+	 * and 'parralletity' they are considered the same
+	 * and one get's removed
+	 * */
+	double identityThreshold;
         TreeSearchConf();
     };
 

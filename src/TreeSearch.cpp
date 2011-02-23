@@ -14,7 +14,9 @@ TreeSearchConf::TreeSearchConf()
     , angularSamplingNominalCount(4)
     , discountFactor(1.0)
     , obstacleSafetyDistance(0.1)
-    , robotWidth(0.5) {}
+    , robotWidth(0.5)
+    , identityThreshold(-1)
+    {}
 
 TreeSearch::TreeSearch()
 {
@@ -23,6 +25,10 @@ TreeSearch::TreeSearch()
 void TreeSearch::setSearchConf(const TreeSearchConf& conf)
 {
     this->search_conf = conf;
+    if(search_conf.identityThreshold < 0)
+    {
+	search_conf.identityThreshold = search_conf.stepDistance / 5.0;
+    }
 }
 
 const TreeSearchConf& TreeSearch::getSearchConf() const
@@ -201,7 +207,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             //
             // searchNode should be used only here !
             TreeNode searchNode(projected.first, curDirection);
-            double identity_threshold = search_conf.stepDistance / 5;
+            double identity_threshold = search_conf.identityThreshold;
             std::pair<NNSearch::const_iterator, double> this_nn =
                 kdtree.find_nearest(&searchNode, identity_threshold);
             if (this_nn.first != kdtree.end())
