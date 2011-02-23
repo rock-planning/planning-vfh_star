@@ -116,12 +116,16 @@ class Grid
 	    return gridResolution;
 	}
 	
-	const Eigen::Vector3d &getPosition() {
+	const Eigen::Vector3d &getPosition() const {
 	    return gridPosition;
 	}
 	
-	double getGridSize() {
+	double getGridSize() const {
 	    return gridSize;
+	}
+	
+	double getGridResolution() const {
+	    return gridResolution;
 	}
 	
 	const Eigen::Vector2i &getGridOrigin() const {
