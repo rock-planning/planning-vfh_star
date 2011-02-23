@@ -131,12 +131,17 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     curNode->candidate_it = expandCandidates.insert(std::make_pair(0, curNode));
     
     int max_depth = search_conf.maxTreeSize;
+    base::Time startTime = base::Time::now();
+    
     while(!expandCandidates.empty()) 
     {
         curNode = expandCandidates.begin()->second;
         expandCandidates.erase(expandCandidates.begin());
         curNode->candidate_it = expandCandidates.end();
 
+	if(!search_conf.maxSeekTime.isNull() && base::Time::now() - startTime > search_conf.maxSeekTime)
+	    break;
+	
         if (!validateNode(*curNode))
         {
             curNode->heuristic = -1;

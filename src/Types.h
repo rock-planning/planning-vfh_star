@@ -29,6 +29,9 @@ namespace vfh_star
 	 * and one get's removed
 	 * */
 	double identityThreshold;
+
+	base::Time maxSeekTime;
+	
         TreeSearchConf();
     };
 
