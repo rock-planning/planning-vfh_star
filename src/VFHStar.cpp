@@ -33,6 +33,8 @@ std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, doubl
         Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitY();
     this->targetLinePoint  =
         start.position + targetLineNormal * horizon;
+	
+    this->targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitX();
 
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
@@ -43,6 +45,11 @@ std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, doubl
 
 double VFHStar::algebraicDistanceToGoalLine(const base::Position& pos) const
 {
+    //check weather we crossed the target line;
+    
+    //targetLineNormal is normalized
+    //so this solves to |(targetLinePoint - pos)| * cos alpha = b
+    //b is the adjecent which is the searched distance to the line.
     return (targetLinePoint - pos).dot(targetLineNormal);
 }
 
@@ -62,6 +69,7 @@ double VFHStar::getHeuristic(const TreeNode &node) const
     double result = 0;
     while (steps-- > 0)
         result = result * search_conf.discountFactor + 1;
+    
     return result * search_conf.discountFactor * search_conf.stepDistance * cost_conf.distanceWeight;
 }
 

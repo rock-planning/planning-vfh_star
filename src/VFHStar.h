@@ -15,18 +15,30 @@ class VFHStar : public TreeSearch
         void setCostConf(const VFHStarConf& config);
         const VFHStarConf& getCostConf() const;
 
+	base::Vector3d getHorizonOrigin() 
+	{
+	    return targetLinePoint;
+	}
+
+	base::Vector3d getHorizonVector() 
+	{
+	    return targetLine;
+	}
+
     private:
-        double angleDiff(const double &a1, const double &a2) const;
         double getMotionDirection(const Eigen::Vector3d &start, const Eigen::Vector3d &end) const;
 
         double mainHeading;
         VFHStarConf cost_conf;
 
+    protected:
         base::Vector3d targetLinePoint;
         base::Vector3d targetLineNormal;
+        base::Vector3d targetLine;
 
-    protected:
-        /** Returns true if \c node is behind the goal line
+	double angleDiff(const double &a1, const double &a2) const;
+
+	/** Returns true if \c node is behind the goal line
          */
         virtual bool isTerminalNode(const TreeNode& node) const;
 
