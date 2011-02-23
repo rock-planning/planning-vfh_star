@@ -129,6 +129,21 @@ double normalize(double ang)
     return ang;
 }
 
+
+
+bool VFH::validPosition(const base::Pose& curPose) const
+{
+    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
+    
+    double distanceToCenter = (gridPos->getTransform().translation() - curPose.position).norm();
+    double gridWidthHalf = traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX();
+    double gridHeightHalf = traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY();
+    
+//    std::cout << "ghh " << gridHeightHalf << " gwh " << gridWidthHalf << " dtc " << distanceToCenter << std::endl;
+    
+    return !(gridHeightHalf  - (distanceToCenter + senseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + senseRadius) < 0);    
+}
+
 void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double senseRadius, double obstacleSafetyDist, double robotRadius) const
 {
     const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
@@ -144,7 +159,7 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
     std::vector<double> &dirs(histogram);    
     
     //calculate robot pos in grid coordinates
-    const Vector3d toCorner(traversabillityGrid->getWidth() / 2 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2 * traversabillityGrid->getScaleY(), 0);   
+    const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
     const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
     const Vector3d robotPosInGrid = curPose.position - cornerPos;
     const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();

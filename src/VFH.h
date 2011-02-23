@@ -22,6 +22,11 @@ namespace vfh_star
 
         const VFHDebugData &getDebugData();	
 
+	/**
+	 * Return weather vfh can return possible directions for this position
+	 * */
+	bool validPosition(const base::Pose& curPose) const;
+	
 	void setSenseRadius(double radius)
 	{
 	    senseRadius = radius;
