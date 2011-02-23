@@ -87,8 +87,6 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
     
     if(start >= 0)
     {
-// 	std::cout << "have start " << start << std::endl; 
-
 	addDir(drivableDirections, angularResoultion, narrowThreshold, start, firstEnd, histogramSize);
     }
     else 
@@ -98,12 +96,6 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
 	    addDir(drivableDirections, angularResoultion, narrowThreshold, 0, firstEnd, histogramSize);
 	}
     }
-    
-/*    std::cout << "Resulting Areas: " << std::endl;
-    for(std::vector<std::pair<double, double> >::const_iterator it = drivableDirections.begin(); it != drivableDirections.end(); it++)
-    {
-	std::cout << "Start " << it->first / M_PI * 180 << " end " << it->second  / M_PI * 180<< std::endl;
-    }*/
     
     if(dd) 
     {
@@ -138,8 +130,6 @@ bool VFH::validPosition(const base::Pose& curPose) const
     double distanceToCenter = (gridPos->getTransform().translation() - curPose.position).norm();
     double gridWidthHalf = traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX();
     double gridHeightHalf = traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY();
-    
-//    std::cout << "ghh " << gridHeightHalf << " gwh " << gridWidthHalf << " dtc " << distanceToCenter << std::endl;
     
     return !(gridHeightHalf  - (distanceToCenter + senseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + senseRadius) < 0);    
 }
