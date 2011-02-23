@@ -229,6 +229,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                         // The existing node is worse than this one, but we are
                         // lucky: the node has not been expanded yet. Just remove it
                         // from expandCandidates
+                        closest_node->candidate_it->second->setHeuristic(-2.0);
                         expandCandidates.erase(closest_node->candidate_it);
                         closest_node->candidate_it = expandCandidates.end();
                         kdtree.erase(this_nn.first);
