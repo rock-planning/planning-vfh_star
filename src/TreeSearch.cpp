@@ -71,13 +71,11 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(double curDir, const T
             intervalOpening = end - start;
         }
 
-        double step = 0;
-        if (intervalOpening / minNodes < minStep)
+        double step = intervalOpening / minNodes;
+        if (step < minStep)
             step = minStep;
-        else if (intervalOpening / minNodes > maxStep)
+        else if (step > maxStep)
             step = maxStep;
-        else
-            step = intervalOpening / minNodes;
 
         int intervalSize = floor(intervalOpening / step);
         double delta = (intervalOpening - (intervalSize * step)) / 2;
