@@ -210,12 +210,15 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             //
             // searchNode should be used only here !
             TreeNode searchNode(projected.first, curDirection);
-            double identity_threshold = search_conf.identityThreshold;
-            std::pair<NNSearch::const_iterator, double> this_nn =
-                kdtree.find_nearest(&searchNode, identity_threshold);
-            if (this_nn.first != kdtree.end())
-            {
-                TreeNode const* closest_node   = *(this_nn.first);
+            const double identity_threshold = search_conf.identityThreshold;
+	    
+	    std::vector<const TreeNode*> nearNodes;
+	    kdtree.find_within_range(&searchNode, identity_threshold, std::back_insert_iterator<std::vector<const TreeNode* > >(nearNodes));	
+
+	    bool foundBetterNode = false;	    
+            for(std::vector<const TreeNode*>::iterator nearNode = nearNodes.begin(); nearNode != nearNodes.end(); nearNode++)
+	    {		
+                TreeNode const* closest_node   = *nearNode;
                 if (closest_node->getCost() <= nodeCost)
                 {
                     // The existing node is better than this one from a cost
@@ -223,7 +226,9 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                     TreeNode const* closest_parent = closest_node->getParent();
                     double parent_d = (closest_parent->getPose().position - curNode->getPose().position).norm();
                     if (parent_d < identity_threshold)
-                        continue;
+		    {
+			foundBetterNode = true;
+		    }
                 }
                 else if (closest_node->candidate_it != expandCandidates.end())
                 {
@@ -237,10 +242,13 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                         closest_node->candidate_it->second->setHeuristic(-2.0);
                         expandCandidates.erase(closest_node->candidate_it);
                         closest_node->candidate_it = expandCandidates.end();
-                        kdtree.erase(this_nn.first);
+                        kdtree.erase(*nearNode);
                     }
                 }
             }
+            
+            if(foundBetterNode)
+		continue;
 
             // Finally, create the new node and add it in the tree
             TreeNode *newNode = tree.createChild(curNode, projected.first, curDirection);
