@@ -135,11 +135,16 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     tree.clear();
     kdtree.clear();
     TreeNode *curNode = tree.createRoot(start, start.getYaw());
+    curNode->setHeuristic(getHeuristic(*curNode));
     kdtree.insert(curNode);
 
     curNode->candidate_it = expandCandidates.insert(std::make_pair(0, curNode));
     
     int max_depth = search_conf.maxTreeSize;
+    
+    double bestHeuristic = std::numeric_limits<double>::max();
+    TreeNode *bestHeuristicNode = NULL;
+    
     base::Time startTime = base::Time::now();
     
     while(!expandCandidates.empty()) 
@@ -259,6 +264,12 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             if(foundBetterNode)
 		continue;
 
+	    if(bestHeuristic > curNode->getHeuristic())
+	    {
+		bestHeuristic = curNode->getHeuristic();
+		bestHeuristicNode = curNode;
+	    }	
+
             // Finally, create the new node and add it in the tree
             TreeNode *newNode = tree.createChild(curNode, projected.first, curDirection);
             newNode->setCost(curNode->getCost() + nodeCost);
@@ -275,6 +286,13 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     }
 
     curNode = tree.getFinalNode();
+    
+    if(!curNode && bestHeuristicNode)
+    {
+	tree.setFinalNode(bestHeuristicNode);
+	curNode = bestHeuristicNode;
+    }
+    
     if (curNode)
     {
         std::cerr << "TreeSearch: found solution at c=" << curNode->getCost() << std::endl;
