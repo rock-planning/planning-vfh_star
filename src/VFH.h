@@ -32,6 +32,8 @@ namespace vfh_star
 	    senseRadius = radius;
 	}
 	
+	Traversability getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const;
+	
     private:
         void generateHistogram(std::vector< double > &histogram,
                 const base::Pose &curPose,

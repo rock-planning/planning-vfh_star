@@ -134,6 +134,68 @@ bool VFH::validPosition(const base::Pose& curPose) const
     return !(gridHeightHalf  - (distanceToCenter + senseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + senseRadius) < 0);    
 }
 
+vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const
+{
+    vfh_star::Traversability worstTerrain = TRAVERSABLE;
+    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
+    const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
+    const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
+    const Vector3d robotPosInGrid = curPose.position - cornerPos;
+    const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
+    const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
+    const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
+
+    int localSenseSize = robotWidth / 2.0 / traversabillityGrid->getScaleX();
+
+    for(int x = -localSenseSize; x <= localSenseSize; x++)
+    {
+	for(int y = -localSenseSize; y <= localSenseSize; y++)
+	{
+	    const double xd = x * traversabillityGrid->getScaleX();
+	    const double yd = y * traversabillityGrid->getScaleY();
+	    double distToRobot = sqrt(xd*xd + yd*yd);
+	    
+	    //check if outside circle
+	    if(distToRobot > robotWidth)
+		continue;
+	  
+	    int rx = robotX + x;
+	    int ry = robotY + y;
+
+	    if(!traversabillityGrid->inGrid(rx, ry))
+	    {
+		std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
+		std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
+		std::cout << "Sense size x:" << localSenseSize << " sense radius" << robotWidth << std::endl;
+		
+		throw std::runtime_error("Accessed cell outside of grid");
+	    }
+
+	    switch(gridData[rx][ry]) {
+		case OBSTACLE:
+		    worstTerrain = OBSTACLE;
+		    break;
+		case UNCLASSIFIED:
+		    if(worstTerrain == TRAVERSABLE)
+			worstTerrain = UNCLASSIFIED;		    
+		    break;
+		case TRAVERSABLE:
+		    //can't get worse ;-)
+		    break;
+		case UNKNOWN_OBSTACLE:
+		    //worse than traversable and unclassified, but still
+		    //better than an known obstacle
+		    if(worstTerrain != OBSTACLE)
+			worstTerrain = UNKNOWN_OBSTACLE;
+		    break;
+	    }	    
+	}
+    }
+    
+    return worstTerrain;
+}
+
+
 void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double senseRadius, double obstacleSafetyDist, double robotRadius) const
 {
     const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
