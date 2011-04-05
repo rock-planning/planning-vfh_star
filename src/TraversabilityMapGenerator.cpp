@@ -147,6 +147,64 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
     trGrid.getEntry(p) = cl;
 }
 
+void TraversabilityMapGenerator::markUnknownInRadiusAs(const base::Pose& pose, double radius, Traversability type)
+{
+    Eigen::Vector2i gridp;
+    if(!traversabilityGrid.getGridPoint(pose.position, gridp))
+    {
+	std::cout << "Pose " << pose.position.transpose() << " Gridpos " << traversabilityGrid.getPosition().transpose() << " Boundary Size " << boundarySize << std::endl;
+	throw std::runtime_error("markUnknownInRadiusAsObstacle: Pose out of grid");
+    }
+    
+    int posX = gridp.x();
+    int posY = gridp.y();
+    
+    int radiusGrid = radius / traversabilityGrid.getGridResolution();
+    for(int x = -radiusGrid; x < radiusGrid; x++)
+    {
+	for(int y = -radiusGrid; y < radiusGrid; y++)
+	{
+	    const double xd = x * traversabilityGrid.getGridResolution();
+	    const double yd = y * traversabilityGrid.getGridResolution();
+	    double distToRobot = sqrt(xd*xd + yd*yd);
+
+	    //check if outside circle
+	    if(distToRobot > radius)
+		continue;
+
+	    const int rx = posX + x;
+	    const int ry = posY + y;
+	    
+	    if(!traversabilityGrid.inGrid(rx, ry))
+	    {
+		std::cout << "x " << x << " y " << y << " posX " << posX << " posY " << posY << " radGrid " << radiusGrid << std::endl;
+		throw std::runtime_error("markUnknownInRadiusAsObstacle: Access out of grid");
+	    }
+	    
+	    Traversability &entry(traversabilityGrid.getEntry(rx, ry));
+	    
+	    if(entry == UNCLASSIFIED || entry == UNKNOWN_OBSTACLE) 
+	    {
+		entry = type;
+		if(type == TRAVERSABLE)
+		{
+		    laserGrid.getEntry(rx, ry).addHeightMeasurement(laserGrid.getEntry(rx, ry).getMedian());
+		}
+	    }
+	}
+    }
+}
+
+void TraversabilityMapGenerator::markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius)
+{
+    markUnknownInRadiusAs(pose, radius, TRAVERSABLE);
+}
+
+void TraversabilityMapGenerator::markUnknownInRadiusAsObstacle(const base::Pose& pose, double radius)
+{
+    markUnknownInRadiusAs(pose, radius, OBSTACLE);
+}
+
 void TraversabilityMapGenerator::doConservativeInterpolation(const ElevationGrid& source, ElevationGrid& target, Eigen::Vector2i p) {
     if(!source.inGrid(p))
 	return;

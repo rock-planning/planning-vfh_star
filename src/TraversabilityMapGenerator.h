@@ -6,6 +6,7 @@
 #include "TraversabilityGrid.h"
 #include "DebugTypes.h"
 #include <base/samples/laser_scan.h>
+#include <base/pose.h>
 #include <stdint.h>
 
 namespace vfh_star {
@@ -32,7 +33,12 @@ class TraversabilityMapGenerator
 	 * */
 	void setBoundarySize(double size);
 	
+	void markUnknownInRadiusAsObstacle(const base::Pose& pose, double radius);
+	void markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius);
+	
     private:
+	
+	void markUnknownInRadiusAs(const base::Pose& pose, double radius, vfh_star::Traversability type);
 	
 	/**
 	* This function updates the TraversabilityGrid in respect to the given
