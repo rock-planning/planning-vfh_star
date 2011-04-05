@@ -273,7 +273,7 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 // 	    std::cout << "rx " << rx << " ry " << ry << std::endl;
 
 	    //go safe, if we do not know anything about something, it is an obstacle
-	    if(!traversabillityGrid->inGrid(rx, ry) || (gridData[rx][ry] != TRAVERSABLE && gridData[rx][ry] != UNCLASSIFIED))
+	    if(!traversabillityGrid->inGrid(rx, ry) || (gridData[rx][ry] == OBSTACLE))
 	    {
 		if(!traversabillityGrid->inGrid(rx, ry))
 		{
