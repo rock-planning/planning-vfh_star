@@ -84,7 +84,13 @@ bool TraversabilityMapGenerator::moveGridIfRobotNearBoundary(ElevationGrid &grid
     double width = grid.getWidth() * grid.getGridResolution() / 2.0;
     double height = grid.getHeight() * grid.getGridResolution() / 2.0;
     
-    if(fabs(posInGrid.x()) > width - boundarySize || fabs(posInGrid.y()) > height - boundarySize) {
+    if(fabs(posInGrid.x()) > (width - boundarySize) || fabs(posInGrid.y()) > (height - boundarySize)) {
+	
+	if(fabs(posInGrid.x()) > width || fabs(posInGrid.y()) > height)
+	{
+	    //inital case, robot might be out of grid
+	    posInGrid = Vector3d(0, 0, 0);
+	}
 	
 	//we assume the robot keeps moving into the same direction
 	grid.moveGrid(robotPosition_world + posInGrid * 2.0 / 3.0);
