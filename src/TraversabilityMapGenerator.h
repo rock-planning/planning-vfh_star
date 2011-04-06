@@ -35,7 +35,7 @@ class TraversabilityMapGenerator
 	
 	void markUnknownInRadiusAsObstacle(const base::Pose& pose, double radius);
 	void markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius);
-	
+	void markUnknownInRectangeAsTraversable(const base::Pose& pose, double width, double height, double forwardOffset);
     private:
 	
 	void markUnknownInRadiusAs(const base::Pose& pose, double radius, vfh_star::Traversability type);

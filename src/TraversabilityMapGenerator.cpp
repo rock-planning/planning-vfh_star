@@ -195,6 +195,33 @@ void TraversabilityMapGenerator::markUnknownInRadiusAs(const base::Pose& pose, d
     }
 }
 
+void TraversabilityMapGenerator::markUnknownInRectangeAsTraversable(const base::Pose& pose, double width, double height, double forwardOffset)
+{
+    double heading = pose.orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
+    AngleAxisd rot = AngleAxisd(heading, Vector3d::UnitZ());
+    
+    for(double x = -width / 2.0; x <= (width / 2.0); x += 0.03)
+    {
+	for(double y = -height / 2.0; y <= (height / 2.0 + forwardOffset); y += 0.03)
+	{
+	    Vector2i p_g;
+	    Vector3d p_w = pose.position + rot * Vector3d(x, y, 0);
+	    if(laserGrid.getGridPoint(p_w, p_g))
+	    {
+		vfh_star::ElevationEntry &entry(laserGrid.getEntry(p_g));
+		if(!entry.getMeasurementCount())
+		{
+		    entry.addHeightMeasurement(0);
+		}
+	    }
+	    else 
+	    {
+		std::cout << "Error point not in grid " << std::endl;
+	    }
+	}
+    }
+}
+
 void TraversabilityMapGenerator::markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius)
 {
     markUnknownInRadiusAs(pose, radius, TRAVERSABLE);
