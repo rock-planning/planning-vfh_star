@@ -73,6 +73,7 @@ class TraversabilityMapGenerator
 	ElevationGrid interpolatedGrid;
 	TraversabilityGrid traversabilityGrid;
 	Eigen::Transform3d lastBody2Odo;
+	Eigen::Transform3d lastLaser2Odo;
 	double boundarySize;
 };
 

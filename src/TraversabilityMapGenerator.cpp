@@ -18,13 +18,15 @@ void TraversabilityMapGenerator::setBoundarySize(double size)
 bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Transform3d& body2Odo, const Eigen::Transform3d& laser2Body)
 {
 //     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
-    
+
+    Transform3d laser2Odo(body2Odo * laser2Body);
     Transform3d  body2LastBody(lastBody2Odo.inverse() * body2Odo);
     double distanceBodyToLastBody = body2LastBody.translation().norm();
-    double orientationChange = acos(Vector3d::UnitY().dot((body2LastBody * Vector3d::UnitY() - body2LastBody * Vector3d(0,0,0)).normalized()));
+    Vector3d Ylaser2Odo = laser2Odo * Vector3d::UnitY();
+    Vector3d YlastLaser2Odo = laser2Odo * Vector3d::UnitY();
+    double laserChange = acos(Ylaser2Odo.dot(YlastLaser2Odo));
 
     //add current laser scan to grid
-    Transform3d laser2Odo(body2Odo * laser2Body);    
     std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
 
     moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
@@ -32,7 +34,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     laserGrid.addLaserScan(currentLaserPoints);
     
     //    std::cout << "GridMapSegmenter: Odometry distance : " << distanceBodyToLastBody << " Orientation change is " << orientationChange / M_PI * 180.0 << std::endl;
-    if(distanceBodyToLastBody < 0.05 && orientationChange < M_PI / 36.0) {
+    if(distanceBodyToLastBody < 0.05 && laserChange < M_PI / 36.0) {
 	return false;
     }
 
@@ -44,6 +46,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     updateTraversabilityGrid(interpolatedGrid, traversabilityGrid);    
     
     lastBody2Odo = body2Odo;
+    lastLaser2Odo = laser2Odo;
     
     return true;
 
