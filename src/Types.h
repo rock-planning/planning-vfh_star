@@ -30,6 +30,12 @@ namespace vfh_star
 	 * */
 	double identityThreshold;
 
+	/**
+	 * Max height of step between two cells in height map,
+	 * that will caount as traversable
+	 * */
+	double maxStepSize;
+
 	base::Time maxSeekTime;
 	
         TreeSearchConf();

@@ -8,11 +8,17 @@ namespace vfh_star {
 TraversabilityMapGenerator::TraversabilityMapGenerator()
 {
     boundarySize = 0;
+    maxStepSize = 0.2;
 }
 
 void TraversabilityMapGenerator::setBoundarySize(double size)
 {
     boundarySize = size;
+}
+
+void TraversabilityMapGenerator::setMaxStepSize(double size)
+{
+    maxStepSize = size;
 }
 
 bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Transform3d& body2Odo, const Eigen::Transform3d& laser2Body)
@@ -140,7 +146,7 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 		
 		if(neighbourEntry.getMeasurementCount()) {
 		    //TODO correct formula
-		    if(fabs(neighbourEntry.getMedian() - entry.getMedian()) > 0.1) {
+		    if(fabs(neighbourEntry.getMedian() - entry.getMedian()) > maxStepSize) {
 			cl = OBSTACLE;
 		    }
 		}

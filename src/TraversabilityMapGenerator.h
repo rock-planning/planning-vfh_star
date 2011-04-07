@@ -32,6 +32,8 @@ class TraversabilityMapGenerator
 	 * is inside the outer boundary of the map.
 	 * */
 	void setBoundarySize(double size);
+
+	void setMaxStepSize(double size);
 	
 	void markUnknownInRadiusAsObstacle(const base::Pose& pose, double radius);
 	void markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius);
@@ -75,6 +77,7 @@ class TraversabilityMapGenerator
 	Eigen::Transform3d lastBody2Odo;
 	Eigen::Transform3d lastLaser2Odo;
 	double boundarySize;
+	double maxStepSize;
 };
 
 }
