@@ -195,6 +195,57 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
     return worstTerrain;
 }
 
+std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadiusWidth, double outerRadiusWidth) const
+{
+    TerrainStatistic innerStats;
+    TerrainStatistic outerStats;
+
+    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
+    const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
+    const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
+    const Vector3d robotPosInGrid = curPose.position - cornerPos;
+    const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
+    const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
+    const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
+
+    int localSenseSize = (innerRadiusWidth + outerRadiusWidth) / 2.0 / traversabillityGrid->getScaleX();
+
+    for(int x = -localSenseSize; x <= localSenseSize; x++)
+    {
+	for(int y = -localSenseSize; y <= localSenseSize; y++)
+	{
+	    const double xd = x * traversabillityGrid->getScaleX();
+	    const double yd = y * traversabillityGrid->getScaleY();
+	    double distToRobot = sqrt(xd*xd + yd*yd);
+	    
+	    //check if outside circle
+	    if(distToRobot > innerRadiusWidth + outerRadiusWidth)
+		continue;
+	  
+	    int rx = robotX + x;
+	    int ry = robotY + y;
+
+	    if(!traversabillityGrid->inGrid(rx, ry))
+	    {
+		std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
+		std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
+		std::cout << "Sense size x:" << localSenseSize << " sense radius" << innerRadiusWidth + outerRadiusWidth << std::endl;
+		
+		throw std::runtime_error("Accessed cell outside of grid");
+	    }
+	    
+	    TerrainStatistic *curStats;
+	    if(distToRobot > innerRadiusWidth)
+		curStats = &outerStats;
+	    else
+		curStats = &innerStats;
+
+	    curStats->statistic[gridData[rx][ry]]++;
+	    curStats->count++;
+	}
+    }
+    return std::make_pair(innerStats, outerStats);
+}
 
 void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double senseRadius, double obstacleSafetyDist, double robotRadius) const
 {

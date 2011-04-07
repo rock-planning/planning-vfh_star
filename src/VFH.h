@@ -6,11 +6,44 @@
 #include <vector>
 #include <base/pose.h>
 
-#include <vfh_star/Types.h>
+#include "Types.h"
 
 namespace vfh_star
 {
-
+    class TerrainStatistic
+    {
+	public:
+	    friend class VFH;
+	    TerrainStatistic() {
+		statistic.resize(4);
+		count = 0;
+	    }
+	    
+	    int getTerrainCount() const {
+		return count;
+	    };
+	    
+	    int getObstacleCount() const {
+		return statistic[OBSTACLE];
+	    };
+	    
+	    int getUnknownCount() const {
+		return statistic[UNCLASSIFIED];
+	    };
+	    
+	    int getUnknownObstacleCount() const {
+		return statistic[UNKNOWN_OBSTACLE];
+	    };
+	    
+	    int getTraversableCount() const {
+		return statistic[TRAVERSABLE];
+	    };
+	    
+	private:
+	    std::vector<int> statistic;
+	    int count;
+    };
+    
     class VFH
     {
     public:
@@ -32,8 +65,10 @@ namespace vfh_star
 	    senseRadius = radius;
 	}
 	
-	Traversability getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const;
 	
+	Traversability getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const;
+	std::pair<TerrainStatistic, TerrainStatistic> getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadiusWidth, double outerRadiusWidth) const;
+
     private:
         void generateHistogram(std::vector< double > &histogram,
                 const base::Pose &curPose,
