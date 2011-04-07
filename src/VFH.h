@@ -47,7 +47,7 @@ namespace vfh_star
     class VFH
     {
     public:
-        VFH(const envire::Grid<Traversability> *trGrid);
+        VFH();
         virtual std::vector< std::pair<double, double> >
             getNextPossibleDirections(const base::Pose& curPose,
                     double obstacleSafetyDist,
@@ -65,6 +65,7 @@ namespace vfh_star
 	    senseRadius = radius;
 	}
 	
+	void setNewTraversabilityGrid(const envire::Grid<Traversability> *trGrid);
 	
 	Traversability getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const;
 	std::pair<TerrainStatistic, TerrainStatistic> getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadiusWidth, double outerRadiusWidth) const;

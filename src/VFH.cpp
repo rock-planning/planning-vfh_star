@@ -5,10 +5,8 @@ using namespace Eigen;
 namespace vfh_star
 {
 
-VFH::VFH(const envire::Grid< Traversability >* trGrid)
+VFH::VFH()
 {
-    traversabillityGrid = trGrid;
-    
     senseRadius = 0.9;
     histogramSize = 90;
     narrowThreshold = 10;
@@ -39,6 +37,11 @@ void addDir(std::vector< std::pair<double, double> > &drivableDirections, double
 	double right = end * angularResoultion;
 	drivableDirections.push_back(std::make_pair(left, right));
     }    
+}
+
+void VFH::setNewTraversabilityGrid(const envire::Grid< Traversability >* trGrid)
+{
+    traversabillityGrid = trGrid;
 }
 
 std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
