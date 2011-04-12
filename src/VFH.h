@@ -68,7 +68,7 @@ namespace vfh_star
 	void setNewTraversabilityGrid(const envire::Grid<Traversability> *trGrid);
 	
 	Traversability getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const;
-	std::pair<TerrainStatistic, TerrainStatistic> getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadiusWidth, double outerRadiusWidth) const;
+	std::pair<TerrainStatistic, TerrainStatistic> getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadius, double outerRadius) const;
 
     private:
         void generateHistogram(std::vector< double > &histogram,

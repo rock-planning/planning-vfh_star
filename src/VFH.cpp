@@ -198,7 +198,7 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
     return worstTerrain;
 }
 
-std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadiusWidth, double outerRadiusWidth) const
+std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadius, double outerRadius) const
 {
     TerrainStatistic innerStats;
     TerrainStatistic outerStats;
@@ -211,7 +211,7 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
     const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
 
-    int localSenseSize = (innerRadiusWidth + outerRadiusWidth) / 2.0 / traversabillityGrid->getScaleX();
+    int localSenseSize = (innerRadius + outerRadius) / traversabillityGrid->getScaleX();
 
     for(int x = -localSenseSize; x <= localSenseSize; x++)
     {
@@ -222,7 +222,7 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 	    double distToRobot = sqrt(xd*xd + yd*yd);
 	    
 	    //check if outside circle
-	    if(distToRobot > innerRadiusWidth + outerRadiusWidth)
+	    if(distToRobot > innerRadius + outerRadius)
 		continue;
 	  
 	    int rx = robotX + x;
@@ -232,13 +232,13 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 	    {
 		std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
 		std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
-		std::cout << "Sense size x:" << localSenseSize << " sense radius" << innerRadiusWidth + outerRadiusWidth << std::endl;
+		std::cout << "Sense size x:" << localSenseSize << " sense radius" << innerRadius + outerRadius << std::endl;
 		
 		throw std::runtime_error("Accessed cell outside of grid");
 	    }
 	    
 	    TerrainStatistic *curStats;
-	    if(distToRobot > innerRadiusWidth)
+	    if(distToRobot > innerRadius)
 		curStats = &outerStats;
 	    else
 		curStats = &innerStats;
