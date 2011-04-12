@@ -28,8 +28,10 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     Transform3d laser2Odo(body2Odo * laser2Body);
     Transform3d  body2LastBody(lastBody2Odo.inverse() * body2Odo);
     double distanceBodyToLastBody = body2LastBody.translation().norm();
-    Vector3d Ylaser2Odo = laser2Odo * Vector3d::UnitY();
-    Vector3d YlastLaser2Odo = laser2Odo * Vector3d::UnitY();
+    Vector3d Ylaser2Odo = laser2Odo * Vector3d::UnitY() - laser2Odo.translation();
+    Ylaser2Odo.normalize();
+    Vector3d YlastLaser2Odo = lastLaser2Odo * Vector3d::UnitY() - lastLaser2Odo.translation();
+    YlastLaser2Odo.normalize();
     double laserChange = acos(Ylaser2Odo.dot(YlastLaser2Odo));
 
     //add current laser scan to grid
