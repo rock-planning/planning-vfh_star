@@ -46,18 +46,18 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
 	return false;
     }
 
-    std::cout << "TraversabilityMapGenerator: Next Segmentation" << std::endl;
     
+    lastBody2Odo = body2Odo;
+    lastLaser2Odo = laser2Odo;
+    return true;
+}
+
+void TraversabilityMapGenerator::computeNewMap()
+{
     //interpolate grid
     smoothElevationGrid(laserGrid, interpolatedGrid);
     
     updateTraversabilityGrid(interpolatedGrid, traversabilityGrid);    
-    
-    lastBody2Odo = body2Odo;
-    lastLaser2Odo = laser2Odo;
-    
-    return true;
-
 }
 
 void TraversabilityMapGenerator::getGridDump(GridDump& gd) const

@@ -28,6 +28,11 @@ class TraversabilityMapGenerator
 	};
 	
 	/**
+	 * Manual trigger for map generation
+	 * */
+	void computeNewMap();
+	
+	/**
 	 * The map is moved if the robot position
 	 * is inside the outer boundary of the map.
 	 * */
