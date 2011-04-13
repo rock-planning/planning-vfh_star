@@ -127,17 +127,25 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 	return;
     
     const ElevationEntry &entry = elGrid.getEntry(p);
+    Traversability cl = TRAVERSABLE;
+    double curHeight;
 
-    if(!entry.getMeasurementCount()) {
-	if(entry.getMaximum() != -std::numeric_limits< double >::max())
-	    trGrid.getEntry(p) = UNKNOWN_OBSTACLE;
-	else
-	    trGrid.getEntry(p) = UNCLASSIFIED;
-	
+    if(!entry.getMeasurementCount() && entry.getMaximum() == -std::numeric_limits< double >::max()) 
+    {
+	trGrid.getEntry(p) = UNCLASSIFIED;
 	return;
     }
+
+    if(!entry.getMeasurementCount())
+    {
+	curHeight = entry.getMaximum();
+	cl = UNKNOWN_OBSTACLE;
+    }
+    else
+    {
+	curHeight = entry.getMedian();
+    }
     
-    Traversability cl = TRAVERSABLE;
 
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
@@ -146,12 +154,25 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 	    if(elGrid.inGrid(rx, ry)) {
 		const ElevationEntry &neighbourEntry = elGrid.getEntry(rx, ry);
 		
-		if(neighbourEntry.getMeasurementCount()) {
-		    //TODO correct formula
-		    if(fabs(neighbourEntry.getMedian() - entry.getMedian()) > maxStepSize) {
-			cl = OBSTACLE;
-		    }
+		double neighbourHeight;
+		
+		if(neighbourEntry.getMeasurementCount()) 
+		{
+		    //use real measurement if available
+		    neighbourHeight = neighbourEntry.getMedian();
 		}
+		else
+		{
+		    if(neighbourEntry.getMaximum() == -std::numeric_limits<double>::max())
+			continue;
+		    
+		    neighbourHeight = neighbourEntry.getMinimum();
+		}
+		
+		//TODO correct formula
+		if(fabs(neighbourHeight - curHeight) > maxStepSize) {
+		    cl = OBSTACLE;
+		} 
 	    }
 	}
     }    
