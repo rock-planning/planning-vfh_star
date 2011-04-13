@@ -13,6 +13,7 @@ class ElevationEntry {
 	void addHeightMeasurement(double measurement);
 	void setInterpolatedMeasurement(double measurement);
 	void setMaximumHeight(double measurement);
+	void setMinimumHeight(double measurement);
 	
 	int getMeasurementCount() const {
 	    return heights.size();
@@ -28,6 +29,10 @@ class ElevationEntry {
 	
 	double getMaximum() const {
 	    return max;
+	}
+
+	double getMinimum() const {
+	    return min;
 	}
 	
     private:

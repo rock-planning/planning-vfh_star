@@ -36,6 +36,12 @@ void ElevationEntry::setMaximumHeight(double measurement)
 	max = measurement;
 }
 
+void ElevationEntry::setMinimumHeight(double measurement)
+{
+    if(min > measurement)
+	min = measurement;
+}
+
 void ElevationEntry::setInterpolatedMeasurement(double measurement)
 {
     interpolated = true;
@@ -82,7 +88,8 @@ void ElevationGrid::addLineBetweenPoints(const Eigen::Vector3d &start, const Eig
 	{
 	    const Eigen::Vector2f pf(p.x(), p.y());
 	    const double interpolatedHeight = start.z() + (pf - start_gf).norm() * inclination;
-	    getEntry(p).setMaximumHeight(interpolatedHeight);	    
+	    getEntry(p).setMaximumHeight(interpolatedHeight);
+	    getEntry(p).setMinimumHeight(interpolatedHeight);
 	}
     }
 }
