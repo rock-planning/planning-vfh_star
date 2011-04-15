@@ -43,10 +43,12 @@ class TraversabilityMapGenerator
 	void markUnknownInRadiusAsObstacle(const base::Pose& pose, double radius);
 	void markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius);
 	void markUnknownInRectangeAsTraversable(const base::Pose& pose, double width, double height, double forwardOffset);
+	void markUnknownInRectangeAsObstacle(const base::Pose& pose, double width, double height, double forwardOffset);
     private:
 	
 	void markUnknownInRadiusAs(const base::Pose& pose, double radius, vfh_star::Traversability type);
-	
+	void markUnknownInRectangeAs(const base::Pose& pose, double width, double height, double forwardOffset, Traversability type);
+
 	/**
 	* This function updates the TraversabilityGrid in respect to the given
 	* ElevationGrid.

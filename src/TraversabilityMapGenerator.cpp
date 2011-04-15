@@ -227,7 +227,7 @@ void TraversabilityMapGenerator::markUnknownInRadiusAs(const base::Pose& pose, d
     }
 }
 
-void TraversabilityMapGenerator::markUnknownInRectangeAsTraversable(const base::Pose& pose, double width, double height, double forwardOffset)
+void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose, double width, double height, double forwardOffset, Traversability type)
 {
     double heading = pose.orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
     AngleAxisd rot = AngleAxisd(heading, Vector3d::UnitZ());
@@ -238,12 +238,22 @@ void TraversabilityMapGenerator::markUnknownInRectangeAsTraversable(const base::
 	{
 	    Vector2i p_g;
 	    Vector3d p_w = pose.position + rot * Vector3d(x, y, 0);
+	    
 	    if(laserGrid.getGridPoint(p_w, p_g))
 	    {
-		vfh_star::ElevationEntry &entry(laserGrid.getEntry(p_g));
-		if(!entry.getMeasurementCount())
+		Traversability &entry(traversabilityGrid.getEntry(p_g));
+		if(entry == UNCLASSIFIED || entry == UNKNOWN_OBSTACLE) 
 		{
-		    entry.addHeightMeasurement(0);
+		    entry = type;
+		    if(type == TRAVERSABLE)
+		    {		
+			vfh_star::ElevationEntry &entry(laserGrid.getEntry(p_g));
+
+			if(!entry.getMeasurementCount())
+			{
+			    entry.addHeightMeasurement(0);
+			}
+		    }
 		}
 	    }
 	    else 
@@ -252,6 +262,16 @@ void TraversabilityMapGenerator::markUnknownInRectangeAsTraversable(const base::
 	    }
 	}
     }
+}
+
+void TraversabilityMapGenerator::markUnknownInRectangeAsObstacle(const base::Pose& pose, double width, double height, double forwardOffset)
+{
+    markUnknownInRectangeAs(pose, width, height, forwardOffset, OBSTACLE);
+}
+
+void TraversabilityMapGenerator::markUnknownInRectangeAsTraversable(const base::Pose& pose, double width, double height, double forwardOffset)
+{
+    markUnknownInRectangeAs(pose, width, height, forwardOffset, TRAVERSABLE);
 }
 
 void TraversabilityMapGenerator::markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius)
