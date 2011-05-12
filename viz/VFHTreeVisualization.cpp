@@ -36,6 +36,7 @@ struct VFHTreeVisualization::Data {
 VFHTreeVisualization::VFHTreeVisualization()
     : p(new Data)
 {
+    VizPluginRubyAdapter(VFHTreeVisualization, vfh_star::Tree, Tree);
 }
 
 VFHTreeVisualization::~VFHTreeVisualization()
@@ -299,4 +300,7 @@ void VFHTreeVisualization::updateDataIntern(Segment const& segment)
     p->segment = segment;
     p->hasSegment = true;
 }
+
+VizkitQtPlugin(VFHTreeVisualization);
+
 
