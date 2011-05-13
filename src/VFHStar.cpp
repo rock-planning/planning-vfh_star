@@ -1,6 +1,7 @@
 #include "VFHStar.h"
 #include <Eigen/Core>
 #include <map>
+#include <iostream>
 
 using namespace vfh_star;
 using namespace Eigen;

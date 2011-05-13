@@ -94,7 +94,7 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
     }
     else 
     {
-	if(firstEnd != bHistogram.size())
+	if(firstEnd != static_cast<signed int>(bHistogram.size()))
 	{
 	    addDir(drivableDirections, angularResoultion, narrowThreshold, 0, firstEnd, histogramSize);
 	}

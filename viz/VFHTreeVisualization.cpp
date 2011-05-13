@@ -5,6 +5,8 @@
 #include <boost/tuple/tuple.hpp>
 #include <osg/LineWidth>
 
+#include <iostream>
+
 using namespace vizkit;
 using namespace std;
 using vfh_star::TreeNode;

@@ -1,4 +1,5 @@
 #include "VFHStar.h"
+#include <iostream>
 
 using namespace Eigen;
 

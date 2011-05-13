@@ -2,7 +2,7 @@
 #include <Eigen/Core>
 #include <map>
 #include <stdexcept>
-
+#include <iostream>
 
 using namespace vfh_star;
 

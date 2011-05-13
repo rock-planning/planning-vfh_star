@@ -1,5 +1,6 @@
 #include "TraversabilityMapGenerator.h"
 #include <Eigen/LU>
+#include <iostream>
  
 using namespace Eigen;
 
@@ -23,7 +24,7 @@ void TraversabilityMapGenerator::setMaxStepSize(double size)
     maxStepSize = size;
 }
 
-bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Transform3d& body2Odo2, const Eigen::Transform3d& laser2Body)
+bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo, const Eigen::Affine3d& laser2Body)
 {
     static double lastHeight = 0.0;
     Eigen::Transform3d body2Odo(body2Odo2);
@@ -52,8 +53,9 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     
      body2Odo.translation().z() = curHeight + vecToGround.z();
     
-    Transform3d laser2Odo(body2Odo * laser2Body);
-    Transform3d  body2LastBody(lastBody2Odo.inverse() * body2Odo);
+    Affine3d laser2Odo(body2Odo * laser2Body);
+    Affine3d  body2LastBody(lastBody2Odo.inverse() * body2Odo);
+
     double distanceBodyToLastBody = body2LastBody.translation().norm();
     Vector3d Ylaser2Odo = laser2Odo * Vector3d::UnitY() - laser2Odo.translation();
     Ylaser2Odo.normalize();

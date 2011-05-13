@@ -26,7 +26,7 @@ class TraversabilityMapGenerator
 
 	TraversabilityMapGenerator();
 		
-	bool addLaserScan(const base::samples::LaserScan& ls, const Eigen::Transform3d& body2Odo, const Eigen::Transform3d& laser2Body);
+	bool addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo, const Eigen::Affine3d& laser2Body);
 	
 	void getGridDump(GridDump &gd) const;
 	
@@ -94,8 +94,8 @@ class TraversabilityMapGenerator
 	ElevationGrid laserGrid;
 	ElevationGrid interpolatedGrid;
 	TraversabilityGrid traversabilityGrid;
-	Eigen::Transform3d lastBody2Odo;
-	Eigen::Transform3d lastLaser2Odo;
+	Eigen::Affine3d lastBody2Odo;
+	Eigen::Affine3d lastLaser2Odo;
 	double boundarySize;
 	double maxStepSize;
 };

@@ -173,4 +173,10 @@ class Grid
 };
 }
 
+template <class T, int size, int resolution>
+	const int vfh_star::Grid<T,size,resolution>::gridOriginX;
+template <class T, int size, int resolution>
+	const int vfh_star::Grid<T,size,resolution>::gridOriginY;
+
+
 #endif // GRID_H
