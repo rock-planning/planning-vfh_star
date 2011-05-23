@@ -34,10 +34,19 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     YlastLaser2Odo.normalize();
     double laserChange = acos(Ylaser2Odo.dot(YlastLaser2Odo));
 
-    //add current laser scan to grid
-    std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
 
     moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
+
+    //filter out wheels
+    AlignedBox<double, 3> leftWheel(Vector3d(0.285, -0.215, -0.18), Vector3d(0.285 - 0.06, 0.215, 0.25));
+    AlignedBox<double, 3> rightWheel(Vector3d(-0.285, -0.215, -0.18), Vector3d(-0.285 + 0.06, 0.215, 0.25));
+    
+    std::vector<AlignedBox<double, 3> > maskedAreas;
+    maskedAreas.push_back(leftWheel);
+    maskedAreas.push_back(rightWheel);
+    
+    std::vector<Vector3d> currentLaserPoints;
+    filterLaserScan(currentLaserPoints, ls, laser2Body, laser2Odo, maskedAreas);
     
     laserGrid.addLaserScan(currentLaserPoints);
     
@@ -50,6 +59,37 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     lastBody2Odo = body2Odo;
     lastLaser2Odo = laser2Odo;
     return true;
+}
+
+void TraversabilityMapGenerator::filterLaserScan(std::vector< Eigen::Vector3d>& result,const base::samples::LaserScan& ls, const Eigen::Transform3d& filterFrame, const Eigen::Transform3d& resultFrame, const std::vector<AlignedBox<double, 3> >& maskedAreas)
+{
+    std::vector<Vector3d> pointsFilterFrame = ls.convertScanToPointCloud(filterFrame);
+    
+    std::vector<Eigen::Vector3d> pointCloud;
+    
+    result.clear();
+    
+    for(unsigned int i = 0; i < ls.ranges.size(); i++) {
+	bool isMasked = false;
+	
+	for(std::vector<AlignedBox<double, 3> >::const_iterator it = maskedAreas.begin(); it != maskedAreas.end();it++)
+	{
+	    if(it->contains(pointsFilterFrame[i]))
+	    {
+		isMasked = true;
+		break;
+	    }
+	}
+
+	if(isMasked)
+	    continue;
+	
+	Eigen::Vector3d point;
+	if(ls.getPointFromScanBeam(i, point)) {
+	    point = resultFrame * point;
+	    result.push_back(point);
+	}
+    }    
 }
 
 void TraversabilityMapGenerator::computeNewMap()
