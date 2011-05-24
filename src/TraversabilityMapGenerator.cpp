@@ -9,6 +9,8 @@ TraversabilityMapGenerator::TraversabilityMapGenerator()
 {
     boundarySize = 0;
     maxStepSize = 0.2;
+    lastBody2Odo = Transform3d::Identity();
+    lastLaser2Odo = Transform3d::Identity();
 }
 
 void TraversabilityMapGenerator::setBoundarySize(double size)

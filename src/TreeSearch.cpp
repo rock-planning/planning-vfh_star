@@ -15,7 +15,8 @@ TreeSearchConf::TreeSearchConf()
     , discountFactor(1.0)
     , obstacleSafetyDistance(0.1)
     , robotWidth(0.5)
-    , identityThreshold(-1)
+    , identityThreshold(-1),
+    maxStepSize(0)
     {}
 
 TreeSearch::TreeSearch()
@@ -509,7 +510,7 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
         std::cerr << "WARN: the chosen heuristic does not seem to be a minorant" << std::endl;
 }
 
-TreeNode::TreeNode(): parent(this), direction(0), cost(0), heuristic(0), depth(0), index(0)
+TreeNode::TreeNode(): parent(this), direction(0), cost(0), heuristic(0), depth(0), index(0), updated_cost(false), positionTolerance(0), headingTolerance(0)
 {
 
 }
