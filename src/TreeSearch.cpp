@@ -288,11 +288,11 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 
     curNode = tree.getFinalNode();
     
-    if(!curNode && bestHeuristicNode)
+/*    if(!curNode && bestHeuristicNode)
     {
 	tree.setFinalNode(bestHeuristicNode);
 	curNode = bestHeuristicNode;
-    }
+	}*/
     
     if (curNode)
     {
