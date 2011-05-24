@@ -243,6 +243,8 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 	    else
 		curStats = &innerStats;
 
+	    curStats->minDistance[gridData[rx][ry]] = std::min(curStats->minDistance[gridData[rx][ry]], distToRobot);
+
 	    curStats->statistic[gridData[rx][ry]]++;
 	    curStats->count++;
 	}
