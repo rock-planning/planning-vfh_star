@@ -24,6 +24,9 @@ namespace vfh_star
         double obstacleSafetyDistance; //! the margin distance between the robot and the obstacles
         double robotWidth; //! the radius of the circle used to model the robot
 
+	/** Maximum number of nodes that may be evaluated */
+	int maxSeekSteps;
+	
 	/** if two nodes are below this threshhold in position
 	 * and 'parralletity' they are considered the same
 	 * and one get's removed
@@ -43,6 +46,12 @@ namespace vfh_star
 
     struct VFHStarConf
     {
+	
+	/**
+	 * Radius in which obstacles are sensed
+	 * per step.
+	 * */
+	double obastacleSenseRadius;
         double mainHeadingWeight;
         double distanceWeight;
         double turningWeight;
