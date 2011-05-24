@@ -1,5 +1,6 @@
 #include "ElevationGrid.h"
 #include "Bresenham.h"
+#include <algorithm>
 
 using namespace vfh_star;
 
@@ -23,11 +24,16 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 	max = measurement;
     
     heights.push_back(measurement);
+    std::sort(heights.begin(), heights.end());
 
     sum += measurement;
     count++;
         
-    median = sum / count;
+    if(heights.size() > 1)
+	median = heights.at(heights.size() / 2);
+    else
+	median = measurement;
+//     median = sum / count;
 }
 
 void ElevationEntry::setMaximumHeight(double measurement)
