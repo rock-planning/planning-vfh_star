@@ -1,5 +1,6 @@
 #include "TraversabilityMapGenerator.h"
 #include <Eigen/LU>
+#include <base/pose.h>
  
 using namespace Eigen;
 
@@ -55,6 +56,8 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
 	return false;
     }
 
+    //no need any more, done later
+//     computeNewMap();
     
     lastBody2Odo = body2Odo;
     lastLaser2Odo = laser2Odo;
@@ -187,6 +190,12 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
     }
     
 
+    
+    //roughness
+//     if(fabs(entry.getMaximum() - entry.getMinimum()) > 0.25)
+// 	cl = UNKNOWN_OBSTACLE;
+//     
+    
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
 	    int rx = p.x() + x;

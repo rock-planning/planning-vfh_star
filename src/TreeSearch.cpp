@@ -54,6 +54,8 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(double curDir, const T
 	double start = (it->first);
 	double end  = (it->second);
 
+// 	std::cout << "Sampling interval start " << start << " end " << end << " Node dir " << curDir << std::endl; 
+
         double intervalOpening;
 
 	// Special case, wrapping interval
@@ -131,6 +133,8 @@ base::geometry::Spline<3> TreeSearch::getTrajectory(const base::Pose& start)
 
 TreeNode const* TreeSearch::compute(const base::Pose& start)
 {
+    std::cout << "Starting Pos " << start.position.transpose() << std::endl;
+    
     std::multimap<double, TreeNode *> expandCandidates;
 
     tree.clear();
@@ -145,6 +149,8 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     int max_steps = search_conf.maxSeekSteps;
 
     int curStep = 0;
+    
+    int doubleDevelopmentCnt = 0;
     
     double bestHeuristic = std::numeric_limits<double>::max();
     TreeNode *bestHeuristicNode = NULL;
@@ -191,17 +197,71 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             break;
         }
 
-        base::Position p = curNode->getPose().position;
+	base::Position p = curNode->getPose().position;
         if (max_depth > 0 && tree.getSize() > max_depth)
             continue;
 
-        // Get possible ways to go out of this node
+	//get sorounding nodes
+	std::vector<const TreeNode*> nearNodes;
+	kdtree.find_within_range(curNode,search_conf.identityThreshold, std::back_insert_iterator<std::vector<const TreeNode* > >(nearNodes));	
+
+	// Get possible ways to go out of this node
         AngleIntervals driveIntervals =
             getNextPossibleDirections(*curNode,
                     search_conf.obstacleSafetyDistance, search_conf.robotWidth);
 
-        if (driveIntervals.empty())
+        if (driveIntervals.empty()) {
+	    
+	    //TODO delete alle nearNodes from candidate list
+	    
             continue;
+	}
+	
+	//As all nodes are very near we consider the drive intervals to be 
+	//valid for all of them. This is a optimisation.
+	
+	//get all directions for nearest nodes
+	//create bin for reduction
+/*	int nrBins = 2*M_PI / search_conf.angularSamplingMin;
+	std::vector<std::pair<double, const TreeNode *> > directionBin;
+	directionBin.resize(nrBins);
+	std::vector<std::pair<double, const TreeNode *> > driveDirs;
+	for(std::vector<const TreeNode*>::iterator it = nearNodes.begin(); it != nearNodes.end(); it++)
+	{
+	    if((*it)->isLeaf()) {
+		//project
+		Angles driveDirections =
+		    getDirectionsFromIntervals((*it)->getDirection(), driveIntervals);
+		
+		for(Angles::iterator dir = driveDirections.begin(); dir != driveDirections.end(); dir++)
+		{
+		    driveDirs.push_back(std::make_pair(*dir, static_cast<const TreeNode *>(NULL)));
+		}
+	    } else {
+		//just get dirs from childs
+		for(std::vector<TreeNode *>::const_iterator child = (*it)->getChilds().begin(); child != (*it)->getChilds().end(); child++)
+		{
+		    std::pair<double, const TreeNode *> candidate = std::make_pair((*child)->getDirection(), *child);
+		    driveDirs.push_back(candidate);
+		}
+	    }
+	}
+	
+	std::sort(driveDirs.begin(), driveDirs.end());*/
+// 	std::std::vector<std::pair<double, const TreeNode *> >::iterator cand_it = std::find(driveDirs.begin(), driveDirs.end(), candidate);
+// 	assert(cand_it != driveDirs.end());
+	
+	//for all near nodes
+	
+	    //project all
+
+	    //filter nodes that are near to each other, by only selecting 
+	    //the cheapest in one direction interval
+
+	    //insert results
+	
+	    
+
 
         Angles driveDirections =
             getDirectionsFromIntervals(curNode->getDirection(), driveIntervals);
@@ -210,10 +270,26 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 
         double curDiscount = pow(search_conf.discountFactor, curNode->getDepth());
 
+	base::Time startK = base::Time::now();
+	
         // Expand the node: add children in the directions returned by
         // driveDirections
         for (Angles::const_iterator it = driveDirections.begin(); it != driveDirections.end(); it++)
         {
+/*	    if(*it < 0 || *it > 2*M_PI)
+	    {
+		for (Angles::const_iterator it2 = driveDirections.begin(); it2 != driveDirections.end(); it2++)
+		{
+		    std::cout << "Angle " << *it2 << std::endl;
+		}
+
+		for (AngleIntervals::const_iterator it2 = driveIntervals.begin(); it2 != driveIntervals.end(); it2++)
+		{
+		    std::cout << "Interval " << it2->first << " " << it2->second << std::endl;
+		}
+		
+	    }*/
+	    
             if (max_depth > 0 && tree.getSize() >= max_depth)
                 break;
 
@@ -265,9 +341,12 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                         closest_node->candidate_it->second->setHeuristic(-2.0);
                         expandCandidates.erase(closest_node->candidate_it);
                         closest_node->candidate_it = expandCandidates.end();
+//                         kdtree.erase(this_nn.first);
                         kdtree.erase(*nearNode);
                     }
-                }
+                } else {
+		    doubleDevelopmentCnt++;
+		}
             }
             
             if(foundBetterNode)
@@ -289,10 +368,14 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             // Add it to the expand list
             newNode->candidate_it = expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
 
-            // And add it to the kdtree
-            kdtree.insert(newNode);
-        }
+	    // And add it to the kdtree
+            kdtree.insert(newNode);	    
+        }        
     }
+
+    base::Time curTime = base::Time::now();
+    std::cout << "Tree search took " << (curTime - startTime).toMicroseconds() << " steps " << curStep << " tree size " << tree.getSize() << " number of double nodes " << doubleDevelopmentCnt << std::endl;
+
 
     curNode = tree.getFinalNode();
     
@@ -304,10 +387,13 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     
     if (curNode)
     {
+	std::cout << std::endl << "Final Node"<<std::endl;
+	getCostForNode(curNode->getPose(), curNode->getDirection(), (*curNode->getParent()));
         std::cerr << "TreeSearch: found solution at c=" << curNode->getCost() << std::endl;
         tree.verifyHeuristicConsistency(curNode);
         return curNode;
     }
+    
     return 0;
 }
 
@@ -420,6 +506,25 @@ TreeNode* Tree::getRootNode()
 TreeNode* Tree::getFinalNode() const
 {
     return final_node;
+}
+
+void TreeNode::addChild(TreeNode* child)
+{
+    childs.push_back(child);
+}
+
+const std::vector< TreeNode* > TreeNode::getChilds() const
+{
+    return childs;
+}
+
+void TreeNode::removeChild(TreeNode* child)
+{
+    std::vector<TreeNode *>::iterator it = std::find(childs.begin(), childs.end(), child);
+    if(it == childs.end())
+	throw std::runtime_error("Tried to remove unknown child");
+    
+    childs.erase(it);
 }
 
 void Tree::setFinalNode(TreeNode* node)
@@ -536,7 +641,11 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
     , positionTolerance(0)
     , headingTolerance(0)
 {
-
+/*    if(dir < 0 || dir > 2* M_PI)
+    {
+	std::cout << "Invalid direction, dir is " << dir << std::endl;
+	throw("Got invalid direction");
+    }*/
 }
 
 

@@ -316,6 +316,8 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 	    const double xd = x * traversabillityGrid->getScaleX();
 	    const double yd = y * traversabillityGrid->getScaleY();
 	    double distToRobot = sqrt(xd*xd + yd*yd);
+
+	    // 	    std::cout << "distToRobot " << distToRobot << std::endl;
 	    
 	    //check if outside circle
 	    if(distToRobot > senseRadius)

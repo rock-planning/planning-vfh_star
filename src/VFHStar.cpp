@@ -36,7 +36,7 @@ std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, doubl
 	
     this->targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitX();
 
-    targetLineNormal +=  Vector3d(0, 0, start.position.z());
+//     targetLineNormal +=  Vector3d(0, 0, start.position.z());
     
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
@@ -47,6 +47,11 @@ std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, doubl
 
 double VFHStar::algebraicDistanceToGoalLine(const base::Position& pos) const
 {
+    /*if(pos.z() != targetLinePoint.z() || pos.z() != targetLineNormal.z())
+    {
+	std::cout << "Pos Z:" << pos.z() << " tlp Z:" << targetLinePoint.z() << " tln Z:" << targetLineNormal.z() <<std::endl;
+	throw std::runtime_error("Z not equal, bad");
+    }*/
     //check weather we crossed the target line;
     
     //targetLineNormal is normalized

@@ -44,8 +44,13 @@ class TreeNode
         double getHeadingTolerance() const;
         void setHeadingTolerance(double tol);
 	
+	void addChild(TreeNode *child);
+	const std::vector<TreeNode *> getChilds() const;
+	void removeChild(TreeNode *child);
+	
     private:
 	TreeNode *parent;
+	std::vector<TreeNode *> childs;
         bool is_leaf;
 	
 	///pose of the node, note the orientation of the node and the direction may differ, 
