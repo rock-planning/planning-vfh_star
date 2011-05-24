@@ -4,12 +4,19 @@
 #include <osg/Point>
 #include <boost/tuple/tuple.hpp>
 #include <osg/LineWidth>
+#include <osgText/Text>
+#include <osg/PositionAttitudeTransform>
+#include <QWidget>
+#include <QSpinBox>
+#include <QObject>
+
 
 using namespace vizkit;
 using namespace std;
 using vfh_star::TreeNode;
 
-struct VFHTreeVisualization::Data {
+class VFHTreeVisualization::Data {
+public:
     // Copy of the value given to updateDataIntern.
     //
     // Making a copy is required because of how OSG works
@@ -28,9 +35,49 @@ struct VFHTreeVisualization::Data {
 
     int treeNodeCount;
 
+    QTAdapter *adapter;
+    
     Data()
-        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0) {}
+        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0), adapter(0) {
+	    
+	}
+	
+    virtual ~Data() {};
+    
 };
+
+void QTAdapter::numberChanged(int x)
+{
+    std::cout << "number changed " << std::endl;
+    boost::mutex::scoped_lock lockit(viz->updateMutex);
+    viz->setDirty();
+    viz->p->treeNodeCount = x;
+}
+
+QTAdapter::QTAdapter()
+{
+    spinBox = new QSpinBox(); 
+    this->connect(spinBox, SIGNAL(valueChanged(int)), this, SLOT(numberChanged(int)) );
+    spinBox->setMinimum(0);
+    spinBox->setMaximum(10000);
+}
+
+QTAdapter::~QTAdapter()
+{
+
+}
+
+QWidget* VFHTreeVisualization::getSideWidget()
+{
+    if(!p->adapter)
+    {
+	p->adapter = new QTAdapter();
+	p->adapter->viz = this;
+    }
+
+    return p->adapter->spinBox;
+}
+
 
 
 VFHTreeVisualization::VFHTreeVisualization()
@@ -66,7 +113,9 @@ osg::ref_ptr<osg::Node> VFHTreeVisualization::createMainNode()
 {
     // Geode is a common node used for vizkit plugins. It allows to display
     // "arbitrary" geometries
-    return new osg::Geode();
+    osg::PositionAttitudeTransform *treeGroup = new osg::PositionAttitudeTransform;
+    treeGroup->setPosition(osg::Vec3(0,0,0.1));
+    return treeGroup;
 }
 
 static double getDisplayCost(VFHTreeVisualization::COST_MODE mode, vfh_star::TreeNode const& node)
@@ -167,8 +216,10 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     return geom;
 }
 
-osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> const& nodes, double color_a, double color_b)
+osg::Group* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> const& nodes, double color_a, double color_b)
 {
+    osg::Group *treeGroup = new osg::Group;
+    osg::Geode* geode = new osg::Geode();
     osg::Geometry* geom = new osg::Geometry;
 
     // Create the color and vertex arrays
@@ -186,12 +237,35 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
 
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
+
+// 	std::stringstream cost;
+// 	cost << "C: " <<  node->getCost() << std::endl << "H: " << node->getHeuristic();
+// 	
+// 	osgText::Text *costText = new osgText::Text();
+// 	costText->setCharacterSize(0.02);
+// 	costText->setAxisAlignment(osgText::Text::SCREEN);
+// 	costText->setText(cost.str());
+// 	base::Position halfDistance = (parent_p - p) * 0.5 + p; 
+// 	costText->setPosition(osg::Vec3(halfDistance.x(), halfDistance.y(), halfDistance.z()));
+// 
+// 	geode->addDrawable(costText);
+// 	
 	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
 	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
 
         if (node->getHeuristic() < 0) // used to mark invalid nodes
-            colors->push_back(osg::Vec4(0, 0, 0, 1));
-        else
+        {
+	    if(node->getHeuristic() == -1)
+	    {
+		colors->push_back(osg::Vec4(0, 0, 0, 1));
+// 		costText->setColor(osg::Vec4(0, 0, 0, 1));
+	    } else
+	    {
+		colors->push_back(osg::Vec4(1, 1, 1, 0.5));
+// 		costText->setColor(osg::Vec4(0, 0, 1, 1));
+	    }
+	}
+	else
         {
             double cost = getDisplayCost(this->p->costMode, *node);
 
@@ -200,6 +274,7 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
             double blue = 0.5;
             double alpha = 1.0;
             colors->push_back(osg::Vec4(red, green, blue, alpha));
+// 	    costText->setColor(osg::Vec4(red, green, blue, alpha));
         }
     }
     geom->setColorArray(colors);
@@ -219,13 +294,21 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
     point->setMaxSize( 5.0 );
     geom->getOrCreateStateSet()->setAttribute( point, osg::StateAttribute::ON );
 
-    return geom;
+    geode->addDrawable(geom);
+    treeGroup->addChild(geode);
+    return treeGroup;
 }
 
 void VFHTreeVisualization::updateMainNode ( osg::Node* node )
 {
-    osg::Geode* geode = static_cast<osg::Geode*>(node);
-    while(geode->removeDrawables(0));
+    std::cout << "Updating Node VFHTreeVisualization" << std::endl;
+    osg::Group *mainNode = dynamic_cast<osg::Group *>(node);
+    assert(mainNode);
+    
+    //Remove old childs
+    mainNode->removeChildren(0, mainNode->getNumChildren());
+    
+    osg::Geode* geode = new osg::Geode();
 
     if (p->hasSegment)
     {
@@ -285,7 +368,8 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     boost::tie(cost_a, cost_b) = computeColorMapping(enabled_nodes);
     std::cerr << "vfh_viz: cost mapping " << cost_a << " " << cost_b << std::endl;
 
-    geode->addDrawable(createTreeNode(enabled_nodes, cost_a, cost_b));
+    mainNode->addChild(createTreeNode(enabled_nodes, cost_a, cost_b));
+    mainNode->addChild(geode);
     if (p->data.getFinalNode())
         geode->addDrawable(createSolutionNode(p->data.getFinalNode(), cost_a, cost_b));
 }
