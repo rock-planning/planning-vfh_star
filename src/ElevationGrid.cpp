@@ -21,13 +21,29 @@ void ElevationEntry::addHeightMeasurement(double measurement)
     
     if(max < measurement)
 	max = measurement;
-    
-    heights.push_back(measurement);
 
-    sum += measurement;
-    count++;
+    int num_points = heights.size();
+
+    if(num_points < 30)
+    {
+	heights.push_back(measurement);
+
+	sum += measurement;
+	count++;
         
-    median = sum / count;
+	median = sum / count;
+    } else {
+	count++;
+	count = count % 30;
+	
+	heights[count] = measurement;
+	
+	sum = 0;
+	for(int i = 0; i < num_points; i++)
+	    sum += heights[i];
+
+	median = sum / num_points;
+    }
 }
 
 void ElevationEntry::setMaximumHeight(double measurement)
