@@ -9,7 +9,7 @@ template <class T, int size, int resolution>
 class Grid
 {
     public:
-	Grid():gridOrigin(gridOriginX, gridOriginY) {
+	Grid():gridOrigin(gridOriginX, gridOriginY),  gridPosition(0,0,0) {
 	    
 	}
 	
