@@ -170,8 +170,8 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
 		std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
 		std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
 		std::cout << "Sense size x:" << localSenseSize << " sense radius" << robotWidth << std::endl;
-		
-		throw std::runtime_error("Accessed cell outside of grid");
+		return OBSTACLE;
+//		throw std::runtime_error("Accessed cell outside of grid");
 	    }
 
 	    switch(gridData[rx][ry]) {
@@ -227,15 +227,20 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 	  
 	    int rx = robotX + x;
 	    int ry = robotY + y;
-
-	    if(!traversabillityGrid->inGrid(rx, ry))
+	    
+	    Traversability terrainType =  OBSTACLE;
+	    
+	    if(traversabillityGrid->inGrid(rx, ry))
+		terrainType = gridData[rx][ry];
+	    
+/*	    if(!traversabillityGrid->inGrid(rx, ry))
 	    {
 		std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
 		std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
 		std::cout << "Sense size x:" << localSenseSize << " sense radius" << innerRadius + outerRadius << std::endl;
 		
 		throw std::runtime_error("Accessed cell outside of grid");
-	    }
+	    }*/
 	    
 	    TerrainStatistic *curStats;
 	    if(distToRobot > innerRadius)
@@ -243,9 +248,9 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 	    else
 		curStats = &innerStats;
 
-	    curStats->minDistance[gridData[rx][ry]] = std::min(curStats->minDistance[gridData[rx][ry]], distToRobot);
+	    curStats->minDistance[terrainType] = std::min(curStats->minDistance[terrainType], distToRobot);
 
-	    curStats->statistic[gridData[rx][ry]]++;
+	    curStats->statistic[terrainType]++;
 	    curStats->count++;
 	}
     }
