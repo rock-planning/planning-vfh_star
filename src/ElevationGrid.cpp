@@ -16,6 +16,7 @@ ElevationEntry::ElevationEntry()
 
 void ElevationEntry::addHeightMeasurement(double measurement)
 {
+    const int maxPoints = 50;
     if(min > measurement)
 	min = measurement;
     
@@ -24,7 +25,7 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 
     int num_points = heights.size();
 
-    if(num_points < 30)
+    if(num_points < 50)
     {
 	heights.push_back(measurement);
 
@@ -34,7 +35,7 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 	median = sum / count;
     } else {
 	count++;
-	count = count % 30;
+	count = count % 50;
 	
 	heights[count] = measurement;
 	
