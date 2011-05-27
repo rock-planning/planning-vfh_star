@@ -110,17 +110,125 @@ void ElevationGrid::addLineBetweenPoints(const Eigen::Vector3d &start, const Eig
     }
 }
 
+void ElevationGrid::addLineBetweenPoints(const Eigen::Vector2i &start_g, double start_val, const Eigen::Vector2i &end_g, double end_val)
+{
+    getEntry(end_g).addHeightMeasurement(end_val);    
+    
+    const Eigen::Vector2f start_gf(start_g.x(), start_g.y());
+    const Eigen::Vector2f end_gf(end_g.x(), end_g.y());
+
+    if(start_g == end_g || (start_gf - end_gf).norm() < 2)
+	return;
+
+    vfh_star::Bresenham nextSegmentLine(start_g, end_g);
+    
+    const Eigen::Vector2f startToEnd = end_gf-start_gf;
+    
+    const double heightDiff = end_val - start_val;
+    
+    const double inclination = heightDiff / startToEnd.norm();
+
+    Eigen::Vector2i p;
+    
+    while(nextSegmentLine.getNextPoint(p)) 
+    {
+	if(p == start_g || p == end_g)
+	    continue;
+	
+	if(inGrid(p))
+	{
+	    const Eigen::Vector2f pf(p.x(), p.y());
+	    const double interpolatedHeight = start_val + (pf - start_gf).norm() * inclination;
+	    getEntry(p).setMaximumHeight(interpolatedHeight);
+	    getEntry(p).setMinimumHeight(interpolatedHeight);
+	}
+    }
+}
+
+struct binnedPoint
+{
+    Eigen::Vector2i gridPos;
+    double heightValue;
+    bool validNeighbour;
+};
+    
 void ElevationGrid::addLaserScan(const std::vector< Eigen::Vector3d>& laserPoints_world)
 {
-    Eigen::Vector2i p_g;
+    Eigen::Vector2i p_g, lastP_g;
+        
+    bool gotGridPoint = false;
     
-    std::vector< Eigen::Vector3d >::const_iterator last_p = laserPoints_world.begin();
-    if(getGridPoint(*last_p, p_g))
-	getEntry(p_g).addHeightMeasurement(last_p->z());
+    double heightSum = 0;
+    int cnt = 0;
     
-    for(std::vector< Eigen::Vector3d >::const_iterator it = last_p + 1; it != laserPoints_world.end(); it++) {
 
-	addLineBetweenPoints(*last_p, *it);	
+    
+    std::vector< struct binnedPoint > binnedPoints;
+    
+    bool directNeighbour = false;
+    
+    //first bin the points
+    for(std::vector< Eigen::Vector3d >::const_iterator it = laserPoints_world.begin(); it != laserPoints_world.end(); it++) {	
+	if(getGridPoint(*it, p_g))
+	{
+	    if(gotGridPoint) {
+		if(lastP_g == p_g)
+		{
+		    heightSum += it->z();
+		    cnt++;
+		}
+		else
+		{
+		    binnedPoint bp;
+		    bp.gridPos = lastP_g;
+		    bp.heightValue = heightSum / cnt;
+		    bp.validNeighbour = directNeighbour;
+		    //add binned value
+		    binnedPoints.push_back(bp);
+		    heightSum = it->z();
+		    cnt = 1;
+		    gotGridPoint = true;
+		    directNeighbour = true;
+		}
+	    }
+	    else
+	    {
+		directNeighbour = false;
+		heightSum = it->z();
+		cnt = 1;
+		gotGridPoint = true;
+	    }
+	    lastP_g = p_g;
+	}
+	else
+	{
+	    if(gotGridPoint)
+	    {
+		binnedPoint bp;
+		bp.gridPos = lastP_g;
+		bp.heightValue = heightSum / cnt;
+		bp.validNeighbour = directNeighbour;
+		
+		//add binned value
+		binnedPoints.push_back(bp);
+	    }
+	    
+	    heightSum = 0;
+	    cnt = 0;
+	    gotGridPoint = false;
+	    directNeighbour = false;
+	}
+    }
+    
+    
+    std::vector< binnedPoint >::const_iterator last_p = binnedPoints.begin();
+    getEntry(last_p->gridPos).addHeightMeasurement(last_p->heightValue);
+    
+    for(std::vector< binnedPoint >::const_iterator it = last_p + 1; it != binnedPoints.end(); it++) {
+	if(it->validNeighbour)
+	    addLineBetweenPoints(last_p->gridPos, last_p->heightValue, it->gridPos, it->heightValue);
+	else
+	    getEntry(it->gridPos).addHeightMeasurement(it->heightValue);
 	last_p = it;
     }
 

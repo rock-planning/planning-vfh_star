@@ -50,6 +50,7 @@ class ElevationGrid: public Grid<ElevationEntry, 600, 6>
     public:
 	ElevationGrid();
 	
+	void addLineBetweenPoints(const Eigen::Vector2i &start_g, double start_val, const Eigen::Vector2i &end_g, double end_val);
 	void addLineBetweenPoints(const Eigen::Vector3d &start,const Eigen::Vector3d &end);
 	void addLaserScan(const std::vector<Eigen::Vector3d> &laserPoints_world);
 	
