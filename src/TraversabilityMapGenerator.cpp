@@ -40,8 +40,8 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
 
     //filter out wheels
-    AlignedBox<double, 3> leftWheel(Vector3d(0.23, -0.25, -0.2), Vector3d(0.4, 0.25, 0.5));
-    AlignedBox<double, 3> rightWheel(Vector3d(-0.4, -0.25, -0.2), Vector3d(-0.23, 0.25, 0.5));
+    AlignedBox<double, 3> leftWheel(Vector3d(0.20, -0.25, -0.2), Vector3d(0.4, 0.25, 0.5));
+    AlignedBox<double, 3> rightWheel(Vector3d(-0.4, -0.25, -0.2), Vector3d(-0.20, 0.25, 0.5));
     
     std::vector<AlignedBox<double, 3> > maskedAreas;
     maskedAreas.push_back(leftWheel);
