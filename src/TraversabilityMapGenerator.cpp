@@ -23,10 +23,34 @@ void TraversabilityMapGenerator::setMaxStepSize(double size)
     maxStepSize = size;
 }
 
-bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Transform3d& body2Odo, const Eigen::Transform3d& laser2Body)
+bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Transform3d& body2Odo2, const Eigen::Transform3d& laser2Body)
 {
+    static double lastHeight = 0.0;
+    Eigen::Transform3d body2Odo(body2Odo2);
 //     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
 
+    
+    //correct body2Odo z measurement
+    Vector2i pInGrid;
+    if(!laserGrid.getGridPoint(body2Odo.translation(), pInGrid))
+    {
+	std::cout << "Odometry position not in Grid" <<std::endl;
+	throw std::runtime_error("Odometry position not in Grid");
+    }
+    
+    const ElevationEntry entry(laserGrid.getEntry(pInGrid));
+
+    double curHeight;
+    
+    if(entry.getMeasurementCount())
+	curHeight = entry.getMedian();
+    else
+	curHeight = lastHeight;
+    
+    Vector3d vecToGround = body2Odo.rotation() * Vector3d(0,0, 0.18);
+    
+     body2Odo.translation().z() = curHeight + vecToGround.z();
+    
     Transform3d laser2Odo(body2Odo * laser2Body);
     Transform3d  body2LastBody(lastBody2Odo.inverse() * body2Odo);
     double distanceBodyToLastBody = body2LastBody.translation().norm();
@@ -37,6 +61,8 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     double laserChange = acos(Ylaser2Odo.dot(YlastLaser2Odo));
 
 
+    lastHeight = curHeight;
+    
     moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
 
     //filter out wheels
