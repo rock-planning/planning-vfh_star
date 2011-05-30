@@ -306,6 +306,55 @@ void TraversabilityMapGenerator::markUnknownInRadiusAs(const base::Pose& pose, d
     }
 }
 
+ConsistencyStats TraversabilityMapGenerator::checkMapConsistencyInArea(const base::Pose& pose, double width, double height)
+{
+    double heading = pose.orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
+    AngleAxisd rot = AngleAxisd(heading, Vector3d::UnitZ());
+    
+    ConsistencyStats stats;
+    
+    stats.cellCnt = 0;
+    stats.noMeasurementCnt = 0;
+    stats.measurementCnt = 0;
+    stats.averageCertainty = 0.0;
+    
+    for(double x = -width / 2.0; x <= (width / 2.0); x += 0.03)
+    {
+	for(double y = -height / 2.0; y <= (height / 2.0); y += 0.03)
+	{
+	    Vector2i p_g;
+	    Vector3d p_w = pose.position + rot * Vector3d(x, y, 0);
+	    
+	    if(laserGrid.getGridPoint(p_w, p_g))
+	    {
+		vfh_star::ElevationEntry &entry(laserGrid.getEntry(p_g));
+		stats.cellCnt++;
+		
+		if(entry.getMeasurementCount())
+		{
+		    stats.measurementCnt++;
+		    //FIXME hard coded
+		    stats.averageCertainty += entry.getMeasurementCount() / 50.0;
+		}
+		else 
+		{
+		    stats.noMeasurementCnt++;
+		}
+	    }
+	    else 
+	    {
+		std::cout << "Error point not in grid " << std::endl;
+	    }
+	}
+    }
+    
+    stats.averageCertainty /= stats.measurementCnt;
+    
+//     std::cout << "CellCnt " << stats.cellCnt << " Cells with Measurement " << stats.measurementCnt << " Cells without Measurement " << stats.noMeasurementCnt << " average certainty " << stats.averageCertainty << std::endl;    
+    return stats;
+}
+
+
 void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose, double width, double height, double forwardOffset, Traversability type)
 {
     double heading = pose.orientation.toRotationMatrix().eulerAngles(2,1,0)[0];

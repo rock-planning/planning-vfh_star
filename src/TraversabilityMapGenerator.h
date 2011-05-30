@@ -10,6 +10,14 @@
 #include <stdint.h>
 
 namespace vfh_star {
+
+struct ConsistencyStats
+{
+    int cellCnt;
+    int noMeasurementCnt;
+    int measurementCnt;
+    double averageCertainty;
+};
     
 class TraversabilityMapGenerator
 {
@@ -44,6 +52,9 @@ class TraversabilityMapGenerator
 	void markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius);
 	void markUnknownInRectangeAsTraversable(const base::Pose& pose, double width, double height, double forwardOffset);
 	void markUnknownInRectangeAsObstacle(const base::Pose& pose, double width, double height, double forwardOffset);
+	
+	ConsistencyStats checkMapConsistencyInArea(const base::Pose& pose, double width, double height);
+	
     private:
 	
 	void markUnknownInRadiusAs(const base::Pose& pose, double radius, vfh_star::Traversability type);
