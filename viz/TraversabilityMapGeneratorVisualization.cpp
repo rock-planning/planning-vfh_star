@@ -42,6 +42,7 @@ void TraversabilityMapGeneratorVisualization::updateMainNode(osg::Node* node)
     //sorrage for color per vertex
     osg::ref_ptr<osg::Vec4Array> colorArray = new osg::Vec4Array;
 
+    osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
     
     for(int x = 0; x < width; x++) {
 	for(int y = 0; y < height; y++) {
@@ -57,6 +58,7 @@ void TraversabilityMapGeneratorVisualization::updateMainNode(osg::Node* node)
 	    //up right
 	    v->push_back(osg::Vec3((x+1) * gridEntrySize, y*gridEntrySize, grid[x][y]));
 	    colorArray->push_back(gridColor[x][y]);
+	    
 	}
     }
     
@@ -67,6 +69,9 @@ void TraversabilityMapGeneratorVisualization::updateMainNode(osg::Node* node)
     geom->addPrimitiveSet(
 	    new osg::DrawArrays( osg::PrimitiveSet::QUADS, 0, v->size() ) );
 
+    normals->push_back(osg::Vec3(0,0,1));
+    geom->setNormalArray(normals);
+    geom->setNormalBinding( osg::Geometry::BIND_OVERALL );    
     
     osg::ref_ptr<osg::Geode> geode = new osg::Geode;
     geode->addDrawable(geom.get());

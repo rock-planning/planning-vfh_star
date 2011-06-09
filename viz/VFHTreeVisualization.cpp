@@ -66,7 +66,10 @@ osg::ref_ptr<osg::Node> VFHTreeVisualization::createMainNode()
 {
     // Geode is a common node used for vizkit plugins. It allows to display
     // "arbitrary" geometries
-    return new osg::Geode();
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+    osg::StateSet *state = geode->getOrCreateStateSet();
+    state->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
+    return geode;
 }
 
 static double getDisplayCost(VFHTreeVisualization::COST_MODE mode, vfh_star::TreeNode const& node)
