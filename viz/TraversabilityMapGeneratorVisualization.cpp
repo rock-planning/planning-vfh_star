@@ -9,6 +9,7 @@ namespace vizkit {
 
 TraversabilityMapGeneratorVisualization::TraversabilityMapGeneratorVisualization()
 {
+    VizPluginRubyAdapter(TraversabilityMapGeneratorVisualization, vfh_star::GridDump, GridDump);
     width = 0;
     height = 0;
 }

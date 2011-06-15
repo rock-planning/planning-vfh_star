@@ -304,6 +304,3 @@ void VFHTreeVisualization::updateDataIntern(Segment const& segment)
     p->hasSegment = true;
 }
 
-VizkitQtPlugin(VFHTreeVisualization);
-
-
