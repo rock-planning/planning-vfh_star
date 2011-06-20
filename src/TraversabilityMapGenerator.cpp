@@ -29,6 +29,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     Eigen::Transform3d body2Odo(body2Odo2);
 //     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
 
+    moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
     
     //correct body2Odo z measurement
     Vector2i pInGrid;
@@ -63,8 +64,6 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
 
     lastHeight = curHeight;
     
-    moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
-
     //filter out wheels
     AlignedBox<double, 3> leftWheel(Vector3d(0.20, -0.25, -0.2), Vector3d(0.4, 0.25, 0.5));
     AlignedBox<double, 3> rightWheel(Vector3d(-0.4, -0.25, -0.2), Vector3d(-0.20, 0.25, 0.5));
