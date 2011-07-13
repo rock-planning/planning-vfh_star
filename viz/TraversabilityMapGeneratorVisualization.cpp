@@ -5,6 +5,8 @@
 #include <osg/ShapeDrawable>
 #include <osg/PositionAttitudeTransform>
 
+#include <iostream>
+
 namespace vizkit {
 
 TraversabilityMapGeneratorVisualization::TraversabilityMapGeneratorVisualization()

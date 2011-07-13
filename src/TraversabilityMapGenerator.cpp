@@ -10,8 +10,8 @@ TraversabilityMapGenerator::TraversabilityMapGenerator()
 {
     boundarySize = 0;
     maxStepSize = 0.2;
-    lastBody2Odo = Transform3d::Identity();
-    lastLaser2Odo = Transform3d::Identity();
+    lastBody2Odo = Affine3d::Identity();
+    lastLaser2Odo = Affine3d::Identity();
 }
 
 void TraversabilityMapGenerator::setBoundarySize(double size)
@@ -90,7 +90,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     return true;
 }
 
-void TraversabilityMapGenerator::filterLaserScan(std::vector< Eigen::Vector3d>& result,const base::samples::LaserScan& ls, const Eigen::Transform3d& filterFrame, const Eigen::Transform3d& resultFrame, const std::vector<AlignedBox<double, 3> >& maskedAreas)
+void TraversabilityMapGenerator::filterLaserScan(std::vector< Eigen::Vector3d>& result,const base::samples::LaserScan& ls, const Eigen::Affine3d& filterFrame, const Eigen::Affine3d& resultFrame, const std::vector<AlignedBox<double, 3> >& maskedAreas)
 {
     std::vector<Eigen::Vector3d> pointCloud;
     std::vector<bool> maskedPoints;
