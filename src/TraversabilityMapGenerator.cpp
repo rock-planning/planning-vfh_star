@@ -24,10 +24,10 @@ void TraversabilityMapGenerator::setMaxStepSize(double size)
     maxStepSize = size;
 }
 
-bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo, const Eigen::Affine3d& laser2Body)
+bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo2, const Eigen::Affine3d& laser2Body)
 {
     static double lastHeight = 0.0;
-    Eigen::Transform3d body2Odo(body2Odo2);
+    Eigen::Affine3d body2Odo(body2Odo2);
 //     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
 
     moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
