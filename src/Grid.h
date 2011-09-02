@@ -86,6 +86,8 @@ class Grid
 		    grid[x][y] = T();		    
 		}
 	    }
+
+	    gridPosition.setZero();
 	};
 
 	const T &getEntry(const Eigen::Vector2i &p) const {

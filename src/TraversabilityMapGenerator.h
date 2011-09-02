@@ -34,6 +34,11 @@ class TraversabilityMapGenerator
 	{
 	    return traversabilityGrid;
 	};
+
+	/**
+	 * Deletes all information in the maps
+	 **/
+	void clearMap();
 	
 	/**
 	 * Manual trigger for map generation
@@ -98,6 +103,7 @@ class TraversabilityMapGenerator
 	Eigen::Affine3d lastLaser2Odo;
 	double boundarySize;
 	double maxStepSize;
+	double lastHeight;
 };
 
 }

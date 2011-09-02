@@ -12,6 +12,7 @@ TraversabilityMapGenerator::TraversabilityMapGenerator()
     maxStepSize = 0.2;
     lastBody2Odo = Affine3d::Identity();
     lastLaser2Odo = Affine3d::Identity();
+    lastHeight = 0.0;
 }
 
 void TraversabilityMapGenerator::setBoundarySize(double size)
@@ -26,7 +27,6 @@ void TraversabilityMapGenerator::setMaxStepSize(double size)
 
 bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo2, const Eigen::Affine3d& laser2Body)
 {
-    static double lastHeight = 0.0;
     Eigen::Affine3d body2Odo(body2Odo2);
 //     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
 
@@ -164,6 +164,16 @@ void TraversabilityMapGenerator::computeNewMap()
     smoothElevationGrid(laserGrid, interpolatedGrid);
     
     updateTraversabilityGrid(interpolatedGrid, traversabilityGrid);    
+}
+
+void TraversabilityMapGenerator::clearMap()
+{
+    lastBody2Odo = Affine3d::Identity();
+    lastLaser2Odo = Affine3d::Identity();
+    lastHeight = 0.0;
+    laserGrid.clear();
+    interpolatedGrid.clear();
+    traversabilityGrid.clear();
 }
 
 void TraversabilityMapGenerator::getGridDump(GridDump& gd) const
