@@ -4,6 +4,7 @@
 #include <osg/Point>
 #include <boost/tuple/tuple.hpp>
 #include <osg/LineWidth>
+#include <base/float.h>
 
 #include <iostream>
 
@@ -26,7 +27,7 @@ struct VFHTreeVisualization::Data {
     VFHTreeVisualization::COST_MODE costMode;
 
     bool hasSegment;
-    std::pair< base::Vector3d, base::Vector3d > segment;
+    std::vector<base::Vector3d> segment;
 
     int treeNodeCount;
 
@@ -39,6 +40,7 @@ VFHTreeVisualization::VFHTreeVisualization()
     : p(new Data)
 {
     VizPluginRubyAdapter(VFHTreeVisualization, vfh_star::Tree, Tree);
+    VizPluginRubyAdapter(VFHTreeVisualization, std::vector<base::Vector3d>, Segment);
 }
 
 VFHTreeVisualization::~VFHTreeVisualization()
@@ -237,9 +239,9 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
         osg::Geometry* geom = new osg::Geometry;
         osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
         osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
-        base::Vector3d pt = p->segment.first;
+        base::Vector3d pt = p->segment[0];
         vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
-        pt = p->segment.second;
+        pt = p->segment[1];
         vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
         colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
@@ -300,7 +302,7 @@ void VFHTreeVisualization::updateDataIntern(vfh_star::Tree const& value)
     p->data = value;
 }
 
-void VFHTreeVisualization::updateDataIntern(Segment const& segment)
+void VFHTreeVisualization::updateDataIntern(std::vector<base::Vector3d> const& segment)
 {
     p->segment = segment;
     p->hasSegment = true;
