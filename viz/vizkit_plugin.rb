@@ -1,3 +1,7 @@
-Vizkit::UiLoader.register_3d_plugin('VFHTreeViewer', 'vfh_star', 'VFHTree', 'updateVFHTree', 'updateTree')
-Vizkit::UiLoader.register_3d_plugin_for('VFHTreeViewer', "/wrappers/vfh_star/Tree", :updateVFHTree)
+Vizkit::UiLoader.register_3d_plugin('VFHTreeViewer', 'vfh_star', 'VFHTree')
+Vizkit::UiLoader.register_3d_plugin_for('VFHTreeViewer', "/wrappers/vfh_star/Tree", :updateTree)
+Vizkit::UiLoader.register_3d_plugin_for('VFHTreeViewer', "/corridor_navigation/FollowingDebug_m") do |plugin, data, port|
+    plugin.updateTree(data.tree)
+    plugin.updateSegment(data.horizon)
+end
 
