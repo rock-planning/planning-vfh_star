@@ -23,8 +23,6 @@ osg::ref_ptr< osg::Node > TraversabilityMapGeneratorVisualization::createMainNod
 
 void TraversabilityMapGeneratorVisualization::updateMainNode(osg::Node* node)
 {
-    std::cout << "TraversabilityMapGeneratorViz: Drawing Grid" << std::endl;
-
     osg::PositionAttitudeTransform *group = dynamic_cast<osg::PositionAttitudeTransform *>(node);
     assert(group);
     
@@ -110,7 +108,6 @@ void TraversabilityMapGeneratorVisualization::updateDataIntern(const vfh_star::G
 	}
     }
     Eigen::Vector3d pos(data.gridPositionX, data.gridPositionY, data.gridPositionZ);
-    std::cout << "Grid Pos " << pos.transpose() << std::endl;
     egrid.setGridPosition(pos);
     trgrid.setGridPosition(pos);
 

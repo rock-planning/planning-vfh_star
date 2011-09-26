@@ -258,14 +258,6 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     if (nodes.empty())
         return;
 
-    if (p->costMode == VFHTreeVisualization::SHOW_COST)
-        std::cerr << "vfh_viz: displaying cost" << std::endl;
-    else if (p->costMode == VFHTreeVisualization::SHOW_HEURISTICS)
-        std::cerr << "vfh_viz: displaying heuristic" << std::endl;
-    else if (p->costMode == VFHTreeVisualization::SHOW_BOTH)
-        std::cerr << "vfh_viz: displaying cost+heuristic" << std::endl;
-
-    std::cerr << "vfh_viz: " << p->data.getSize() << " nodes in tree" << std::endl;
     std::set<TreeNode const*> enabled_nodes;
     if (p->removeLeaves)
     {
@@ -290,7 +282,6 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     // Gets the mapping from cost to color
     double cost_a, cost_b;
     boost::tie(cost_a, cost_b) = computeColorMapping(enabled_nodes);
-    std::cerr << "vfh_viz: cost mapping " << cost_a << " " << cost_b << std::endl;
 
     geode->addDrawable(createTreeNode(enabled_nodes, cost_a, cost_b));
     if (p->data.getFinalNode())
