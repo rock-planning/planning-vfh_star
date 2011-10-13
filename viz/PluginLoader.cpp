@@ -3,16 +3,16 @@
 #include "VFHTreeVisualization.hpp"
 
 namespace vizkit {
-    class QtPluginVFHStar : public vizkit::VizkitQtPluginBase {
+    class QtPluginVFHStar : public vizkit::VizkitPluginFactory {
     public:
-        virtual QStringList getAvailablePlugins() const
+        virtual QStringList* getAvailablePlugins() const
         {
-            QStringList result;
-            result.push_back("TraversabilityMapGeneratorVisualization");
-            result.push_back("VFHTreeVisualization");
+            QStringList* result = new QStringList;
+            result->push_back("TraversabilityMapGeneratorVisualization");
+            result->push_back("VFHTreeVisualization");
             return result;
         }
-        virtual vizkit::VizPluginBase* createPlugin(QString const& name)
+        virtual QObject* createPlugin(QString const& name)
         {
             if (name == "TraversabilityMapGeneratorVisualization")
                 return new TraversabilityMapGeneratorVisualization;
