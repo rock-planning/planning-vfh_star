@@ -65,8 +65,6 @@ class TraversabilityMapGenerator
 	void markUnknownInRadiusAs(const base::Pose& pose, double radius, vfh_star::Traversability type);
 	void markUnknownInRectangeAs(const base::Pose& pose, double width, double height, double forwardOffset, Traversability type);
 
-	void filterLaserScan(std::vector< Eigen::Vector3d >& result,const base::samples::LaserScan& ls, const Eigen::Affine3d& filterFrame, const Eigen::Affine3d& resultFrame, const std::vector< Eigen::AlignedBox< double, 3 > >& maskedAreas);
-	
 	/**
 	* This function updates the TraversabilityGrid in respect to the given
 	* ElevationGrid.

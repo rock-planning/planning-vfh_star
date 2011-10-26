@@ -66,16 +66,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
 
     lastHeight = curHeight;
     
-    //filter out wheels
-    AlignedBox<double, 3> leftWheel(Vector3d(0.20, -0.25, -0.2), Vector3d(0.4, 0.25, 0.5));
-    AlignedBox<double, 3> rightWheel(Vector3d(-0.4, -0.25, -0.2), Vector3d(-0.20, 0.25, 0.5));
-    
-    std::vector<AlignedBox<double, 3> > maskedAreas;
-    maskedAreas.push_back(leftWheel);
-    maskedAreas.push_back(rightWheel);
-    
-    std::vector<Vector3d> currentLaserPoints;
-    filterLaserScan(currentLaserPoints, ls, laser2Body, laser2Odo, maskedAreas);
+    std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
     
     laserGrid.addLaserScan(currentLaserPoints);
     
@@ -88,74 +79,6 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     lastBody2Odo = body2Odo;
     lastLaser2Odo = laser2Odo;
     return true;
-}
-
-void TraversabilityMapGenerator::filterLaserScan(std::vector< Eigen::Vector3d>& result,const base::samples::LaserScan& ls, const Eigen::Affine3d& filterFrame, const Eigen::Affine3d& resultFrame, const std::vector<AlignedBox<double, 3> >& maskedAreas)
-{
-    std::vector<Eigen::Vector3d> pointCloud;
-    std::vector<bool> maskedPoints;
-
-    int lastRange = ls.ranges.at(0);
-    const int nrPoints = ls.ranges.size();
-
-    maskedPoints.resize(nrPoints);
-    
-    result.clear();
-
-    for(unsigned int i = 0; i < maskedPoints.size(); i++) {
-	maskedPoints[i] = false;
-    }
-    
-    for(unsigned int i = 0; i < ls.ranges.size(); i++) {
-	//this is a filter for false readings that do occur if one scannes over edgeds of objects
-	bool isMasked = abs(lastRange - ls.ranges[i]) > 30 && ls.ranges[i] < 1500;
-
-	lastRange = ls.ranges[i];
-
-	//convert reading to cartesian coordinates
-	Vector3d curPoint;
-	if(!ls.getPointFromScanBeam(i, curPoint))
-	    continue;
-	
-	//transform into filter frame
-	curPoint = filterFrame * curPoint;
-
-	//check for intersection with masked areas
-	for(std::vector<AlignedBox<double, 3> >::const_iterator it = maskedAreas.begin(); it != maskedAreas.end();it++)
-	{
-	    if(it->contains(curPoint))
-	    {
-		isMasked = true;
-		break;
-	    }
-	}
-
-	//second filter for ghost readings
-	if(isMasked) {
-	    //mask previous 5 and following 5 points
-	    for(int j = -5; j < 5; j++)
-	    {
-		if((i +j < 0) || (i+j > nrPoints))
-		{
-		    continue;
-		}
-		maskedPoints[i + j] = true;
-	    }
-	}
-    }
-
-    //create result from all valid readings
-    for(unsigned int i = 0; i < ls.ranges.size(); i++) {
-	if(maskedPoints[i]) {
-	    continue;
-	}
-	
-	Eigen::Vector3d point;
-	if(ls.getPointFromScanBeam(i, point)) {
-	    point = resultFrame * point;
-	    result.push_back(point);
-	}
-    }    
 }
 
 void TraversabilityMapGenerator::computeNewMap()
