@@ -184,6 +184,11 @@ class TreeSearch
 	* be if he would have driven towards the given direction.
 	* This method should take the robot driving constrains
 	* into account. 
+        *
+        * The boolean in the pair is true if a next pose existed given the
+        * provided parameters, and false otherwise. The distance between the
+        * returned pose and the curNode's pose must be UP TO \c distance, but
+        * can be lower in case of e.g. obstacles.
 	*/
 	virtual std::pair<base::Pose, bool> getProjectedPose(const TreeNode& curNode,
                 double heading,
