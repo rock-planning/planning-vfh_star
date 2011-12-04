@@ -11,5 +11,6 @@
   <license>LGPL v2 or later</license>
   <depend package="slam/envire" />
   <depend package="base/types" />
+  <depend package="gui/vizkit" optional="1" />
   <tags>needs_opt</tags>
 </package>
