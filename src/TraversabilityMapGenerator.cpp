@@ -68,6 +68,8 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     
     std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
     
+    laser2Map = laser2Odo;
+    
     laserGrid.addLaserScan(currentLaserPoints);
     
     //    std::cout << "GridMapSegmenter: Odometry distance : " << distanceBodyToLastBody << " Orientation change is " << orientationChange / M_PI * 180.0 << std::endl;

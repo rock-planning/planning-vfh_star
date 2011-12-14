@@ -60,6 +60,11 @@ class TraversabilityMapGenerator
 	
 	ConsistencyStats checkMapConsistencyInArea(const base::Pose& pose, double width, double height);
 	
+	
+	const Eigen::Affine3d & getLaser2Map() const {
+	    return laser2Map;
+	};
+	
     private:
 	
 	void markUnknownInRadiusAs(const base::Pose& pose, double radius, vfh_star::Traversability type);
@@ -97,6 +102,7 @@ class TraversabilityMapGenerator
 	ElevationGrid laserGrid;
 	ElevationGrid interpolatedGrid;
 	TraversabilityGrid traversabilityGrid;
+	Eigen::Affine3d laser2Map;
 	Eigen::Affine3d lastBody2Odo;
 	Eigen::Affine3d lastLaser2Odo;
 	double boundarySize;
