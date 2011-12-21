@@ -221,6 +221,8 @@ void ElevationGrid::addLaserScan(const std::vector< Eigen::Vector3d>& laserPoint
 	}
     }
     
+    if(binnedPoints.empty())
+	return;
     
     std::vector< binnedPoint >::const_iterator last_p = binnedPoints.begin();
     getEntry(last_p->gridPos).addHeightMeasurement(last_p->heightValue);
