@@ -9,6 +9,11 @@
 #include <base/pose.h>
 #include <stdint.h>
 
+namespace envire
+{
+    class MLSGrid;
+}
+
 namespace vfh_star {
 
 struct ConsistencyStats
@@ -60,6 +65,7 @@ class TraversabilityMapGenerator
 	
 	ConsistencyStats checkMapConsistencyInArea(const base::Pose& pose, double width, double height);
 	
+	void addKnowMap(envire::MLSGrid const *mls, const Eigen::Affine3d& mls2LaserGrid);
 	
 	const Eigen::Affine3d & getLaser2Map() const {
 	    return laser2Map;

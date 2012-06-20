@@ -1,7 +1,8 @@
 #include "TraversabilityMapGenerator.h"
 #include <Eigen/LU>
 #include <iostream>
- 
+#include <envire/maps/MLSGrid.hpp>
+
 using namespace Eigen;
 
 namespace vfh_star {
@@ -81,6 +82,36 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     lastBody2Odo = body2Odo;
     lastLaser2Odo = laser2Odo;
     return true;
+}
+
+void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Affine3d &mls2LaserGrid)
+{
+    for(unsigned int x = 0; x < mls->getCellSizeX(); x++)
+    {
+	for(unsigned int y = 0; y < mls->getCellSizeY(); y++)
+	{
+	    const Vector3d posMls(x,y,0);
+	    const Vector3d posLaserGrid = mls2LaserGrid * posMls;
+
+	    const Vector2i posLG(posLaserGrid.x(), posLaserGrid.y());
+	    
+	    if(laserGrid.inGrid(posLG))
+	    {
+		vfh_star::ElevationEntry &entry(laserGrid.getEntry(posLG));
+
+		if(!entry.getMeasurementCount())
+		{
+		    envire::MLSGrid::const_iterator cellIt = mls->beginCell(x, y);
+		    envire::MLSGrid::const_iterator cellEndIt = mls->endCell();
+		    
+		    for(; cellIt != cellEndIt; cellIt++)
+		    {
+			entry.addHeightMeasurement(cellIt->mean);
+		    }
+		}
+	    }
+	}
+    }
 }
 
 void TraversabilityMapGenerator::computeNewMap()
