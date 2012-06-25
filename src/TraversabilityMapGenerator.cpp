@@ -91,22 +91,32 @@ bool TraversabilityMapGenerator::moveMapIfRobotNearBoundary(const Eigen::Vector3
 
 void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Affine3d &mls2LaserGrid)
 {
-    for(unsigned int x = 0; x < mls->getCellSizeX(); x++)
+    const Eigen::Vector3d gridPos(laserGrid.getPosition());
+    const Affine3d laserGrid2mls(mls2LaserGrid.inverse());
+    
+    for(int x = 0; x < laserGrid.getWidth(); x++)
     {
-	for(unsigned int y = 0; y < mls->getCellSizeY(); y++)
+	for(int y = 0; y < laserGrid.getHeight(); y++)
 	{
-	    const Vector3d posMls(x,y,0);
-	    const Vector3d posLaserGrid = mls2LaserGrid * posMls;
-
-	    const Vector2i posLG(posLaserGrid.x(), posLaserGrid.y());
+	    Eigen::Vector3d posLaserGrid;
+	    Eigen::Vector2i posLG(x,y);
 	    
-	    if(laserGrid.inGrid(posLG))
+	    if(!laserGrid.fromGridPoint(posLG, posLaserGrid))
+	    {
+		std::cout << "WARNING point that should be in the grid is not in grid" <<std::endl;
+		continue;
+	    }
+	    const Eigen::Vector3d posMls = laserGrid2mls * posLaserGrid;
+
+	    size_t mlsX;
+	    size_t mlsY;
+	    if(mls->toGrid(posMls, mlsX, mlsY))
 	    {
 		vfh_star::ElevationEntry &entry(laserGrid.getEntry(posLG));
 
 		if(!entry.getMeasurementCount())
 		{
-		    envire::MLSGrid::const_iterator cellIt = mls->beginCell(x, y);
+		    envire::MLSGrid::const_iterator cellIt = mls->beginCell(mlsX, mlsY);
 		    envire::MLSGrid::const_iterator cellEndIt = mls->endCell();
 		    
 		    for(; cellIt != cellEndIt; cellIt++)
