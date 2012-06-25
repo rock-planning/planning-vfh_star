@@ -84,6 +84,11 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     return true;
 }
 
+bool TraversabilityMapGenerator::moveMapIfRobotNearBoundary(const Eigen::Vector3d& robotPosition_world)
+{
+    moveGridIfRobotNearBoundary(laserGrid, robotPosition_world);
+}
+
 void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Affine3d &mls2LaserGrid)
 {
     for(unsigned int x = 0; x < mls->getCellSizeX(); x++)

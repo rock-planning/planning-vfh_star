@@ -32,7 +32,13 @@ class TraversabilityMapGenerator
 	TraversabilityMapGenerator();
 		
 	bool addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo, const Eigen::Affine3d& laser2Body);
-	
+
+	/**
+	* This function test if the robot is near the outer bound of
+	* the map and moves the map if needed.
+	**/
+	bool moveMapIfRobotNearBoundary(const Eigen::Vector3d& robotPosition_world);
+
 	void getGridDump(GridDump &gd) const;
 	
 	const TraversabilityGrid &getTraversabilityMap() const 
@@ -77,6 +83,12 @@ class TraversabilityMapGenerator
 	void markUnknownInRectangeAs(const base::Pose& pose, double width, double height, double forwardOffset, Traversability type);
 
 	/**
+	* This function test if the robot is near the outer bound of
+	* the grid and if the grid needs to be moved.
+	**/
+	bool moveGridIfRobotNearBoundary(ElevationGrid& grid, const Eigen::Vector3d& robotPosition_world);
+
+	/**
 	* This function updates the TraversabilityGrid in respect to the given
 	* ElevationGrid.
 	**/
@@ -98,12 +110,6 @@ class TraversabilityMapGenerator
 	* and sets the traversibillity of the cell p in the TraversabilityGrid
 	**/
 	void testNeighbourEntry(Eigen::Vector2i p, const ElevationGrid &elGrid, TraversabilityGrid &trGrid);
-
-	/**
-	* This function test if the robot is near the outer bound of
-	* the grid and thus the grid need to be moved
-	**/
-	bool moveGridIfRobotNearBoundary(ElevationGrid& grid, const Eigen::Vector3d& robotPosition_world);
 
 	ElevationGrid laserGrid;
 	ElevationGrid interpolatedGrid;
