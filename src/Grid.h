@@ -14,11 +14,11 @@ class Grid
 	}
 	
 	bool inGrid(const Eigen::Vector2i &p) const {
-	    return p.x() > 0 && p.x() < gridWidth && p.y() > 0 && p.y() < gridHeight;
+	    return p.x() >= 0 && p.x() < gridWidth && p.y() >= 0 && p.y() < gridHeight;
 	}
 
 	bool inGrid(const int x, const int y) const {
-	    return x > 0 && x < gridWidth && y > 0 && y < gridHeight;
+	    return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
 	}
 
 	/**
