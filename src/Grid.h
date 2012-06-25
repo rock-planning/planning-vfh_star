@@ -21,6 +21,15 @@ class Grid
 	    return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
 	}
 
+	bool fromGridPoint(const Eigen::Vector2i& p_grid, Eigen::Vector3d& p_world) const {
+	    if(!inGrid(p_grid))
+		return false;
+	    
+	    Eigen::Vector3d origin2Pos((p_grid.x() - gridOriginX) * gridResolution, (p_grid.y() - gridOriginY) * gridResolution, 0);
+	    p_world = gridPosition + origin2Pos;
+	    return true;	    
+	}
+	
 	/**
 	* This function returns a 2d point in the grid coresponding to the given 
 	* 3d point in world coordinates. 
