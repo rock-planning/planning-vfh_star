@@ -3,6 +3,7 @@
 #include <map>
 #include <stdexcept>
 #include <iostream>
+#include <base/angle.h>
 
 using namespace vfh_star;
 
@@ -303,6 +304,16 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     return 0;
 }
 
+std::vector< base::Trajectory > TreeSearch::getTrajectories(const base::Pose& start)
+{
+    TreeNode const* curNode = compute(start);
+    if (curNode)
+        return tree.buildTrajectoriesTo(curNode);
+    else
+        return std::vector<base::Trajectory>();
+}
+
+
 std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
 {
     TreeNode const* curNode = compute(start);
@@ -376,6 +387,72 @@ Tree& Tree::operator = (Tree const& other)
     if (other.getFinalNode())
         setFinalNode(node_map[other.getFinalNode()]);
     return *this;
+}
+
+std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNode* node) const
+{    
+    std::vector<const vfh_star::TreeNode *> nodes;
+    const vfh_star::TreeNode* nodeTmp = node;
+    int size = node->getDepth() + 1;
+    for (int i = 0; i < size; ++i)
+    {
+	nodes.insert(nodes.begin(), nodeTmp);
+	if (nodeTmp->isRoot() && i != size - 1)
+            throw std::runtime_error("internal error in buildTrajectoryTo: found a root node even though the trajectory is not finished");
+	nodeTmp = nodeTmp->getParent();
+    }    
+    
+    std::vector<base::Trajectory> result;
+    //reserve space for the worst case
+    result.reserve(size);
+
+    base::Angle posDir = base::Angle::fromRad (nodes.front()->getPose().getYaw());
+    base::Angle nodeDir = base::Angle::fromRad(nodes.front()->getDirection());
+
+    bool lastDirection = fabs((posDir - nodeDir).rad) < 4.0/5.0 * M_PI;
+//     std::cout << "Lastdirection is " << lastDirection << std::endl;
+    std::vector<base::Vector3d> as_points;
+ 
+    for(std::vector<const vfh_star::TreeNode *>::const_iterator it = nodes.begin();it != nodes.end(); it++)
+    {
+	const vfh_star::TreeNode *node = *it;
+// 	posDir = base::Angle::fromRad 
+	bool curDirection = fabs((base::Angle::fromRad(node->getPose().getYaw()) - base::Angle::fromRad(node->getDirection())).rad) < 4.0/5.0 * M_PI;
+// 	std::cout << "Pose is " << node->getPose().position.transpose() << " yaw " << node->getPose().getYaw() << " dir " << node->getDirection() <<  std::endl;
+	//check if direction changed
+	if(lastDirection != curDirection)
+	{
+// 	    std::cout << "Direction change detected " << lastDirection << " " << curDirection << std::endl;
+	    base::Trajectory tr;
+	    if(lastDirection)
+		//forward
+		tr.speed = 1.0;
+	    else
+		tr.speed = -1.0;
+		
+	    tr.spline.interpolate(as_points);
+	    
+	    result.push_back(tr);
+	}
+
+        base::Pose p = node->getPose();
+	as_points.push_back(p.position);
+
+	lastDirection = curDirection;
+    }
+
+    base::Trajectory tr;
+    if(lastDirection)
+	//forward
+	tr.speed = 1.0;
+    else
+	//backwards
+	tr.speed = -1.0;
+	
+    tr.spline.interpolate(as_points);
+    result.push_back(tr);
+
+    return result;
 }
 
 std::vector<base::Waypoint> Tree::buildTrajectoryTo(TreeNode const* node) const
