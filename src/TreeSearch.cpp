@@ -572,7 +572,7 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
     double actual_cost = node->getCost();
     while (!node->isRoot())
     {
-        if (node->getHeuristicCost() > actual_cost)
+        if (node->getHeuristicCost() > actual_cost && fabs(node->getHeuristicCost() - actual_cost) > 0.0001)
         {
             base::Position p = node->getPose().position;
             std::cerr << "found invalid heuristic cost\n"
