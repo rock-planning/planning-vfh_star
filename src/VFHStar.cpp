@@ -46,7 +46,7 @@ std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, doubl
     return TreeSearch::getWaypoints(start);
 }
 
-std::vector< base::Trajectory > VFHStar::getTrajectories(const base::Pose& start, double mainHeading, double horizon)
+std::vector< base::Trajectory > VFHStar::getTrajectories(const base::Pose& start, double mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
 {
     this->mainHeading = mainHeading;
 
@@ -64,7 +64,7 @@ std::vector< base::Trajectory > VFHStar::getTrajectories(const base::Pose& start
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
     std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
     
-    return TreeSearch::getTrajectories(start);
+    return TreeSearch::getTrajectories(start, body2Trajectory);
 }
 
 double VFHStar::algebraicDistanceToGoalLine(const base::Position& pos) const

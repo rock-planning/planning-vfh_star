@@ -304,11 +304,11 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     return 0;
 }
 
-std::vector< base::Trajectory > TreeSearch::getTrajectories(const base::Pose& start)
+std::vector< base::Trajectory > TreeSearch::getTrajectories(const base::Pose& start, const Eigen::Affine3d &body2Trajectory)
 {
     TreeNode const* curNode = compute(start);
     if (curNode)
-        return tree.buildTrajectoriesTo(curNode);
+        return tree.buildTrajectoriesTo(curNode, body2Trajectory);
     else
         return std::vector<base::Trajectory>();
 }
@@ -389,7 +389,7 @@ Tree& Tree::operator = (Tree const& other)
     return *this;
 }
 
-std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNode* node) const
+std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNode* node, const Eigen::Affine3d &body2Trajectory) const
 {    
     std::vector<const vfh_star::TreeNode *> nodes;
     const vfh_star::TreeNode* nodeTmp = node;
@@ -403,15 +403,14 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNo
     }    
     
     std::vector<base::Trajectory> result;
-    //reserve space for the worst case
-    result.reserve(size);
-
 	
     std::vector<const vfh_star::TreeNode *>::const_iterator it = nodes.begin();
     std::vector<base::Vector3d> as_points;
     if(!nodes.empty())
     {
-	as_points.push_back((*it)->getPose().position);
+	const Eigen::Affine3d body2Planner((*it)->getPose().toTransform());
+	const Eigen::Affine3d trajectory2Planner(body2Planner * body2Trajectory.inverse());
+	as_points.push_back((trajectory2Planner * Eigen::Vector3d(0,0,0)));
 	it++;
     }
     
@@ -439,8 +438,9 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNo
 	    result.push_back(tr);
 	}
 
-        base::Pose p = curNode->getPose();
-	as_points.push_back(p.position);
+	const Eigen::Affine3d body2Planner((*it)->getPose().toTransform());
+	const Eigen::Affine3d trajectory2Planner(body2Planner * body2Trajectory.inverse());
+	as_points.push_back((trajectory2Planner * Eigen::Vector3d(0,0,0)));
 
 	lastNodeIsForward = curNodeIsForward;
     }

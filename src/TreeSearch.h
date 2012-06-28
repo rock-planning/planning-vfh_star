@@ -84,7 +84,7 @@ class Tree
 	TreeNode *getRootNode();
 
         std::vector<base::Waypoint> buildTrajectoryTo(TreeNode const* leaf) const;
-        std::vector<base::Trajectory> buildTrajectoriesTo(TreeNode const* leaf) const;
+        std::vector<base::Trajectory> buildTrajectoriesTo(TreeNode const* leaf, const Eigen::Affine3d &body2Trajectory) const;
 
         int getSize() const;
         void clear();
@@ -135,7 +135,7 @@ class TreeSearch
 	 * Generates set of output trajectories. Each trajectectorie has a
 	 * different drive direction.
          */
-        std::vector< base::Trajectory > getTrajectories(const base::Pose& start);
+        std::vector< base::Trajectory > getTrajectories(const base::Pose& start, const Eigen::Affine3d &body2Trajectory);
 
         /** Computes the optimal path as a set of waypoints
          */

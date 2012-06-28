@@ -11,7 +11,7 @@ class VFHStar : public TreeSearch
 
         std::vector<base::Waypoint> getWaypoints(base::Pose const& start, double mainHeading, double horizon);
         base::geometry::Spline<3> getTrajectory(base::Pose const& start, double mainHeading, double horizon);
-        std::vector<base::Trajectory> getTrajectories(base::Pose const& start, double mainHeading, double horizon);
+        std::vector<base::Trajectory> getTrajectories(base::Pose const& start, double mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory);
 
         void setCostConf(const VFHStarConf& config);
         const VFHStarConf& getCostConf() const;
