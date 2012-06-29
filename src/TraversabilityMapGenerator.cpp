@@ -121,7 +121,7 @@ void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Af
 		    
 		    for(; cellIt != cellEndIt; cellIt++)
 		    {
-			entry.addHeightMeasurement(cellIt->mean);
+			entry.addHeightMeasurement(cellIt->mean + mls2LaserGrid.translation().z());
 		    }
 		}
 	    }
