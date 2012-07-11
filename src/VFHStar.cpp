@@ -27,26 +27,17 @@ base::geometry::Spline<3> VFHStar::getTrajectory(base::Pose const& start, double
 
 std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, double mainHeading, double horizon)
 {
-    this->mainHeading = mainHeading;
-
-    // Used for heuristics
-    this->targetLineNormal =
-        Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitY();
-    this->targetLinePoint  =
-        start.position + targetLineNormal * horizon;
-	
-    this->targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitX();
-
-    targetLineNormal +=  Vector3d(0, 0, start.position.z());
-    
-    std::cout << "target:" << std::endl;
-    std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
-    std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
-
-    return TreeSearch::getWaypoints(start);
+    const TreeNode *node = computePath(start, mainHeading, horizon, Affine3d::Identity());
+    return tree.buildTrajectoryTo(node);
 }
 
 std::vector< base::Trajectory > VFHStar::getTrajectories(const base::Pose& start, double mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
+{
+    const TreeNode *node = computePath(start, mainHeading, horizon, body2Trajectory);
+    return tree.buildTrajectoriesTo(node, body2Trajectory);
+}
+
+const TreeNode* VFHStar::computePath(base::Pose const& start, double mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
 {
     this->mainHeading = mainHeading;
 
@@ -64,9 +55,9 @@ std::vector< base::Trajectory > VFHStar::getTrajectories(const base::Pose& start
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
     std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
     
-    return TreeSearch::getTrajectories(start, body2Trajectory);
+    return compute(start);
 }
-
+	
 double VFHStar::algebraicDistanceToGoalLine(const base::Position& pos) const
 {
     //check weather we crossed the target line;

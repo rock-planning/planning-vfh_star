@@ -304,16 +304,6 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     return 0;
 }
 
-std::vector< base::Trajectory > TreeSearch::getTrajectories(const base::Pose& start, const Eigen::Affine3d &body2Trajectory)
-{
-    TreeNode const* curNode = compute(start);
-    if (curNode)
-        return tree.buildTrajectoriesTo(curNode, body2Trajectory);
-    else
-        return std::vector<base::Trajectory>();
-}
-
-
 std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
 {
     TreeNode const* curNode = compute(start);
@@ -389,8 +379,8 @@ Tree& Tree::operator = (Tree const& other)
     return *this;
 }
 
-std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNode* node, const Eigen::Affine3d &body2Trajectory) const
-{    
+std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNode* node, const Eigen::Affine3d& body2Trajectory) const
+{
     std::vector<const vfh_star::TreeNode *> nodes;
     const vfh_star::TreeNode* nodeTmp = node;
     int size = node->getDepth() + 1;
@@ -401,7 +391,12 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNo
             throw std::runtime_error("internal error in buildTrajectoryTo: found a root node even though the trajectory is not finished");
 	nodeTmp = nodeTmp->getParent();
     }    
-    
+
+    return buildTrajectoriesTo(nodes, body2Trajectory);
+}
+
+std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_star::TreeNode *> nodes, const Eigen::Affine3d &body2Trajectory) const
+{    
     std::vector<base::Trajectory> result;
 	
     std::vector<const vfh_star::TreeNode *>::const_iterator it = nodes.begin();
