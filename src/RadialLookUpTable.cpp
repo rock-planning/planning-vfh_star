@@ -8,12 +8,13 @@ RadialLookUpTable::RadialLookUpTable() : numElementsPerLine(0), distanceTable(0)
 
 void RadialLookUpTable::computeDistances(double scale, double maxRadius)
 {
-    if(this->scale == scale && this->maxRadius == maxRadius && numElementsPerLine == maxRadius / scale)
+    if(this->scale == scale && this->maxRadius == maxRadius)
 	return;
     
     this->maxRadius = maxRadius;
     this->scale = scale;
-    numElementsPerLine = maxRadius / scale;
+    numElementsPerLine = maxRadius / scale * 2;
+    numElementsPerLineHalf = maxRadius / scale;
     
     if(distanceTable)
 	delete[] distanceTable;
@@ -23,16 +24,18 @@ void RadialLookUpTable::computeDistances(double scale, double maxRadius)
     {
 	for(int x = 0; x < numElementsPerLine;x++)
 	{
-	    const double xd = x * scale;
-	    const double yd = y * scale;
+	    const double xd = (x - numElementsPerLineHalf) * scale;
+	    const double yd = (y - numElementsPerLineHalf) * scale;
 	    distanceTable[numElementsPerLine * y + x] = sqrt(xd*xd + yd*yd);
 	}
     }
 }
 
 
-const double &RadialLookUpTable::getDistance(unsigned int x, unsigned int y) const
+const double &RadialLookUpTable::getDistance(int x, int y) const
 {
-    return distanceTable[numElementsPerLine * y + x];
+    unsigned int xd = x + numElementsPerLineHalf;
+    unsigned int yd = y + numElementsPerLineHalf;
+    return distanceTable[numElementsPerLine * yd + xd];
 }
 
