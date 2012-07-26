@@ -43,8 +43,10 @@ void VFH::setNewTraversabilityGrid(const envire::Grid< Traversability >* trGrid)
 {
     traversabillityGrid = trGrid;
     
+    assert(traversabillityGrid->getScaleX() == traversabillityGrid->getScaleY());
+    
     //precompute distances
-    lut.computeDistances(traversabillityGrid->getScaleX(), 5.0);
+    lut.recompute(traversabillityGrid->getScaleX(), 5.0);
     
 }
 
@@ -343,7 +345,7 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 		    throw std::runtime_error("Accessed cell outside of grid");
 		}
 		
-		double angleToObstace = atan2(y, x);
+		double angleToObstace = lut.getAngle(x, y); // atan2(y, x);
 		
 		//convert to ENU
 		angleToObstace -= M_PI / 2.0;

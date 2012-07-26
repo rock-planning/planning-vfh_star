@@ -8,13 +8,18 @@ public:
     RadialLookUpTable();
     
     const double& getDistance(int x, int y) const;
-    void computeDistances(double scale, double maxRadius);    
-private:
+    const double& getAngle(int x, int y) const;
     
+    void recompute(double scale, double maxRadius);
+    
+private:
+    void computeDistances();
+    void computeAngles();
     
     int numElementsPerLine;
     int numElementsPerLineHalf;
     double *distanceTable;
+    double *angleTable;
     double scale;
     double maxRadius;
 };
