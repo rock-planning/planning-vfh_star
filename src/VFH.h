@@ -5,6 +5,7 @@
 #include "TraversabilityGrid.h"
 #include <vector>
 #include <base/pose.h>
+#include "RadialLookUpTable.hpp"
 
 #include "Types.h"
 
@@ -87,7 +88,7 @@ namespace vfh_star
                 double senseRadius, double obstacleSafetyDist, double robotRadius) const;
 
         void getBinaryHistogram(const std::vector< double > &histogram, std::vector< bool > &binHistogram, double lowThreshold, double highThreshold) const;
-
+	RadialLookUpTable lut;
         const envire::Grid<Traversability> *traversabillityGrid;
 
         bool debugActive;

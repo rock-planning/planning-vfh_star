@@ -42,6 +42,10 @@ void addDir(std::vector< std::pair<double, double> > &drivableDirections, double
 void VFH::setNewTraversabilityGrid(const envire::Grid< Traversability >* trGrid)
 {
     traversabillityGrid = trGrid;
+    
+    //precompute distances
+    lut.computeDistances(traversabillityGrid->getScaleX(), 5.0);
+    
 }
 
 std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
@@ -150,13 +154,11 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
 
     int localSenseSize = robotWidth / 2.0 / traversabillityGrid->getScaleX();
 
-    for(int x = -localSenseSize; x <= localSenseSize; x++)
+    for(int y = -localSenseSize; y <= localSenseSize; y++)
     {
-	for(int y = -localSenseSize; y <= localSenseSize; y++)
+	for(int x = -localSenseSize; x <= localSenseSize; x++)
 	{
-	    const double xd = x * traversabillityGrid->getScaleX();
-	    const double yd = y * traversabillityGrid->getScaleY();
-	    double distToRobot = sqrt(xd*xd + yd*yd);
+	    double distToRobot = lut.getDistance(x, y);
 	    
 	    //check if outside circle
 	    if(distToRobot > robotWidth)
@@ -213,13 +215,11 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 
     int localSenseSize = (innerRadius + outerRadius) / traversabillityGrid->getScaleX();
 
-    for(int x = -localSenseSize; x <= localSenseSize; x++)
+    for(int y = -localSenseSize; y <= localSenseSize; y++)
     {
-	for(int y = -localSenseSize; y <= localSenseSize; y++)
+	for(int x = -localSenseSize; x <= localSenseSize; x++)
 	{
-	    const double xd = x * traversabillityGrid->getScaleX();
-	    const double yd = y * traversabillityGrid->getScaleY();
-	    double distToRobot = sqrt(xd*xd + yd*yd);
+	    double distToRobot = lut.getDistance(x, y);
 	    
 	    //check if outside circle
 	    if(distToRobot > innerRadius + outerRadius)
@@ -316,13 +316,11 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
     }*/
     
     //walk over area of grid within of circle with radius senseRadius around the robot
-    for(int x = -senseSize; x <= senseSize; x++)
+    for(int y = -senseSize; y <= senseSize; y++)
     {
-	for(int y = -senseSize; y <= senseSize; y++)
+	for(int x = -senseSize; x <= senseSize; x++)
 	{
-	    const double xd = x * traversabillityGrid->getScaleX();
-	    const double yd = y * traversabillityGrid->getScaleY();
-	    double distToRobot = sqrt(xd*xd + yd*yd);
+	    double distToRobot = lut.getDistance(x, y);
 	    
 	    //check if outside circle
 	    if(distToRobot > senseRadius)
