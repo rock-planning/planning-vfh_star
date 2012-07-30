@@ -184,7 +184,6 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             break;
         }
 
-        base::Position p = curNode->getPose().position;
         if (max_depth > 0 && tree.getSize() > max_depth)
             continue;
 
