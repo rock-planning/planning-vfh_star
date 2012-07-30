@@ -25,10 +25,16 @@ namespace vfh_star
         double robotWidth; //! the radius of the circle used to model the robot
 
 	/** if two nodes are below this threshhold in position
-	 * and 'parralletity' they are considered the same
-	 * and one get's removed
+	 * and are pointing in the same direction, they are 
+	 * considered the same and one get's removed
 	 * */
-	double identityThreshold;
+	double identityPositionThreshold;
+	/**
+	 * Maximum yaw diviantion of two node for identitiy check
+	 * */
+	double identityYawThreshold;
+	
+	
 
 	/**
 	 * Max height of step between two cells in height map,

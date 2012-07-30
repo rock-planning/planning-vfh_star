@@ -16,7 +16,8 @@ TreeSearchConf::TreeSearchConf()
     , discountFactor(1.0)
     , obstacleSafetyDistance(0.1)
     , robotWidth(0.5)
-    , identityThreshold(-1),
+    , identityPositionThreshold(-1)
+    , identityYawThreshold(-1),
     maxStepSize(0)
     {}
 
@@ -27,10 +28,16 @@ TreeSearch::TreeSearch()
 void TreeSearch::setSearchConf(const TreeSearchConf& conf)
 {
     this->search_conf = conf;
-    if(search_conf.identityThreshold < 0)
+    if(search_conf.identityPositionThreshold < 0)
     {
-	search_conf.identityThreshold = search_conf.stepDistance / 5.0;
+	search_conf.identityPositionThreshold = search_conf.stepDistance / 5.0;
     }
+    
+    if(search_conf.identityYawThreshold < 0)
+    {
+	search_conf.identityYawThreshold = 3.0 * 180.0 / M_PI;
+    }
+
 }
 
 const TreeSearchConf& TreeSearch::getSearchConf() const
@@ -225,12 +232,14 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             //
             // searchNode should be used only here !
             TreeNode searchNode(projected.first, curDirection);
-            const double identity_threshold = search_conf.identityThreshold;
+            const double identity_pos_threshold = search_conf.identityPositionThreshold;
+            const double identity_yaw_threshold = search_conf.identityYawThreshold;
 	    
 	    std::vector<const TreeNode*> nearNodes;
-	    kdtree.find_within_range(&searchNode, identity_threshold, std::back_insert_iterator<std::vector<const TreeNode* > >(nearNodes));	
+	    kdtree.find_within_range(&searchNode, identity_pos_threshold, std::back_insert_iterator<std::vector<const TreeNode* > >(nearNodes));	
 
-	    bool foundBetterNode = false;	    
+	    bool foundBetterNode = false;
+	    base::Angle curYaw = base::Angle::fromRad(projected.first.getYaw());
             for(std::vector<const TreeNode*>::iterator nearNode = nearNodes.begin(); nearNode != nearNodes.end(); nearNode++)
 	    {		
                 TreeNode const* closest_node   = *nearNode;
@@ -238,18 +247,16 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                 {
                     // The existing node is better than this one from a cost
                     // point of view. Check that the direction is also the same
-                    TreeNode const* closest_parent = closest_node->getParent();
-                    double parent_d = (closest_parent->getPose().position - curNode->getPose().position).norm();
-                    if (parent_d < identity_threshold)
+                    base::Angle closestNodeYaw = base::Angle::fromRad(closest_node->getPose().getYaw());
+		    if(fabs((curYaw - closestNodeYaw).rad) < identity_yaw_threshold)
 		    {
 			foundBetterNode = true;
 		    }
                 }
                 else if (closest_node->candidate_it != expandCandidates.end())
                 {
-                    TreeNode const* closest_parent = closest_node->getParent();
-                    double parent_d = (closest_parent->getPose().position - curNode->getPose().position).norm();
-                    if (parent_d < identity_threshold)
+                    base::Angle closestNodeYaw = base::Angle::fromRad(closest_node->getPose().getYaw());
+		    if(fabs((curYaw - closestNodeYaw).rad) < identity_yaw_threshold)
                     {
                         // The existing node is worse than this one, but we are
                         // lucky: the node has not been expanded yet. Just remove it
