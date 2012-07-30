@@ -407,18 +407,22 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_
 	
     std::vector<const vfh_star::TreeNode *>::const_iterator it = nodes.begin();
     std::vector<base::Vector3d> as_points;
+    
+    base::Angle posDir;
+    base::Angle nodeDir;
+    bool lastNodeIsForward = true;
     if(!nodes.empty())
     {
+	posDir = base::Angle::fromRad ((*it)->getPose().getYaw());
+	nodeDir = base::Angle::fromRad((*it)->getDirection());
+	lastNodeIsForward = fabs((posDir - nodeDir).rad) < 4.0/5.0 * M_PI;
+
 	const Eigen::Affine3d body2Planner((*it)->getPose().toTransform());
 	const Eigen::Affine3d trajectory2Planner(body2Planner * body2Trajectory.inverse());
 	as_points.push_back((trajectory2Planner * Eigen::Vector3d(0,0,0)));
 	it++;
-    }
-    
-    base::Angle posDir = base::Angle::fromRad ((*it)->getPose().getYaw());
-    base::Angle nodeDir = base::Angle::fromRad((*it)->getDirection());
 
-    bool lastNodeIsForward = fabs((posDir - nodeDir).rad) < 4.0/5.0 * M_PI;
+    }
  
     for(;it != nodes.end(); it++)
     {
