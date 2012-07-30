@@ -234,7 +234,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             for(std::vector<const TreeNode*>::iterator nearNode = nearNodes.begin(); nearNode != nearNodes.end(); nearNode++)
 	    {		
                 TreeNode const* closest_node   = *nearNode;
-                if (closest_node->getCost() <= nodeCost)
+                if (closest_node->getCost() <= nodeCost + curNode->getCost())
                 {
                     // The existing node is better than this one from a cost
                     // point of view. Check that the direction is also the same
