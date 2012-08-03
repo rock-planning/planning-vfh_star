@@ -405,6 +405,9 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_
 {    
     std::vector<base::Trajectory> result;
 	
+    if(nodes.empty())
+	return result;
+    
     std::vector<const vfh_star::TreeNode *>::const_iterator it = nodes.begin();
     std::vector<base::Vector3d> as_points;
     
