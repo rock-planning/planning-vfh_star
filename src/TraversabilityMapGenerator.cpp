@@ -399,7 +399,7 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 
 			if(!entry.getMeasurementCount())
 			{
-			    entry.addHeightMeasurement(0);
+			    entry.addHeightMeasurement(pose.position.z());
 			}
 		    }
 		}
