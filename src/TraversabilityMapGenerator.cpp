@@ -26,21 +26,15 @@ void TraversabilityMapGenerator::setMaxStepSize(double size)
     maxStepSize = size;
 }
 
-bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo2, const Eigen::Affine3d& laser2Body)
+bool TraversabilityMapGenerator::getZCorrection(Eigen::Affine3d& body2Odo)
 {
-    Eigen::Affine3d body2Odo(body2Odo2);
-//     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
-
-    moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
-    
     //correct body2Odo z measurement
     Vector2i pInGrid;
     if(!laserGrid.getGridPoint(body2Odo.translation(), pInGrid))
     {
-	std::cout << "Odometry position not in Grid" <<std::endl;
-	throw std::runtime_error("Odometry position not in Grid");
+	return false;
     }
-    
+
     const ElevationEntry entry(laserGrid.getEntry(pInGrid));
 
     double curHeight;
@@ -52,7 +46,28 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     
     Vector3d vecToGround = body2Odo.rotation() * Vector3d(0,0, 0.18);
     
-     body2Odo.translation().z() = curHeight + vecToGround.z();
+    body2Odo.translation().z() = curHeight + vecToGround.z();
+    
+    lastHeight = curHeight;
+
+    return true;
+}
+
+
+bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo2, const Eigen::Affine3d& laser2Body)
+{
+    Eigen::Affine3d body2Odo(body2Odo2);
+//     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
+
+    moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
+    
+    //correct body2Odo z measurement
+    Vector2i pInGrid;
+    if(!getZCorrection(body2Odo))
+    {
+	std::cout << "Odometry position not in Grid" <<std::endl;
+	throw std::runtime_error("Odometry position not in Grid");
+    }
     
     Affine3d laser2Odo(body2Odo * laser2Body);
     Affine3d  body2LastBody(lastBody2Odo.inverse() * body2Odo);
@@ -64,9 +79,6 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     YlastLaser2Odo.normalize();
     double laserChange = acos(Ylaser2Odo.dot(YlastLaser2Odo));
 
-
-    lastHeight = curHeight;
-    
     std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
     
     laser2Map = laser2Odo;
@@ -86,7 +98,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
 
 bool TraversabilityMapGenerator::moveMapIfRobotNearBoundary(const Eigen::Vector3d& robotPosition_world)
 {
-    moveGridIfRobotNearBoundary(laserGrid, robotPosition_world);
+    return moveGridIfRobotNearBoundary(laserGrid, robotPosition_world);
 }
 
 void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Affine3d &mls2LaserGrid)

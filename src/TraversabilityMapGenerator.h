@@ -31,6 +31,8 @@ class TraversabilityMapGenerator
 
 	TraversabilityMapGenerator();
 		
+	bool getZCorrection(Eigen::Affine3d& body2Odo);
+	
 	bool addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo, const Eigen::Affine3d& laser2Body);
 
 	/**
