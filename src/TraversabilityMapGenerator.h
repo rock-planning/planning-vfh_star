@@ -122,6 +122,8 @@ class TraversabilityMapGenerator
 	double boundarySize;
 	double maxStepSize;
 	double lastHeight;
+	//height from bodyFrame to ground
+	double heightToGround;
 };
 
 }

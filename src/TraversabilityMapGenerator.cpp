@@ -14,6 +14,7 @@ TraversabilityMapGenerator::TraversabilityMapGenerator()
     lastBody2Odo = Affine3d::Identity();
     lastLaser2Odo = Affine3d::Identity();
     lastHeight = 0.0;
+    heightToGround = 0.18;
 }
 
 void TraversabilityMapGenerator::setBoundarySize(double size)
@@ -44,7 +45,7 @@ bool TraversabilityMapGenerator::getZCorrection(Eigen::Affine3d& body2Odo)
     else
 	curHeight = lastHeight;
     
-    Vector3d vecToGround = body2Odo.rotation() * Vector3d(0,0, 0.18);
+    Vector3d vecToGround = body2Odo.rotation() * Vector3d(0,0, heightToGround);
     
     body2Odo.translation().z() = curHeight + vecToGround.z();
     
@@ -379,7 +380,9 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 {
     double heading = pose.orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
     AngleAxisd rot = AngleAxisd(heading, Vector3d::UnitZ());
-    
+
+    Vector3d vecToGround = pose.orientation * Vector3d(0,0, heightToGround);
+
     for(double x = -width / 2.0; x <= (width / 2.0); x += 0.03)
     {
 	for(double y = -height / 2.0; y <= (height / 2.0 + forwardOffset); y += 0.03)
@@ -399,7 +402,7 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 
 			if(!entry.getMeasurementCount())
 			{
-			    entry.addHeightMeasurement(pose.position.z());
+			    entry.addHeightMeasurement(pose.position.z() - vecToGround.z());
 			}
 		    }
 		}
