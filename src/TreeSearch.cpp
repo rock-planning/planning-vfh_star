@@ -518,6 +518,7 @@ TreeNode* Tree::createNode(base::Pose const& pose, double dir)
 
     TreeNode* n = &nodes.back();
     n->pose = pose;
+    n->yaw = pose.getYaw();
     n->direction = dir;
     n->parent = n;
     n->index  = size;
@@ -590,7 +591,7 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
         std::cerr << "WARN: the chosen heuristic does not seem to be a minorant" << std::endl;
 }
 
-TreeNode::TreeNode(): parent(this), direction(0), cost(0), heuristic(0), depth(0), index(0), updated_cost(false), positionTolerance(0), headingTolerance(0)
+TreeNode::TreeNode(): parent(this), is_leaf(true), direction(0), cost(0), heuristic(0), depth(0), index(0), updated_cost(false), positionTolerance(0), headingTolerance(0)
 {
 
 }
@@ -599,6 +600,7 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
     : parent(this)
     , is_leaf(true)
     , pose(pose)
+    , yaw(pose.getYaw())
     , direction(dir)
     , cost(0)
     , heuristic(0)
@@ -611,6 +613,15 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
 
 }
 
+const base::Vector3d TreeNode::getPosition() const
+{
+    return pose.position;
+}
+
+double TreeNode::getYaw() const
+{
+    return yaw;
+}
 
 double TreeNode::getHeuristic() const
 {

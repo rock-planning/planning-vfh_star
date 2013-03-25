@@ -32,6 +32,9 @@ class TreeNode
 	double getDirection() const;
 	int getDepth() const;
 
+	double getYaw() const;
+	const base::Vector3d getPosition() const;
+	
         int getIndex() const;
 
 	double getCost() const;
@@ -53,9 +56,15 @@ class TreeNode
 	///because of kinematic constrains of the robot
 	base::Pose pose;
 
+	double yaw;
+	
 	///direction, that was choosen, that lead to this node
 	double direction;
+	
+	///cost from start to this node
 	double cost;
+	
+	///heuristic from node to goal
 	double heuristic;
 	int depth;
         int index;
