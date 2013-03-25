@@ -16,15 +16,42 @@
 namespace vfh_star {
 
 class TreeNode;
-    
+class NNLookupBox;
+
 class NNLookup
 {
 public:
-    NNLookup(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d &centerPos);
+    NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta);
+    ~NNLookup();
+    TreeNode *getNodeWithinBounds(const TreeNode &node);
+    void clearIfSame(const TreeNode *node);
+    void setNode(TreeNode *node);
+    void clear();
+    
+private:
+    bool getIndex(const TreeNode &node,  int& x, int& y);
+    void extendGlobalGrid(int newSize);
+    int curSize;
+    int curSizeHalf;
+
+    double boxSize;
+    double boxResolutionXY;
+    double boxResolutionTheta;
+
+    std::vector<std::vector<NNLookupBox *> > globalGrid;
+    std::list<NNLookupBox *> usedBoxes;
+    std::list<NNLookupBox *> freeBoxes;
+};
+
+class NNLookupBox
+{
+public:
+    NNLookupBox(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d &centerPos);
     TreeNode *getNearestNode(const TreeNode &node);
     void clearIfSame(const TreeNode *node);
     void setNode(TreeNode *node);
     void clear();
+    void setNewPosition(const Eigen::Vector3d &centerPos);
     
 private:
     bool getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const;

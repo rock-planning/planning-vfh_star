@@ -631,7 +631,120 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
         std::cerr << "WARN: the chosen heuristic does not seem to be a minorant" << std::endl;
 }
 
-NNLookup::NNLookup(double resolutionXY, double angularReosultion, double size, const Eigen::Vector3d& centerPos) : resolutionXY(resolutionXY), angularResolution(angularReosultion)
+NNLookup::NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta): curSize(0), curSizeHalf(0), boxSize(boxSize), boxResolutionXY(boxResolutionXY), boxResolutionTheta(boxResolutionTheta)
+{
+}
+
+NNLookup::~NNLookup()
+{
+    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
+    {
+	for(std::vector<NNLookupBox *>:: iterator it2 = it->begin(); it2 != it->end(); it2++)
+	    delete *it2;
+	
+	it->clear();;
+    }
+    globalGrid.clear();
+}
+
+void NNLookup::clear()
+{
+    freeBoxes.splice(freeBoxes.begin(), usedBoxes);
+    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
+    {
+	for(std::vector<NNLookupBox *>:: iterator it2 = it->begin(); it2 != it->end(); it2++)
+	    *it2 = NULL;
+    }
+}
+
+bool NNLookup::getIndex(const vfh_star::TreeNode& node, int& x, int& y)
+{
+    //calculate position in global grid
+    x = node.getPosition().x() / boxSize + curSizeHalf;
+    y = node.getPosition().y() / boxSize + curSizeHalf;
+    
+    if((x < 0) || (x >= curSize) || (y < 0) || (y >= curSize))
+	return false;
+
+    return true;
+}
+
+TreeNode* NNLookup::getNodeWithinBounds(const vfh_star::TreeNode& node)
+{
+    int x,y;
+    if(!getIndex(node, x, y))
+	return NULL;
+    
+    NNLookupBox *box = globalGrid[x][y];
+    if(box == NULL)
+	return NULL;
+    
+    return box->getNearestNode(node);
+}
+
+
+void NNLookup::clearIfSame(const vfh_star::TreeNode* node)
+{
+    int x,y;
+    if(!getIndex(*node, x, y))
+	return;
+    
+    NNLookupBox *box = globalGrid[x][y];
+    if(box == NULL)
+	return;
+
+    box->clearIfSame(node);
+}
+
+void NNLookup::extendGlobalGrid(int requestedSize)
+{
+    int newSize = requestedSize * 2;
+    curSize = newSize;
+    curSizeHalf = requestedSize;
+    globalGrid.resize(newSize);
+    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
+    {
+	(*it).resize(newSize, NULL);
+    }
+}
+
+
+void NNLookup::setNode(TreeNode* node)
+{
+    int x,y;
+    if(!getIndex(*node, x, y))
+    {
+	extendGlobalGrid(std::max(abs(x),abs(y)) + 1);
+	assert(getIndex(*node, x, y));
+    }
+
+    NNLookupBox *box = globalGrid[x][y];
+    if(box == NULL)
+    {
+	const Eigen::Vector3d boxPos = Eigen::Vector3d(floor(node->getPosition().x()),
+						 floor(node->getPosition().y()),
+						0) + Eigen::Vector3d(boxSize / 2.0, boxSize / 2.0, 0);
+						
+	if(!freeBoxes.empty())
+	{
+	    box = (freeBoxes.front());
+	    freeBoxes.pop_front();
+	    box->clear();
+	    box->setNewPosition(boxPos);
+	}
+	else
+	{
+	    box = new NNLookupBox(boxResolutionXY, boxResolutionTheta, boxSize, boxPos);
+	}
+	usedBoxes.push_back(box);
+	globalGrid[x][y] = box;
+    }
+    
+    box->setNode(node);
+}
+
+
+NNLookupBox::NNLookupBox(double resolutionXY, double angularReosultion, double size, const Eigen::Vector3d& centerPos) : resolutionXY(resolutionXY), angularResolution(angularReosultion)
 {
     xCells = size / resolutionXY + 1;
     yCells = xCells;
@@ -650,7 +763,12 @@ NNLookup::NNLookup(double resolutionXY, double angularReosultion, double size, c
     toWorld = centerPos - Eigen::Vector3d(size/2.0, size/2.0,0);
 }
 
-void NNLookup::clear()
+void NNLookupBox::setNewPosition(const Eigen::Vector3d& centerPos)
+{
+    toWorld = centerPos - Eigen::Vector3d(size/2.0, size/2.0,0);
+}
+
+void NNLookupBox::clear()
 {
     for(int x = 0; x < xCells; x++)
     {
@@ -664,7 +782,7 @@ void NNLookup::clear()
     }
 }
 
-bool NNLookup::getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const
+bool NNLookupBox::getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const
 {
     const Eigen::Vector3d mapPos = node.getPosition() - toWorld;
     x = mapPos.x() / resolutionXY;
@@ -680,7 +798,7 @@ bool NNLookup::getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a
     return true;
 }
 
-void NNLookup::clearIfSame(const vfh_star::TreeNode* node)
+void NNLookupBox::clearIfSame(const vfh_star::TreeNode* node)
 {
     int x, y, a;
     bool valid = getIndixes(*node, x, y, a);
@@ -691,7 +809,7 @@ void NNLookup::clearIfSame(const vfh_star::TreeNode* node)
 	hashMap[x][y][a] = NULL;
 }
 
-TreeNode* NNLookup::getNearestNode(const vfh_star::TreeNode& node)
+TreeNode* NNLookupBox::getNearestNode(const vfh_star::TreeNode& node)
 {
     int x, y, a;
     bool valid = getIndixes(node, x, y, a);
@@ -702,7 +820,7 @@ TreeNode* NNLookup::getNearestNode(const vfh_star::TreeNode& node)
     return ret;
 }
 
-void NNLookup::setNode(TreeNode* node)
+void NNLookupBox::setNode(TreeNode* node)
 {
     int x, y, a;
     bool valid = getIndixes(*node, x, y, a);
