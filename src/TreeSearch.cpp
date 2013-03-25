@@ -136,7 +136,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     curNode->setHeuristic(getHeuristic(*curNode));
     kdtree.insert(curNode);
 
-    curNode->candidate_it = expandCandidates.insert(std::make_pair(0, curNode));
+    curNode->candidate_it = expandCandidates.insert(std::make_pair(curNode->getHeuristicCost(), curNode));
     
     int max_depth = search_conf.maxTreeSize;
     
