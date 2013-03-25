@@ -38,6 +38,9 @@ void TreeSearch::setSearchConf(const TreeSearchConf& conf)
 	search_conf.identityYawThreshold = 3.0 * 180.0 / M_PI;
     }
 
+    //trigger update of nearest neighbour lookup 
+    //will be reconstructed on next search
+    delete nnLookup;
 }
 
 const TreeSearchConf& TreeSearch::getSearchConf() const
@@ -131,17 +134,18 @@ base::geometry::Spline<3> TreeSearch::getTrajectory(const base::Pose& start)
 TreeNode const* TreeSearch::compute(const base::Pose& start)
 {
     tree.clear();
-    kdtree.clear();
+    if(!nnLookup)
+	nnLookup = new NNLookup(1.0, search_conf.identityPositionThreshold / 2.0 , search_conf.identityYawThreshold / 2.0);
+    
+    nnLookup->clear();
     TreeNode *curNode = tree.createRoot(start, start.getYaw());
     curNode->setHeuristic(getHeuristic(*curNode));
-    kdtree.insert(curNode);
+    curNode->setCost(0.0);
+    nnLookup->setNode(curNode);
 
     curNode->candidate_it = expandCandidates.insert(std::make_pair(curNode->getHeuristicCost(), curNode));
     
     int max_depth = search_conf.maxTreeSize;
-    
-    double bestHeuristic = std::numeric_limits<double>::max();
-    TreeNode *bestHeuristicNode = NULL;
     
     base::Time startTime = base::Time::now();
     
@@ -157,6 +161,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         if (!validateNode(*curNode))
         {
             curNode->heuristic = -1;
+	    nnLookup->clearIfSame(curNode);
             continue;
         }
 
@@ -221,55 +226,69 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             //
             // searchNode should be used only here !
             TreeNode searchNode(projected.first, curDirection);
-            const double identity_pos_threshold = search_conf.identityPositionThreshold;
-            const double identity_yaw_threshold = search_conf.identityYawThreshold;
 	    
-	    std::vector<const TreeNode*> nearNodes;
-	    kdtree.find_within_range(&searchNode, identity_pos_threshold, std::back_insert_iterator<std::vector<const TreeNode* > >(nearNodes));	
-
-	    bool foundBetterNode = false;
-	    base::Angle curYaw = base::Angle::fromRad(projected.first.getYaw());
-            for(std::vector<const TreeNode*>::iterator nearNode = nearNodes.begin(); nearNode != nearNodes.end(); nearNode++)
-	    {		
-                TreeNode const* closest_node   = *nearNode;
-                if (closest_node->getCost() <= nodeCost + curNode->getCost())
-                {
-                    // The existing node is better than this one from a cost
-                    // point of view. Check that the direction is also the same
-                    base::Angle closestNodeYaw = base::Angle::fromRad(closest_node->getPose().getYaw());
-		    if(fabs((curYaw - closestNodeYaw).rad) < identity_yaw_threshold)
-		    {
-			foundBetterNode = true;
-		    }
-                }
-                else if (closest_node->candidate_it != expandCandidates.end())
-                {
-                    base::Angle closestNodeYaw = base::Angle::fromRad(closest_node->getPose().getYaw());
-		    if(fabs((curYaw - closestNodeYaw).rad) < identity_yaw_threshold)
-                    {
-                        // The existing node is worse than this one, but we are
-                        // lucky: the node has not been expanded yet. Just remove it
-                        // from expandCandidates
-                        closest_node->candidate_it->second->setHeuristic(-2.0);
-                        expandCandidates.erase(closest_node->candidate_it);
-                        closest_node->candidate_it = expandCandidates.end();
-                        kdtree.erase(*nearNode);
-                    }
-                }
-            }
-            
-            if(foundBetterNode)
-		continue;
-
-	    if(bestHeuristic > curNode->getHeuristic())
+	    const double searchNodeCost = nodeCost + curNode->getCost();
+	    TreeNode *closest_node = nnLookup->getNodeWithinBounds(searchNode);
+	    if(closest_node)
 	    {
-		bestHeuristic = curNode->getHeuristic();
-		bestHeuristicNode = curNode;
-	    }	
+		if(closest_node->getCost() <= searchNodeCost)
+		{
+		    //Existing node is better than current node
+		    //discard the current node
+		    continue;
+		} 
+		else
+		{
+		    if (closest_node->candidate_it != expandCandidates.end())
+		    {
+			// The existing node is worse than this one, but we are
+			// lucky: the node has not been expanded yet. Just remove it
+			// from expandCandidates
+			closest_node->candidate_it->second->setHeuristic(-2.0);
+			expandCandidates.erase(closest_node->candidate_it);
+			closest_node->candidate_it = expandCandidates.end();
+			
+			//remove node from parent
+			closest_node->parent->removeChild(closest_node);
+		    }
+		    else
+		    {
+
+			//remove subtree
+			closest_node->parent->removeChild(closest_node);
+			removeSubtreeFromSearch(closest_node);
+			
+			///Alternative try to reuse expanded tree by updating it's cost
+			///Note this gave a 'jumpy' trajectory
+// 			//node is allready expanded
+// 			std::cout << "Expanded node found" << std::endl;
+// 			
+// 			//update cost of current node
+// 			closest_node->setCost(searchNodeCost);
+// 			
+// 			//remove child from old parent
+// 			closest_node->parent->removeChild(closest_node);
+// 			//connect current node to new child 
+// 			curNode->addChild(closest_node);
+// 			
+// 			//make cur node parent of node
+// 			closest_node->parent = curNode;
+// 			
+// 			//update costs of all childs
+// 			updateNodeCosts(closest_node);
+// 			
+// 			//wo don't enter a new node, as the closest node ist used
+// 			//as our new node
+// 			continue;
+		    }
+		}
+	    }
+	    
 
             // Finally, create the new node and add it in the tree
             TreeNode *newNode = tree.createChild(curNode, projected.first, curDirection);
             newNode->setCost(curNode->getCost() + nodeCost);
+	    newNode->setCostFromParent(nodeCost);
             newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
             newNode->setHeadingTolerance(std::numeric_limits< double >::signaling_NaN());
             newNode->setHeuristic(curDiscount * getHeuristic(*newNode));
@@ -277,20 +296,15 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             // Add it to the expand list
             newNode->candidate_it = expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
 
-            // And add it to the kdtree
-            kdtree.insert(newNode);
+	    //add new node to nearest neighbour lookup
+	    nnLookup->setNode(newNode);
         }
     }
 
     expandCandidates.clear();
+    
     curNode = tree.getFinalNode();
-    
-/*    if(!curNode && bestHeuristicNode)
-    {
-	tree.setFinalNode(bestHeuristicNode);
-	curNode = bestHeuristicNode;
-	}*/
-    
+       
     if (curNode)
     {
         std::cerr << "TreeSearch: found solution at c=" << curNode->getCost() << std::endl;

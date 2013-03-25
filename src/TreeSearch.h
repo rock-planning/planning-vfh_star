@@ -305,15 +305,6 @@ class TreeSearch
 	void removeSubtreeFromSearch(TreeNode *node);
 	
 	std::multimap<double, TreeNode *> expandCandidates;
-        struct TreeNodePositionAccessor
-        {
-            typedef double result_type;
-            double operator ()(TreeNode const* node, int i) const
-            { return node->getPose().position[i]; }
-        };
-        typedef KDTree::KDTree<3, TreeNode const*, TreeNodePositionAccessor> NNSearch;
-        NNSearch kdtree;
-	
 	NNLookup *nnLookup;
 };
 } // vfh_star namespace
