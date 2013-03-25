@@ -29,6 +29,11 @@ class TreeNode
 	
 	const base::Pose &getPose() const;
 	const TreeNode *getParent() const;
+	
+	void addChild(TreeNode *child);
+	void removeChild(TreeNode *child);
+	const std::vector<TreeNode *> &getChildren() const;
+	
 	double getDirection() const;
 	int getDepth() const;
 
@@ -43,6 +48,9 @@ class TreeNode
 	void setHeuristic(double value);
         double getHeuristicCost() const;
 
+	void setCostFromParent(double value);
+	double getCostFromParent() const;
+	
         double getPositionTolerance() const;
         void setPositionTolerance(double tol);
         double getHeadingTolerance() const;
@@ -66,6 +74,10 @@ class TreeNode
 	
 	///heuristic from node to goal
 	double heuristic;
+	
+	///cost from parent to this node
+	double costFromParent;
+	
 	int depth;
         int index;
         bool updated_cost;
@@ -73,6 +85,8 @@ class TreeNode
         double positionTolerance;
         double headingTolerance;
 
+	std::vector<TreeNode *> childs;
+	
         // Used by TreeSearch only
         mutable std::multimap<double, TreeNode *>::iterator candidate_it;
 };
@@ -107,6 +121,8 @@ class Tree
         void reserve(int size);
 
     private:
+	void copyNodeChilds(const vfh_star::TreeNode* otherNode, vfh_star::TreeNode* ownNode, const vfh_star::Tree& other);
+
         TreeNode* createNode(base::Pose const& pose, double dir);
 
         /** A tree might get quite big, in which case calling nodes.size() is
@@ -123,6 +139,9 @@ class Tree
 
         /** The final node (0 if none has been found) */
         TreeNode* final_node;
+	
+	///Root node of the tree
+	TreeNode *root_node;
 };
 
 /** The basic search algorithm used for planning */
@@ -230,6 +249,11 @@ class TreeSearch
         virtual bool updateCost(TreeNode& node, bool is_terminal) const;
 
     private:
+	
+	void updateNodeCosts(TreeNode *node);
+	void removeSubtreeFromSearch(TreeNode *node);
+	
+	std::multimap<double, TreeNode *> expandCandidates;
         struct TreeNodePositionAccessor
         {
             typedef double result_type;

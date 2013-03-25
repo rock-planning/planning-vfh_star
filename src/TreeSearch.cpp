@@ -130,8 +130,6 @@ base::geometry::Spline<3> TreeSearch::getTrajectory(const base::Pose& start)
 
 TreeNode const* TreeSearch::compute(const base::Pose& start)
 {
-    std::multimap<double, TreeNode *> expandCandidates;
-
     tree.clear();
     kdtree.clear();
     TreeNode *curNode = tree.createRoot(start, start.getYaw());
@@ -284,6 +282,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         }
     }
 
+    expandCandidates.clear();
     curNode = tree.getFinalNode();
     
 /*    if(!curNode && bestHeuristicNode)
@@ -299,6 +298,43 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         return curNode;
     }
     return 0;
+}
+
+void TreeSearch::updateNodeCosts(TreeNode* node)
+{
+    const std::vector<TreeNode *> &childs(node->getChildren());
+    
+    for(std::vector<TreeNode *>::const_iterator it = childs.begin(); it != childs.end();it++)
+    {
+	const double costToNode = (*it)->getCostFromParent();
+	(*it)->setCost(node->getCost() + costToNode);
+	//if this node is in the expand list remove and reenter it
+	//so that the position in the queue gets updated
+	if((*it)->candidate_it != expandCandidates.end())
+	{
+	    expandCandidates.erase((*it)->candidate_it);
+	    (*it)->candidate_it = expandCandidates.insert(std::make_pair((*it)->getHeuristicCost(), (*it)));
+	};
+	
+	updateNodeCosts(*it);
+    }
+}
+
+void TreeSearch::removeSubtreeFromSearch(TreeNode* node)
+{
+    const std::vector<TreeNode *> &childs(node->getChildren());
+    
+    for(std::vector<TreeNode *>::const_iterator it = childs.begin(); it != childs.end();it++)
+    {
+	if((*it)->candidate_it != expandCandidates.end())
+	{
+	    expandCandidates.erase((*it)->candidate_it);
+	};
+
+	nnLookup->clearIfSame(*it);
+	
+	removeSubtreeFromSearch(*it);
+    }
 }
 
 std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
@@ -345,6 +381,24 @@ Tree::Tree(Tree const& other)
     *this = other;
 }
 
+void Tree::copyNodeChilds(const TreeNode* otherNode, TreeNode *ownNode, Tree const& other)
+{
+    for(std::vector<TreeNode *>::const_iterator it = otherNode->getChildren().begin();
+	it != otherNode->getChildren().end(); it++)
+	{
+	    TreeNode const* orig_node = *it;
+	    TreeNode* new_node = createChild(ownNode, orig_node->getPose(), orig_node->getDirection());
+	    new_node->setCost(orig_node->getCost());
+	    new_node->setHeuristic(orig_node->getHeuristic());
+	    new_node->setHeadingTolerance(orig_node->getHeadingTolerance());
+	    new_node->setPositionTolerance(orig_node->getPositionTolerance());
+
+	    if(other.getFinalNode() == orig_node)
+		setFinalNode(new_node);
+
+	    copyNodeChilds(*it, new_node, other);
+	}
+}
 
 Tree& Tree::operator = (Tree const& other)
 {
@@ -353,26 +407,9 @@ Tree& Tree::operator = (Tree const& other)
 
     clear();
 
-    std::map<TreeNode const*, TreeNode*> node_map;
-    for (std::list<TreeNode>::const_iterator it = other.nodes.begin();
-            it != other.nodes.end(); ++it)
-    {
-        TreeNode const* orig_node = &(*it);
-        TreeNode* new_node;
-        if (orig_node->isRoot())
-            new_node = createRoot(orig_node->getPose(), orig_node->getDirection());
-        else
-            new_node = createChild(node_map[orig_node->getParent()], orig_node->getPose(), orig_node->getDirection());
-
-        new_node->setCost(orig_node->getCost());
-        new_node->setHeuristic(orig_node->getHeuristic());
-        new_node->setHeadingTolerance(orig_node->getHeadingTolerance());
-        new_node->setPositionTolerance(orig_node->getPositionTolerance());
-
-        node_map.insert( std::make_pair(orig_node, new_node) );
-    }
-    if (other.getFinalNode())
-        setFinalNode(node_map[other.getFinalNode()]);
+    root_node = createRoot(other.root_node->getPose(), other.root_node->getDirection());
+    
+    copyNodeChilds(other.root_node, root_node, other);
     return *this;
 }
 
@@ -531,7 +568,9 @@ TreeNode* Tree::createRoot(base::Pose const& pose, double dir)
     if (!nodes.empty())
         throw std::runtime_error("trying to create a root node of an non-empty tree");
 
-    return createNode(pose, dir);
+    root_node = createNode(pose, dir);
+    
+    return root_node;
 }
 
 TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir)
@@ -541,6 +580,7 @@ TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir
     child->depth  = parent->depth + 1;
     child->updated_cost = false;
     parent->is_leaf = false;
+    parent->addChild(child);
     return child;
 }
 
@@ -645,6 +685,35 @@ double TreeNode::getCost() const
 void TreeNode::setCost(double value)
 {
     cost = value;
+}
+
+void TreeNode::setCostFromParent(double value)
+{
+    costFromParent = value;
+}
+
+double TreeNode::getCostFromParent() const
+{
+    return costFromParent;
+}
+
+void TreeNode::addChild(TreeNode* child)
+{
+    childs.push_back(child);
+}
+
+void TreeNode::removeChild(TreeNode* child)
+{
+    std::vector<TreeNode *>::iterator it = std::find(childs.begin(), childs.end(), child);
+    if(it != childs.end())
+    {
+	childs.erase(it);
+    }
+}
+
+const std::vector< TreeNode* >& TreeNode::getChildren() const
+{
+    return childs;
 }
 
 const TreeNode* TreeNode::getParent() const
