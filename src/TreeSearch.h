@@ -14,6 +14,30 @@
 #include <base/trajectory.h>
 
 namespace vfh_star {
+
+class TreeNode;
+    
+class NNLookup
+{
+public:
+    NNLookup(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d &centerPos);
+    TreeNode *getNearestNode(const TreeNode &node);
+    void clearIfSame(const TreeNode *node);
+    void setNode(TreeNode *node);
+    void clear();
+    
+private:
+    bool getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const;
+    int xCells;
+    int yCells;
+    int aCells;
+    Eigen::Vector3d toWorld;
+    double resolutionXY;
+    double angularResolution;
+    double size;
+    std::vector<std::vector<std::vector<TreeNode *> > > hashMap;
+};
+    
 class TreeNode
 {
     friend class Tree;
@@ -262,6 +286,8 @@ class TreeSearch
         };
         typedef KDTree::KDTree<3, TreeNode const*, TreeNodePositionAccessor> NNSearch;
         NNSearch kdtree;
+	
+	NNLookup *nnLookup;
 };
 } // vfh_star namespace
 

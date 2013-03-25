@@ -21,7 +21,7 @@ TreeSearchConf::TreeSearchConf()
     maxStepSize(0)
     {}
 
-TreeSearch::TreeSearch()
+TreeSearch::TreeSearch(): nnLookup(NULL)
 {
 }
 
@@ -630,6 +630,88 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
     if (!alright)
         std::cerr << "WARN: the chosen heuristic does not seem to be a minorant" << std::endl;
 }
+
+NNLookup::NNLookup(double resolutionXY, double angularReosultion, double size, const Eigen::Vector3d& centerPos) : resolutionXY(resolutionXY), angularResolution(angularReosultion)
+{
+    xCells = size / resolutionXY + 1;
+    yCells = xCells;
+    aCells = M_PI / angularReosultion * 2 + 1;
+
+    hashMap.resize(xCells);
+    for(int x = 0; x < xCells; x++)
+    {
+	hashMap[x].resize(yCells);
+	for(int y = 0; y < yCells; y++)
+	{
+	    hashMap[x][y].resize(aCells, NULL);
+	}
+    }
+    
+    toWorld = centerPos - Eigen::Vector3d(size/2.0, size/2.0,0);
+}
+
+void NNLookup::clear()
+{
+    for(int x = 0; x < xCells; x++)
+    {
+	for(int y = 0; y < yCells; y++)
+	{
+	    for(int a = 0; a < aCells; a++)
+	    {
+		hashMap[x][y][a] = NULL;
+	    }
+	}
+    }
+}
+
+bool NNLookup::getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const
+{
+    const Eigen::Vector3d mapPos = node.getPosition() - toWorld;
+    x = mapPos.x() / resolutionXY;
+    y = mapPos.y() / resolutionXY;
+    a = node.getYaw() / angularResolution;
+    if(a < 0)
+	a+= M_PI/angularResolution * 2.0;
+    
+    assert((x >= 0) && (x < xCells) &&
+	    (y >= 0) && (y < yCells) &&
+	    (a >= 0) && (a < aCells));
+    
+    return true;
+}
+
+void NNLookup::clearIfSame(const vfh_star::TreeNode* node)
+{
+    int x, y, a;
+    bool valid = getIndixes(*node, x, y, a);
+    if(!valid)
+	throw std::runtime_error("NNLookup::clearIfSame:Error, accessed node outside of lookup box");
+
+    if(hashMap[x][y][a] == node)
+	hashMap[x][y][a] = NULL;
+}
+
+TreeNode* NNLookup::getNearestNode(const vfh_star::TreeNode& node)
+{
+    int x, y, a;
+    bool valid = getIndixes(node, x, y, a);
+    if(!valid)
+	throw std::runtime_error("NNLookup::getNearestNode:Error, accessed node outside of lookup box");
+    
+    TreeNode *ret = hashMap[x][y][a];
+    return ret;
+}
+
+void NNLookup::setNode(TreeNode* node)
+{
+    int x, y, a;
+    bool valid = getIndixes(*node, x, y, a);
+    if(!valid)
+	throw std::runtime_error("NNLookup::setNode:Error, accessed node outside of lookup box");
+    
+    hashMap[x][y][a] = node;
+}
+
 
 TreeNode::TreeNode(): parent(this), is_leaf(true), direction(0), cost(0), heuristic(0), depth(0), index(0), updated_cost(false), positionTolerance(0), headingTolerance(0)
 {
