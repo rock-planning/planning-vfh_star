@@ -30,6 +30,12 @@ class TraversabilityMapGenerator
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	TraversabilityMapGenerator();
+
+        /** Sets the distance between the body frame and the ground. It
+         * is zero by default */
+        void setHeightToGround(double value);
+        /** Returns the distance between the body frame and the ground */
+        double getHeightToGround() const;
 		
 	bool getZCorrection(Eigen::Affine3d& body2Odo);
 	
