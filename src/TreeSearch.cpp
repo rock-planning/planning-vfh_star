@@ -8,17 +8,17 @@
 using namespace vfh_star;
 
 TreeSearchConf::TreeSearchConf()
-    : maxTreeSize(0)
-    , stepDistance(0.5)
-    , angularSamplingMin(2 * M_PI / 50)
+    : maxTreeSize(10000)
+    , stepDistance(0.3)
+    , angularSamplingMin(2 * M_PI / 120)
     , angularSamplingMax(2 * M_PI / 20)
-    , angularSamplingNominalCount(4)
+    , angularSamplingNominalCount(5)
     , discountFactor(1.0)
     , obstacleSafetyDistance(0.1)
     , robotWidth(0.5)
-    , identityPositionThreshold(-1)
-    , identityYawThreshold(-1),
-    maxStepSize(0)
+    , identityPositionThreshold(0.06)
+    , identityYawThreshold(0.05)
+    , maxStepSize(0.2)
     {}
 
 TreeSearch::TreeSearch()
