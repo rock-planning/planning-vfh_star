@@ -14,7 +14,17 @@ TraversabilityMapGenerator::TraversabilityMapGenerator()
     lastBody2Odo = Affine3d::Identity();
     lastLaser2Odo = Affine3d::Identity();
     lastHeight = 0.0;
-    heightToGround = 0.18;
+    heightToGround = 0.0;
+}
+
+void TraversabilityMapGenerator::setHeightToGround(double value)
+{
+    heightToGround = value;
+}
+
+double TraversabilityMapGenerator::getHeightToGround() const
+{
+    return heightToGround;
 }
 
 void TraversabilityMapGenerator::setBoundarySize(double size)
