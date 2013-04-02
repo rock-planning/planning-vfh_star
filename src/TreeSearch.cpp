@@ -21,8 +21,25 @@ TreeSearchConf::TreeSearchConf()
     maxStepSize(0)
     {}
 
+            
+void TreeSearchConf::computePosAndYawThreshold()
+{
+    if(identityPositionThreshold < 0)
+    {
+        identityPositionThreshold = stepDistance / 5.0;
+    }
+    
+    if(identityYawThreshold < 0)
+    {
+        identityYawThreshold = 3.0 * 180.0 / M_PI;
+    }
+
+}
+    
+    
 TreeSearch::TreeSearch(): nnLookup(NULL)
 {
+    search_conf.computePosAndYawThreshold();
 }
 
 TreeSearch::~TreeSearch()
@@ -33,15 +50,7 @@ TreeSearch::~TreeSearch()
 void TreeSearch::setSearchConf(const TreeSearchConf& conf)
 {
     this->search_conf = conf;
-    if(search_conf.identityPositionThreshold < 0)
-    {
-	search_conf.identityPositionThreshold = search_conf.stepDistance / 5.0;
-    }
-    
-    if(search_conf.identityYawThreshold < 0)
-    {
-	search_conf.identityYawThreshold = 3.0 * 180.0 / M_PI;
-    }
+    search_conf.computePosAndYawThreshold();
 
     //trigger update of nearest neighbour lookup 
     //will be reconstructed on next search
