@@ -536,9 +536,14 @@ std::vector<base::Waypoint> Tree::buildTrajectoryTo(TreeNode const* node) const
     return result;
 }
 
+const TreeNode* Tree::getRootNode() const
+{
+    return root_node;
+}
+
 TreeNode* Tree::getRootNode()
 {
-    return &(nodes.front());
+    return root_node;
 }
 
 TreeNode* Tree::getFinalNode() const
@@ -916,6 +921,7 @@ double TreeNode::getCostFromParent() const
 
 void TreeNode::addChild(TreeNode* child)
 {
+    child->parent = this;
     childs.push_back(child);
 }
 

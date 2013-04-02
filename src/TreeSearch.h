@@ -80,7 +80,7 @@ class TreeNode
         bool isLeaf() const;
 	
 	const base::Pose &getPose() const;
-	const TreeNode *getParent() const;
+        const TreeNode *getParent() const;
 	
 	void addChild(TreeNode *child);
 	void removeChild(TreeNode *child);
@@ -151,12 +151,14 @@ class Tree
 
         Tree(Tree const& other);
         Tree& operator = (Tree const& other);
-
+	
         TreeNode* createRoot(base::Pose const& pose, double dir);
+        TreeNode* createNode(base::Pose const& pose, double dir);
 	TreeNode* createChild(TreeNode *parent, base::Pose const& pose, double dir);
 
 	TreeNode *getParent(TreeNode *child);
-	TreeNode *getRootNode();
+        const TreeNode *getRootNode() const;
+        TreeNode *getRootNode();
 
         std::vector<base::Waypoint> buildTrajectoryTo(TreeNode const* leaf) const;
 	std::vector<base::Trajectory> buildTrajectoriesTo(TreeNode const* leaf, const Eigen::Affine3d &body2Trajectory) const;
@@ -174,8 +176,6 @@ class Tree
 
     private:
 	void copyNodeChilds(const vfh_star::TreeNode* otherNode, vfh_star::TreeNode* ownNode, const vfh_star::Tree& other);
-
-        TreeNode* createNode(base::Pose const& pose, double dir);
 
         /** A tree might get quite big, in which case calling nodes.size() is
          * really not efficient. Since it is trivial to keep the size uptodate,
