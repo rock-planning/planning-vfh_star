@@ -10,6 +10,10 @@ VFHStar::VFHStar()
 {
 }
 
+VFHStar::~VFHStar()
+{
+}
+
 const VFHStarConf& VFHStar::getCostConf() const
 {
     return cost_conf;

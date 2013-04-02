@@ -8,6 +8,7 @@ class VFHStar : public TreeSearch
 {
     public:
         VFHStar();
+        virtual ~VFHStar();
 
         std::vector<base::Waypoint> getWaypoints(base::Pose const& start, double mainHeading, double horizon);
         base::geometry::Spline<3> getTrajectory(base::Pose const& start, double mainHeading, double horizon);

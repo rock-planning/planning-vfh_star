@@ -393,6 +393,7 @@ const Tree& TreeSearch::getTree() const
 Tree::Tree()
     : size(0)
     , final_node(0)
+    , root_node(0)    
 {
 }
 
@@ -431,9 +432,14 @@ Tree& Tree::operator = (Tree const& other)
 
     clear();
 
-    root_node = createRoot(other.root_node->getPose(), other.root_node->getDirection());
+    if(other.root_node)
+    {
+        root_node = createRoot(other.root_node->getPose(), other.root_node->getDirection());    
+        copyNodeChilds(other.root_node, root_node, other);
+    }
     
-    copyNodeChilds(other.root_node, root_node, other);
+    std::cout << "Copied " << getSize() << " Nodes " << std::endl;
+    
     return *this;
 }
 
@@ -605,10 +611,8 @@ TreeNode* Tree::createRoot(base::Pose const& pose, double dir)
 TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir)
 {
     TreeNode* child = createNode(pose, dir);
-    child->parent = parent;
     child->depth  = parent->depth + 1;
     child->updated_cost = false;
-    parent->is_leaf = false;
     parent->addChild(child);
     return child;
 }
@@ -930,6 +934,7 @@ double TreeNode::getCostFromParent() const
 
 void TreeNode::addChild(TreeNode* child)
 {
+    is_leaf = false;
     child->parent = this;
     childs.push_back(child);
 }
@@ -941,6 +946,8 @@ void TreeNode::removeChild(TreeNode* child)
     {
 	childs.erase(it);
     }
+    if(childs.empty())
+        is_leaf = true;
 }
 
 const std::vector< TreeNode* >& TreeNode::getChildren() const
