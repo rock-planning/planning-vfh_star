@@ -46,6 +46,7 @@ private:
 class NNLookupBox
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     NNLookupBox(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d &centerPos);
     TreeNode *getNearestNode(const TreeNode &node);
     void clearIfSame(const TreeNode *node);
@@ -203,6 +204,7 @@ class TreeSearch
         typedef std::vector< std::pair<double, double> > AngleIntervals;
 
 	TreeSearch();
+        virtual ~TreeSearch();
 
         static base::geometry::Spline<3> waypointsToSpline(const std::vector<base::Waypoint>& waypoints);
 
@@ -219,12 +221,10 @@ class TreeSearch
          * the goal node
          */
         TreeNode const* compute(const base::Pose& start);
-	
-	void setSearchConf(const TreeSearchConf& conf);
+
+        void setSearchConf(const TreeSearchConf& conf);
         const TreeSearchConf& getSearchConf() const;
         Tree const& getTree() const;
-	
-	virtual ~TreeSearch();
 
     protected:
 	Angles getDirectionsFromIntervals(double curDir, const AngleIntervals& intervals);

@@ -25,6 +25,11 @@ TreeSearch::TreeSearch(): nnLookup(NULL)
 {
 }
 
+TreeSearch::~TreeSearch()
+{
+    delete nnLookup;
+}
+
 void TreeSearch::setSearchConf(const TreeSearchConf& conf)
 {
     this->search_conf = conf;
@@ -41,6 +46,7 @@ void TreeSearch::setSearchConf(const TreeSearchConf& conf)
     //trigger update of nearest neighbour lookup 
     //will be reconstructed on next search
     delete nnLookup;
+    nnLookup = 0;
 }
 
 const TreeSearchConf& TreeSearch::getSearchConf() const
@@ -375,11 +381,6 @@ const Tree& TreeSearch::getTree() const
     return tree;
 }
 
-TreeSearch::~TreeSearch()
-{
-
-}
-
 Tree::Tree()
     : size(0)
     , final_node(0)
@@ -651,24 +652,26 @@ NNLookup::NNLookup(double boxSize, double boxResolutionXY, double boxResolutionT
 
 NNLookup::~NNLookup()
 {
-    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
+    for(std::list<NNLookupBox *>::const_iterator it = freeBoxes.begin(); it != freeBoxes.end(); it++)
     {
-	for(std::vector<NNLookupBox *>:: iterator it2 = it->begin(); it2 != it->end(); it2++)
-	    delete *it2;
-	
-	it->clear();;
+        delete *it;
     }
-    globalGrid.clear();
+
+    for(std::list<NNLookupBox *>::const_iterator it = usedBoxes.begin(); it != usedBoxes.end(); it++)
+    {
+        delete *it;
+    }
 }
 
 void NNLookup::clear()
 {
     freeBoxes.splice(freeBoxes.begin(), usedBoxes);
-    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
+    for(std::vector<std::vector<NNLookupBox *> >::iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
     {
-	for(std::vector<NNLookupBox *>:: iterator it2 = it->begin(); it2 != it->end(); it2++)
+	for(std::vector<NNLookupBox *>::iterator it2 = it->begin(); it2 != it->end(); it2++)
 	    *it2 = NULL;
     }
+    usedBoxes.clear();
 }
 
 bool NNLookup::getIndex(const vfh_star::TreeNode& node, int& x, int& y)
