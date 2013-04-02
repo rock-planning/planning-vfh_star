@@ -761,7 +761,7 @@ void NNLookup::setNode(TreeNode* node)
 }
 
 
-NNLookupBox::NNLookupBox(double resolutionXY, double angularReosultion, double size, const Eigen::Vector3d& centerPos) : resolutionXY(resolutionXY), angularResolution(angularReosultion)
+NNLookupBox::NNLookupBox(double resolutionXY, double angularReosultion, double size, const Eigen::Vector3d& centerPos) : resolutionXY(resolutionXY), angularResolution(angularReosultion), size(size)
 {
     xCells = size / resolutionXY + 1;
     yCells = xCells;
