@@ -145,6 +145,8 @@ class TreeNode
 
 class Tree
 {
+        friend class TreeSearch;
+
     public:
 	Tree();
 	~Tree();
@@ -166,13 +168,21 @@ class Tree
 
         int getSize() const;
         void clear();
-        void reserve();
         void verifyHeuristicConsistency(const TreeNode* from) const;
         std::list<TreeNode> const& getNodes() const;
         void setFinalNode(TreeNode* node);
         TreeNode* getFinalNode() const;
 
         void reserve(int size);
+        
+        /**
+         * Removes the node from the tree.
+         * Internally it will be added to the free list for reuse.
+         * 
+         * The caller is responsible for making sure that the node
+         * is not referenced somewere in the tree. 
+         * */
+        void removeNode(TreeNode *node);
 
     private:
 	void copyNodeChilds(const vfh_star::TreeNode* otherNode, vfh_star::TreeNode* ownNode, const vfh_star::Tree& other);
@@ -187,7 +197,7 @@ class Tree
         std::list<TreeNode> nodes;
 
         /** The set of tree nodes */
-        std::list<TreeNode> free_nodes;
+        std::list<TreeNode *> free_nodes;
 
         /** The final node (0 if none has been found) */
         TreeNode* final_node;

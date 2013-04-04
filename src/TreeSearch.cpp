@@ -254,48 +254,11 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 		} 
 		else
 		{
-		    if (closest_node->candidate_it != expandCandidates.end())
-		    {
-			// The existing node is worse than this one, but we are
-			// lucky: the node has not been expanded yet. Just remove it
-			// from expandCandidates
-			closest_node->candidate_it->second->setHeuristic(-2.0);
-			expandCandidates.erase(closest_node->candidate_it);
-			closest_node->candidate_it = expandCandidates.end();
-			
-			//remove node from parent
-			closest_node->parent->removeChild(closest_node);
-		    }
-		    else
-		    {
-
-			//remove subtree
-			closest_node->parent->removeChild(closest_node);
-			removeSubtreeFromSearch(closest_node);
-			
-			///Alternative try to reuse expanded tree by updating it's cost
-			///Note this gave a 'jumpy' trajectory
-// 			//node is allready expanded
-// 			std::cout << "Expanded node found" << std::endl;
-// 			
-// 			//update cost of current node
-// 			closest_node->setCost(searchNodeCost);
-// 			
-// 			//remove child from old parent
-// 			closest_node->parent->removeChild(closest_node);
-// 			//connect current node to new child 
-// 			curNode->addChild(closest_node);
-// 			
-// 			//make cur node parent of node
-// 			closest_node->parent = curNode;
-// 			
-// 			//update costs of all childs
-// 			updateNodeCosts(closest_node);
-// 			
-// 			//wo don't enter a new node, as the closest node ist used
-// 			//as our new node
-// 			continue;
-		    }
+                    //remove from parent
+                    closest_node->parent->removeChild(closest_node);
+                    
+                    //remove closest node and subnodes
+                    removeSubtreeFromSearch(closest_node);                    
 		}
 	    }
 	    
@@ -351,19 +314,24 @@ void TreeSearch::updateNodeCosts(TreeNode* node)
 
 void TreeSearch::removeSubtreeFromSearch(TreeNode* node)
 {
+    if(node->candidate_it != expandCandidates.end())
+    {
+        expandCandidates.erase(node->candidate_it);
+        node->candidate_it = expandCandidates.end();
+    };
+    
+    nnLookup->clearIfSame(node);
+    
     const std::vector<TreeNode *> &childs(node->getChildren());
     
     for(std::vector<TreeNode *>::const_iterator it = childs.begin(); it != childs.end();it++)
     {
-	if((*it)->candidate_it != expandCandidates.end())
-	{
-	    expandCandidates.erase((*it)->candidate_it);
-	};
-
-	nnLookup->clearIfSame(*it);
-	
 	removeSubtreeFromSearch(*it);
     }
+    //all children are invalid now we can just clear them
+    node->childs.clear();
+    
+    tree.removeNode(node);
 }
 
 std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
@@ -573,34 +541,38 @@ void Tree::setFinalNode(TreeNode* node)
 
 void Tree::reserve(int size)
 {
-    int diff = free_nodes.size() - size;
+    int diff = nodes.size() - size;
     for (int i = 0; i < diff; ++i)
-        free_nodes.push_back(TreeNode());
+        nodes.push_back(TreeNode());
 }
 
 TreeNode* Tree::createNode(base::Pose const& pose, double dir)
 {
+    TreeNode* n;
     if (!free_nodes.empty())
     {
-        nodes.splice(nodes.end(), free_nodes, free_nodes.begin());
-        nodes.back() = TreeNode();
+        n = free_nodes.front();
+        free_nodes.pop_front();
     }
     else
+    {
         nodes.push_back(TreeNode());
+        n = &nodes.back();
+    }
 
-    TreeNode* n = &nodes.back();
     n->pose = pose;
     n->yaw = pose.getYaw();
     n->direction = dir;
     n->parent = n;
     n->index  = size;
+    n->childs.clear();
     ++size;
     return n;
 }
 
 TreeNode* Tree::createRoot(base::Pose const& pose, double dir)
 {
-    if (!nodes.empty())
+    if (root_node)
         throw std::runtime_error("trying to create a root node of an non-empty tree");
 
     root_node = createNode(pose, dir);
@@ -617,6 +589,12 @@ TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir
     return child;
 }
 
+void Tree::removeNode(TreeNode* node)
+{
+    node->childs.clear();
+    free_nodes.push_back(node);
+}
+
 TreeNode *Tree::getParent(TreeNode* child)
 {
     return child->parent;
@@ -629,8 +607,13 @@ int Tree::getSize() const
 
 void Tree::clear()
 {
-    free_nodes.splice(free_nodes.end(), nodes);
+    free_nodes.clear();
+    for(std::list<TreeNode>::iterator it = nodes.begin(); it != nodes.end(); it++)
+    {
+        free_nodes.push_back(&(*it));
+    }
     final_node = 0;
+    root_node = 0;
     size = 0;
 }
 
@@ -778,7 +761,7 @@ void NNLookup::setNode(TreeNode* node)
 	const Eigen::Vector3d boxPos = Eigen::Vector3d(floor(node->getPosition().x()),
 						 floor(node->getPosition().y()),
 						0) + Eigen::Vector3d(boxSize / 2.0, boxSize / 2.0, 0);
-						
+                                                
 	if(!freeBoxes.empty())
 	{
 	    box = (freeBoxes.front());
