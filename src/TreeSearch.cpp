@@ -695,9 +695,9 @@ void NNLookup::clear()
 bool NNLookup::getIndex(const vfh_star::TreeNode& node, int& x, int& y)
 {
     //calculate position in global grid
-    x = node.getPosition().x() / boxSize + curSizeHalf;
-    y = node.getPosition().y() / boxSize + curSizeHalf;
-    
+    x = floor(node.getPosition().x() / boxSize) + curSizeHalf;
+    y = floor(node.getPosition().y() / boxSize) + curSizeHalf;
+
     if((x < 0) || (x >= curSize) || (y < 0) || (y >= curSize))
 	return false;
 
@@ -733,14 +733,33 @@ void NNLookup::clearIfSame(const vfh_star::TreeNode* node)
 
 void NNLookup::extendGlobalGrid(int requestedSize)
 {
+    const int oldSize = curSize;
     int newSize = requestedSize * 2;
     curSize = newSize;
     curSizeHalf = requestedSize;
     globalGrid.resize(newSize);
-    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
+    
+    std::vector<std::vector<NNLookupBox *> >newGrid;
+    newGrid.resize(newSize);    
+    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = newGrid.begin(); it != newGrid.end(); it++)
     {
 	(*it).resize(newSize, NULL);
     }
+    
+    const int diffHalf = (newSize - curSize) / 2;
+    
+    for(int x = 0; x < oldSize; x++)
+    {
+        const int newX = x + diffHalf;
+        for(int y = 0; y < oldSize; y++)
+        {
+            const int newY = y + diffHalf;
+            newGrid[newX][newY] = globalGrid[x][y];
+        }
+    }
+    
+    globalGrid.swap(newGrid);
+    
 }
 
 
