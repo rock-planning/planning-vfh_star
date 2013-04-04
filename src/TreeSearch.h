@@ -75,6 +75,8 @@ class TreeNode
 
 	TreeNode();
 	TreeNode(const base::Pose &pose, double dir);
+        
+        void clear();
 
         bool isRoot() const;
         bool isLeaf() const;

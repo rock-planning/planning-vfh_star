@@ -560,12 +560,11 @@ TreeNode* Tree::createNode(base::Pose const& pose, double dir)
         n = &nodes.back();
     }
 
+    n->clear();
     n->pose = pose;
     n->yaw = pose.getYaw();
     n->direction = dir;
-    n->parent = n;
     n->index  = size;
-    n->childs.clear();
     ++size;
     return n;
 }
@@ -868,9 +867,9 @@ void NNLookupBox::setNode(TreeNode* node)
 }
 
 
-TreeNode::TreeNode(): parent(this), is_leaf(true), direction(0), cost(0), heuristic(0), depth(0), index(0), updated_cost(false), positionTolerance(0), headingTolerance(0)
+TreeNode::TreeNode()
 {
-
+    clear();
 }
 
 TreeNode::TreeNode(const base::Pose& pose, double dir)
@@ -887,7 +886,25 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
     , positionTolerance(0)
     , headingTolerance(0)
 {
+    clear();
+    direction = dir;
+    this->pose = pose;
+    yaw = pose.getYaw();
+}
 
+void TreeNode::clear()
+{
+    parent = this;
+    is_leaf = true;
+    cost = 0;
+    heuristic = 0;
+    depth = 0;
+    index = 0;
+    updated_cost = false;
+    positionTolerance = 0;
+    headingTolerance = 0;
+    direction = 0;
+    childs.clear();
 }
 
 const base::Vector3d TreeNode::getPosition() const
