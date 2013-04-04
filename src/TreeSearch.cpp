@@ -728,7 +728,7 @@ void NNLookup::extendGlobalGrid(int requestedSize)
 	(*it).resize(newSize, NULL);
     }
     
-    const int diffHalf = (newSize - curSize) / 2;
+    const int diffHalf = (newSize - oldSize) / 2;
     
     for(int x = 0; x < oldSize; x++)
     {
