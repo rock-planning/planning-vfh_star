@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <base/angle.h>
+#include <base/float.h>
 
 using namespace vfh_star;
 
@@ -583,7 +584,6 @@ TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir
 {
     TreeNode* child = createNode(pose, dir);
     child->depth  = parent->depth + 1;
-    child->updated_cost = false;
     parent->addChild(child);
     return child;
 }
@@ -895,6 +895,8 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
 void TreeNode::clear()
 {
     parent = this;
+    pose = base::Pose();
+    yaw = base::unset<double>();
     is_leaf = true;
     cost = 0;
     heuristic = 0;
