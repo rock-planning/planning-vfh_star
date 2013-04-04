@@ -32,15 +32,13 @@ struct VFHTreeVisualization::Data {
     int treeNodeCount;
 
     Data()
-        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0) {}
+        : removeLeaves(false), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0) {}
 };
 
 
 VFHTreeVisualization::VFHTreeVisualization()
     : p(new Data)
 {
-    VizPluginRubyAdapter(VFHTreeVisualization, vfh_star::Tree, Tree);
-    VizPluginRubyAdapter(VFHTreeVisualization, std::vector<base::Vector3d>, Segment);
 }
 
 VFHTreeVisualization::~VFHTreeVisualization()
@@ -54,16 +52,31 @@ void VFHTreeVisualization::setCostMode(COST_MODE mode)
     setDirty();
 }
 
+VFHTreeVisualization::COST_MODE VFHTreeVisualization::getCostMode()
+{
+    return p->costMode;
+}
+
 void VFHTreeVisualization::removeLeaves(bool enable)
 {
     p->removeLeaves = enable;
     setDirty();
 }
 
+bool VFHTreeVisualization::areLeavesRemoved()
+{
+    return p->removeLeaves;
+}
+
 void VFHTreeVisualization::setMaxNodeCount(int count)
 {
     p->treeNodeCount = count;
     setDirty();
+}
+
+int VFHTreeVisualization::getMaxNodeCount()
+{
+    return p->treeNodeCount;
 }
 
 osg::ref_ptr<osg::Node> VFHTreeVisualization::createMainNode()
