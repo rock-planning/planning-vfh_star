@@ -1,5 +1,5 @@
-#ifndef TRAVERSABILITYGRID_H
-#define TRAVERSABILITYGRID_H
+#ifndef VFH_STAR_TRAVERSABILITYGRID_H
+#define VFH_STAR_TRAVERSABILITYGRID_H
 
 #include "Grid.h"
 #include "ElevationGrid.h"
