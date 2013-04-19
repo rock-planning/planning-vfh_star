@@ -43,6 +43,8 @@ class ElevationEntry {
 	double median;
 	double min;
 	double max;
+	double mean;
+	int entryWindowSize;
 };
 
 class ElevationGrid: public Grid<ElevationEntry, 600, 6>

@@ -1,6 +1,7 @@
 #include "ElevationGrid.h"
 #include "Bresenham.h"
 
+#include <algorithm>
 using namespace vfh_star;
 
 ElevationEntry::ElevationEntry()
@@ -12,11 +13,14 @@ ElevationEntry::ElevationEntry()
     sum = 0;
     count = 0;
     median = 0;
+    mean = 0;
+    entryWindowSize = 50;
 }
 
 void ElevationEntry::addHeightMeasurement(double measurement)
 {
-    const int maxPoints = 50;
+    std::vector<double> aux_heights;
+
     if(min > measurement)
 	min = measurement;
     
@@ -25,25 +29,40 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 
     int num_points = heights.size();
 
-    if(num_points < 50)
+    if(num_points < entryWindowSize)
     {
-	heights.push_back(measurement);
+		heights.push_back(measurement);
 
-	sum += measurement;
-	count++;
-        
-	median = sum / count;
+		sum += measurement;
+		count++;
+
+		aux_heights = heights;
+		if (num_points > 1)
+			{
+			//nth_element returns the nth element if the elements were ordered
+			std::nth_element (aux_heights.begin(), aux_heights.begin()+(count/2), aux_heights.end());
+			median = aux_heights[count/2];
+			}
+		else
+			median = measurement;
+
+		mean = sum / count;
     } else {
-	count++;
-	count = count % 50;
-	
-	heights[count] = measurement;
-	
-	sum = 0;
-	for(int i = 0; i < num_points; i++)
-	    sum += heights[i];
+		count = count % entryWindowSize;
 
-	median = sum / num_points;
+		heights[count] = measurement;
+		count++;
+
+		sum = 0;
+		for(int i = 0; i < num_points; i++)
+			sum += heights[i];
+
+		aux_heights = heights;
+		//nth_element returns the nth element if the elements were ordered
+		std::nth_element (aux_heights.begin(), aux_heights.begin()+(entryWindowSize/2), aux_heights.end());
+		median = aux_heights[entryWindowSize/2];
+	
+		mean = sum / num_points;
     }
 }
 
