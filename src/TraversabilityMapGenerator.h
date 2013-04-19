@@ -77,6 +77,7 @@ class TraversabilityMapGenerator
 	void markUnknownInRectangeAsTraversable(const base::Pose& pose, double width, double height, double forwardOffset);
 	void markUnknownInRectangeAsObstacle(const base::Pose& pose, double width, double height, double forwardOffset);
 	
+	void setGridEntriesWindowSize(int window_size);
 	ConsistencyStats checkMapConsistencyInArea(const base::Pose& pose, double width, double height);
 	
 	void addKnowMap(envire::MLSGrid const *mls, const Eigen::Affine3d& mls2LaserGrid);

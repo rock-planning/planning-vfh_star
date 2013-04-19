@@ -84,6 +84,10 @@ void ElevationEntry::setInterpolatedMeasurement(double measurement)
     median = measurement;
 }
 
+void ElevationEntry::setEntryWindowSize(int window_size)
+{
+	entryWindowSize = window_size;
+}
 ElevationGrid::ElevationGrid()
 {
    
@@ -254,4 +258,12 @@ void ElevationGrid::addLaserScan(const std::vector< Eigen::Vector3d>& laserPoint
 	last_p = it;
     }
 
+}
+
+void ElevationGrid::setEntriesWindowSize(int window_size){
+	for(int x = 0;x < getWidth(); x++){
+		for(int y = 0;y < getHeight(); y++){
+			getEntry(x,y).setEntryWindowSize(window_size);
+		}
+	}
 }

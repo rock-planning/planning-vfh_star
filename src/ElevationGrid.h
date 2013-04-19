@@ -15,6 +15,7 @@ class ElevationEntry {
 	void setMaximumHeight(double measurement);
 	void setMinimumHeight(double measurement);
 	
+	void setEntryWindowSize(int window_size);
 	int getMeasurementCount() const {
 	    return heights.size();
 	}
@@ -56,6 +57,7 @@ class ElevationGrid: public Grid<ElevationEntry, 600, 6>
 	void addLineBetweenPoints(const Eigen::Vector3d &start,const Eigen::Vector3d &end);
 	void addLaserScan(const std::vector<Eigen::Vector3d> &laserPoints_world);
 	
+	void setEntriesWindowSize(int window_size);
 	
     private:
 };
