@@ -45,6 +45,12 @@ namespace vfh_star
 	base::Time maxSeekTime;
 	
         TreeSearchConf();
+                
+        /**
+         * This function computes the position and yaw threshold
+         * from the stepdistance and angularSamplingMin parameters
+         * */
+        void computePosAndYawThreshold();
     };
 
     struct VFHStarConf

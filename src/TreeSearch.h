@@ -14,6 +14,58 @@
 #include <base/trajectory.h>
 
 namespace vfh_star {
+
+class TreeNode;
+class NNLookupBox;
+
+class NNLookup
+{
+public:
+    NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta);
+    ~NNLookup();
+    TreeNode *getNodeWithinBounds(const TreeNode &node);
+    void clearIfSame(const TreeNode *node);
+    void setNode(TreeNode *node);
+    void clear();
+    
+private:
+    bool getIndex(const TreeNode &node,  int& x, int& y);
+    void extendGlobalGrid(int newSize);
+    int curSize;
+    int curSizeHalf;
+
+    double boxSize;
+    double boxResolutionXY;
+    double boxResolutionTheta;
+
+    std::vector<std::vector<NNLookupBox *> > globalGrid;
+    std::list<NNLookupBox *> usedBoxes;
+    std::list<NNLookupBox *> freeBoxes;
+};
+
+class NNLookupBox
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    NNLookupBox(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d &centerPos);
+    TreeNode *getNearestNode(const TreeNode &node);
+    void clearIfSame(const TreeNode *node);
+    void setNode(TreeNode *node);
+    void clear();
+    void setNewPosition(const Eigen::Vector3d &centerPos);
+    
+private:
+    bool getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const;
+    int xCells;
+    int yCells;
+    int aCells;
+    Eigen::Vector3d toWorld;
+    double resolutionXY;
+    double angularResolution;
+    double size;
+    std::vector<std::vector<std::vector<TreeNode *> > > hashMap;
+};
+    
 class TreeNode
 {
     friend class Tree;
@@ -23,15 +75,25 @@ class TreeNode
 
 	TreeNode();
 	TreeNode(const base::Pose &pose, double dir);
+        
+        void clear();
 
         bool isRoot() const;
         bool isLeaf() const;
 	
 	const base::Pose &getPose() const;
-	const TreeNode *getParent() const;
+        const TreeNode *getParent() const;
+	
+	void addChild(TreeNode *child);
+	void removeChild(TreeNode *child);
+	const std::vector<TreeNode *> &getChildren() const;
+	
 	double getDirection() const;
 	int getDepth() const;
 
+	double getYaw() const;
+	const base::Vector3d getPosition() const;
+	
         int getIndex() const;
 
 	double getCost() const;
@@ -40,6 +102,9 @@ class TreeNode
 	void setHeuristic(double value);
         double getHeuristicCost() const;
 
+	void setCostFromParent(double value);
+	double getCostFromParent() const;
+	
         double getPositionTolerance() const;
         void setPositionTolerance(double tol);
         double getHeadingTolerance() const;
@@ -53,10 +118,20 @@ class TreeNode
 	///because of kinematic constrains of the robot
 	base::Pose pose;
 
+	double yaw;
+	
 	///direction, that was choosen, that lead to this node
 	double direction;
+	
+	///cost from start to this node
 	double cost;
+	
+	///heuristic from node to goal
 	double heuristic;
+	
+	///cost from parent to this node
+	double costFromParent;
+	
 	int depth;
         int index;
         bool updated_cost;
@@ -64,24 +139,30 @@ class TreeNode
         double positionTolerance;
         double headingTolerance;
 
+	std::vector<TreeNode *> childs;
+	
         // Used by TreeSearch only
         mutable std::multimap<double, TreeNode *>::iterator candidate_it;
 };
 
 class Tree
 {
+        friend class TreeSearch;
+
     public:
 	Tree();
 	~Tree();
 
         Tree(Tree const& other);
         Tree& operator = (Tree const& other);
-
+	
         TreeNode* createRoot(base::Pose const& pose, double dir);
+        TreeNode* createNode(base::Pose const& pose, double dir);
 	TreeNode* createChild(TreeNode *parent, base::Pose const& pose, double dir);
 
 	TreeNode *getParent(TreeNode *child);
-	TreeNode *getRootNode();
+        const TreeNode *getRootNode() const;
+        TreeNode *getRootNode();
 
         std::vector<base::Waypoint> buildTrajectoryTo(TreeNode const* leaf) const;
 	std::vector<base::Trajectory> buildTrajectoriesTo(TreeNode const* leaf, const Eigen::Affine3d &body2Trajectory) const;
@@ -89,16 +170,24 @@ class Tree
 
         int getSize() const;
         void clear();
-        void reserve();
         void verifyHeuristicConsistency(const TreeNode* from) const;
         std::list<TreeNode> const& getNodes() const;
         void setFinalNode(TreeNode* node);
         TreeNode* getFinalNode() const;
 
         void reserve(int size);
+        
+        /**
+         * Removes the node from the tree.
+         * Internally it will be added to the free list for reuse.
+         * 
+         * The caller is responsible for making sure that the node
+         * is not referenced somewere in the tree. 
+         * */
+        void removeNode(TreeNode *node);
 
     private:
-        TreeNode* createNode(base::Pose const& pose, double dir);
+	void copyNodeChilds(const vfh_star::TreeNode* otherNode, vfh_star::TreeNode* ownNode, const vfh_star::Tree& other);
 
         /** A tree might get quite big, in which case calling nodes.size() is
          * really not efficient. Since it is trivial to keep the size uptodate,
@@ -110,10 +199,13 @@ class Tree
         std::list<TreeNode> nodes;
 
         /** The set of tree nodes */
-        std::list<TreeNode> free_nodes;
+        std::list<TreeNode *> free_nodes;
 
         /** The final node (0 if none has been found) */
         TreeNode* final_node;
+	
+	///Root node of the tree
+	TreeNode *root_node;
 };
 
 /** The basic search algorithm used for planning */
@@ -124,6 +216,7 @@ class TreeSearch
         typedef std::vector< std::pair<double, double> > AngleIntervals;
 
 	TreeSearch();
+        virtual ~TreeSearch();
 
         static base::geometry::Spline<3> waypointsToSpline(const std::vector<base::Waypoint>& waypoints);
 
@@ -140,12 +233,10 @@ class TreeSearch
          * the goal node
          */
         TreeNode const* compute(const base::Pose& start);
-	
-	void setSearchConf(const TreeSearchConf& conf);
+
+        void setSearchConf(const TreeSearchConf& conf);
         const TreeSearchConf& getSearchConf() const;
         Tree const& getTree() const;
-	
-	virtual ~TreeSearch();
 
     protected:
 	Angles getDirectionsFromIntervals(double curDir, const AngleIntervals& intervals);
@@ -221,14 +312,12 @@ class TreeSearch
         virtual bool updateCost(TreeNode& node, bool is_terminal) const;
 
     private:
-        struct TreeNodePositionAccessor
-        {
-            typedef double result_type;
-            double operator ()(TreeNode const* node, int i) const
-            { return node->getPose().position[i]; }
-        };
-        typedef KDTree::KDTree<3, TreeNode const*, TreeNodePositionAccessor> NNSearch;
-        NNSearch kdtree;
+	
+	void updateNodeCosts(TreeNode *node);
+	void removeSubtreeFromSearch(TreeNode *node);
+	
+	std::multimap<double, TreeNode *> expandCandidates;
+	NNLookup *nnLookup;
 };
 } // vfh_star namespace
 

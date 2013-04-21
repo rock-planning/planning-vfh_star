@@ -32,15 +32,13 @@ struct VFHTreeVisualization::Data {
     int treeNodeCount;
 
     Data()
-        : removeLeaves(true), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0) {}
+        : removeLeaves(false), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0) {}
 };
 
 
 VFHTreeVisualization::VFHTreeVisualization()
     : p(new Data)
 {
-    VizPluginRubyAdapter(VFHTreeVisualization, vfh_star::Tree, Tree);
-    VizPluginRubyAdapter(VFHTreeVisualization, std::vector<base::Vector3d>, Segment);
 }
 
 VFHTreeVisualization::~VFHTreeVisualization()
@@ -54,16 +52,31 @@ void VFHTreeVisualization::setCostMode(COST_MODE mode)
     setDirty();
 }
 
+VFHTreeVisualization::COST_MODE VFHTreeVisualization::getCostMode()
+{
+    return p->costMode;
+}
+
 void VFHTreeVisualization::removeLeaves(bool enable)
 {
     p->removeLeaves = enable;
     setDirty();
 }
 
+bool VFHTreeVisualization::areLeavesRemoved()
+{
+    return p->removeLeaves;
+}
+
 void VFHTreeVisualization::setMaxNodeCount(int count)
 {
     p->treeNodeCount = count;
     setDirty();
+}
+
+int VFHTreeVisualization::getMaxNodeCount()
+{
+    return p->treeNodeCount;
 }
 
 osg::ref_ptr<osg::Node> VFHTreeVisualization::createMainNode()
@@ -87,23 +100,24 @@ static double getDisplayCost(VFHTreeVisualization::COST_MODE mode, vfh_star::Tre
     return 0;
 }
 
-pair<double, double> VFHTreeVisualization::computeColorMapping(std::set<TreeNode const*> const& nodes) const
+pair<double, double> VFHTreeVisualization::computeColorMapping(std::multimap<double, TreeNode const*> const &sorted_nodes) const
 {
     // NOTE: we assume that nodes is not empty. This is checked by
     // updateMainNode
-    if (nodes.empty())
+    if (sorted_nodes.empty())
         return make_pair(0, 0);
 
     double min_cost, max_cost;
-    min_cost = max_cost = getDisplayCost(p->costMode, **nodes.begin());
+    min_cost = max_cost = getDisplayCost(p->costMode, *(sorted_nodes.begin()->second));
     
-    for (std::set<TreeNode const*>::const_iterator it = nodes.begin();
-            it != nodes.end(); ++it)
+    for (std::map<double, TreeNode const*>::const_iterator it = sorted_nodes.begin();
+            it != sorted_nodes.end(); ++it)
     {
-        if ((*it)->getHeuristic() < 0)
+        const TreeNode &node(*(it->second));
+        if (node.getHeuristic() < 0)
             continue;
 
-        double c = getDisplayCost(p->costMode, **it);
+        double c = getDisplayCost(p->costMode, node);
 
         if (c < min_cost)
             min_cost = c;
@@ -174,7 +188,7 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     return geom;
 }
 
-osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> const& nodes, double color_a, double color_b)
+osg::Geometry* VFHTreeVisualization::createTreeNode(std::multimap<double, TreeNode const*> const &sorted_nodes, double color_a, double color_b)
 {
     osg::Geometry* geom = new osg::Geometry;
 
@@ -183,13 +197,21 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
     osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
 
     int count = p->treeNodeCount;
-    for(set<TreeNode const*>::const_iterator it = nodes.begin();
-            it != nodes.end(); ++it)
-    {
-        if (count != 0 && (*it)->getIndex() > count)
-            continue;
 
-        TreeNode const* node = (*it);
+    int nodeCounter = 0;
+    
+    for(std::map<double, TreeNode const*>::const_iterator it = sorted_nodes.begin();
+            it != sorted_nodes.end(); ++it)
+    {
+        if (count != 0 && nodeCounter > count)
+            break;
+
+        nodeCounter++;
+        
+        TreeNode const* node = (it->second);
+        
+        if(node->isRoot())
+            continue;
 
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
@@ -207,7 +229,7 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
             double blue = 0.5;
             double alpha = 1.0;
             colors->push_back(osg::Vec4(red, green, blue, alpha));
-        }
+        }        
     }
     geom->setColorArray(colors);
     geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
@@ -258,32 +280,36 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     if (nodes.empty())
         return;
 
-    std::set<TreeNode const*> enabled_nodes;
+    //sort nodes by heuristic costs.
+    std::multimap<double, TreeNode const*> sorted_nodes;
+    
     if (p->removeLeaves)
     {
         for(list<TreeNode>::const_iterator it = nodes.begin();
                 it != nodes.end(); it++)
         {
-            if (!it->isRoot() && !it->getParent()->isRoot())
-                enabled_nodes.insert(it->getParent());
+            if(it->isLeaf() && !it->isRoot())
+                continue;
+            
+            sorted_nodes.insert(std::make_pair(it->getHeuristicCost(), &(*it)));
         }
     }
     else
     {
         for(list<TreeNode>::const_iterator it = nodes.begin();
                 it != nodes.end(); it++)
-            if (!it->isRoot())
-                enabled_nodes.insert(&(*it));
+            sorted_nodes.insert(std::make_pair(it->getHeuristicCost(), &(*it)));
     }
+    
     // Add the final node regardless of the leaf mode
     if (p->data.getFinalNode())
-        enabled_nodes.insert(p->data.getFinalNode());
+        sorted_nodes.insert(std::make_pair(p->data.getFinalNode()->getHeuristicCost(), p->data.getFinalNode()));
 
     // Gets the mapping from cost to color
     double cost_a, cost_b;
-    boost::tie(cost_a, cost_b) = computeColorMapping(enabled_nodes);
+    boost::tie(cost_a, cost_b) = computeColorMapping(sorted_nodes);
 
-    geode->addDrawable(createTreeNode(enabled_nodes, cost_a, cost_b));
+    geode->addDrawable(createTreeNode(sorted_nodes, cost_a, cost_b));
     if (p->data.getFinalNode())
         geode->addDrawable(createSolutionNode(p->data.getFinalNode(), cost_a, cost_b));
 }

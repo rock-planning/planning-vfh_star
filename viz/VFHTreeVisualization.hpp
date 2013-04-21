@@ -2,7 +2,7 @@
 #define vfh_star_VFHTreeVisualization_H
 
 #include <boost/noncopyable.hpp>
-#include <vizkit/VizPlugin.hpp>
+#include <vizkit/Vizkit3DPlugin.hpp>
 #include <vfh_star/TreeSearch.h>
 
 namespace osg
@@ -13,10 +13,11 @@ namespace osg
 namespace vizkit
 {
     class VFHTreeVisualization
-        : public vizkit::VizPlugin<vfh_star::Tree>
+        : public vizkit::Vizkit3DPlugin<vfh_star::Tree>
 	, public vizkit::VizPluginAddType< std::vector<base::Vector3d> >
         , boost::noncopyable
     {
+        Q_OBJECT
     public:
         VFHTreeVisualization();
         ~VFHTreeVisualization();
@@ -25,10 +26,29 @@ namespace vizkit
         {
             SHOW_COST, SHOW_HEURISTICS, SHOW_BOTH
         };
+        
+        Q_PROPERTY(COST_MODE CostMode READ getCostMode WRITE setCostMode)
+        Q_PROPERTY(int MaxNodeCount READ getMaxNodeCount WRITE setMaxNodeCount)
+        Q_PROPERTY(bool RemoveLeaves READ areLeavesRemoved WRITE removeLeaves)
+
+        Q_INVOKABLE void updateData(vfh_star::Tree const& plan)
+        { Vizkit3DPlugin<vfh_star::Tree>::updateData(plan); }
+        Q_INVOKABLE void updateTree(vfh_star::Tree const& plan)
+        { Vizkit3DPlugin<vfh_star::Tree>::updateData(plan); }
+
+        Q_INVOKABLE void updateData(std::vector<base::Vector3d> const& segment)
+        { Vizkit3DPlugin<vfh_star::Tree>::updateData(segment); }
+        Q_INVOKABLE void updateSegment(std::vector<base::Vector3d> const& segment)
+        { Vizkit3DPlugin<vfh_star::Tree>::updateData(segment); }
 
         void setCostMode(COST_MODE mode);
-        void removeLeaves(bool enable);
+        COST_MODE getCostMode();
+        
         void setMaxNodeCount(int count);
+        int getMaxNodeCount();
+
+        void removeLeaves(bool enable);
+        bool areLeavesRemoved();
 
     protected:
         virtual osg::ref_ptr<osg::Node> createMainNode();
@@ -36,10 +56,10 @@ namespace vizkit
         virtual void updateDataIntern(vfh_star::Tree const& plan);
         virtual void updateDataIntern(std::vector<base::Vector3d> const& segment);
 
-        osg::Geometry* createTreeNode(std::set<vfh_star::TreeNode const*> const& nodes, double color_a, double color_b);
+        osg::Geometry* createTreeNode(const std::multimap< double, const vfh_star::TreeNode* >& sorted_nodes, double color_a, double color_b);
         osg::Geometry* createSolutionNode(vfh_star::TreeNode const* node, double color_a, double color_b);
 
-        std::pair<double, double> computeColorMapping(std::set<vfh_star::TreeNode const*> const& nodes) const;
+        std::pair<double, double> computeColorMapping(const std::multimap< double, const vfh_star::TreeNode* >& sorted_nodes) const;
         
     private:
         struct Data;
