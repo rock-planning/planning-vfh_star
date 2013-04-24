@@ -2,6 +2,7 @@
 #include "Bresenham.h"
 
 #include <algorithm>
+#include <math.h>
 using namespace vfh_star;
 
 ElevationEntry::ElevationEntry()
@@ -15,11 +16,15 @@ ElevationEntry::ElevationEntry()
     median = 0;
     mean = 0;
     entryWindowSize = 50;
+    stDev = 0;
+    timesStDev = 0.5;
 }
 
 void ElevationEntry::addHeightMeasurement(double measurement)
 {
+    //median is the attribute that is finally used as elevation
     std::vector<double> aux_heights;
+    double prev_mean = mean;
 
     if(min > measurement)
 	min = measurement;
@@ -64,6 +69,10 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 	
 		mean = sum / num_points;
     }
+    // Using mean and stDeviation
+    stDev += (measurement - prev_mean) * (measurement - mean);
+    stDev = sqrt(stDev / count);
+    median = mean + timesStDev * stDev;
 }
 
 void ElevationEntry::setMaximumHeight(double measurement)
