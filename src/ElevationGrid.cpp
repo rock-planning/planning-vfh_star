@@ -23,7 +23,9 @@ ElevationEntry::ElevationEntry()
 void ElevationEntry::addHeightMeasurement(double measurement)
 {
     //median is the attribute that is finally used as elevation
-    std::vector<double> aux_heights;
+	// I've commented out the code where the median is computed
+	//now the mean + k*stdev is used
+//    std::vector<double> aux_heights;
     double prev_mean = mean;
 
     if(min > measurement)
@@ -41,15 +43,15 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 		sum += measurement;
 		count++;
 
-		aux_heights = heights;
-		if (num_points > 1)
-			{
-			//nth_element returns the nth element if the elements were ordered
-			std::nth_element (aux_heights.begin(), aux_heights.begin()+(count/2), aux_heights.end());
-			median = aux_heights[count/2];
-			}
-		else
-			median = measurement;
+//		aux_heights = heights;
+//		if (num_points > 1)
+//			{
+//			//nth_element returns the nth element if the elements were ordered
+//			std::nth_element (aux_heights.begin(), aux_heights.begin()+(count/2), aux_heights.end());
+//			median = aux_heights[count/2];
+//			}
+//		else
+//			median = measurement;
 
 		mean = sum / count;
     } else {
@@ -62,10 +64,10 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 		for(int i = 0; i < num_points; i++)
 			sum += heights[i];
 
-		aux_heights = heights;
-		//nth_element returns the nth element if the elements were ordered
-		std::nth_element (aux_heights.begin(), aux_heights.begin()+(entryWindowSize/2), aux_heights.end());
-		median = aux_heights[entryWindowSize/2];
+//		aux_heights = heights;
+//		//nth_element returns the nth element if the elements were ordered
+//		std::nth_element (aux_heights.begin(), aux_heights.begin()+(entryWindowSize/2), aux_heights.end());
+//		median = aux_heights[entryWindowSize/2];
 	
 		mean = sum / num_points;
     }
