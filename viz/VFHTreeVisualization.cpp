@@ -163,9 +163,9 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     }
 
     // Add a node for the root's direction
-    Eigen::Quaterniond q(Eigen::AngleAxisd(node->getDirection(), Eigen::Vector3d::UnitZ()));
-    base::Vector3d root_dir = q * Eigen::Vector3d::UnitY();
-    base::Position parent_p = node->getPose().position;
+    Eigen::Quaterniond q(Eigen::AngleAxisd(node->getYaw().getRad(), Eigen::Vector3d::UnitZ()));
+    base::Vector3d root_dir = q * Eigen::Vector3d::UnitX();
+    base::Position parent_p = node->getPosition();
     base::Position p = parent_p - root_dir * step;
     vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
     vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));

@@ -1,6 +1,8 @@
 #include "VFH.h"
 #include <iomanip>
 
+extern bool printDebug;
+
 using namespace Eigen;
 namespace vfh_star
 {
@@ -16,7 +18,7 @@ VFH::VFH()
 
 
 
-void addDir(std::vector< std::pair<double, double> > &drivableDirections, double angularResoultion, int narrowThreshold, int start, int end, int histSize)
+void addDir(std::vector< std::pair<base::Angle, base::Angle> > &drivableDirections, double angularResoultion, int narrowThreshold, int start, int end, int histSize)
 {
 //     std::cout << "adding area " << start << " end " << end << " is narrow " << (abs(end-start) < narrowThreshold) <<  std::endl;
     
@@ -30,16 +32,16 @@ void addDir(std::vector< std::pair<double, double> > &drivableDirections, double
 	if(middle > histSize)
 	    middle -= histSize;
 	
-	double dir = middle * angularResoultion;
+	const base::Angle dir = base::Angle::fromRad((middle * angularResoultion));
 	drivableDirections.push_back(std::make_pair(dir, dir));
     } else {
-	double left = start * angularResoultion;
-	double right = end * angularResoultion;
+	const base::Angle  left = base::Angle::fromRad(start * angularResoultion);
+	const base::Angle  right = base::Angle::fromRad(end * angularResoultion);
 	drivableDirections.push_back(std::make_pair(left, right));
     }    
 }
 
-void VFH::setNewTraversabilityGrid(const envire::Grid< Traversability >* trGrid)
+void VFH::setNewTraversabilityGrid(const envire::TraversabilityGrid* trGrid)
 {
     traversabillityGrid = trGrid;
     
@@ -50,11 +52,11 @@ void VFH::setNewTraversabilityGrid(const envire::Grid< Traversability >* trGrid)
     
 }
 
-std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
+std::vector< std::pair<base::Angle, base::Angle> > VFH::getNextPossibleDirections(
         const base::Pose& curPose, double obstacleSafetyDist, double robotWidth,
         vfh_star::VFHDebugData* dd) const
 {
-    std::vector< std::pair<double, double> > drivableDirections;
+    std::vector< std::pair<base::Angle, base::Angle> > drivableDirections;
     std::vector<double> histogram;
     std::vector<bool> bHistogram;
 
@@ -62,11 +64,25 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
     histogram.resize(histogramSize);
 
     double angularResoultion = 2*M_PI / histogram.size();
-    
+       
     generateHistogram(histogram, curPose, senseRadius, obstacleSafetyDist, robotWidth / 2.0);
 
+//     for(std::vector<double>::iterator it = histogram.begin(); it != histogram.end(); it++)
+//     {
+//         std::cout << *it << std::endl;
+//     }
+    
     //we ignore one obstacle
     getBinaryHistogram(histogram, bHistogram, lowThreshold, highThreshold);
+
+    if(printDebug)
+    {
+        std::cout << "Binary Histogram " << std::endl;
+        for(std::vector<bool>::iterator it = bHistogram.begin(); it != bHistogram.end(); it++)
+        {
+            std::cout << *it << std::endl;
+        }
+    }
     
     int start = -1;
     int end = -1;
@@ -116,6 +132,13 @@ std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
 	dd->senseRadius = senseRadius;
     }
     
+    if(printDebug)
+    {
+        std::cout << "Resulting dirs: " << std::endl;
+        for(std::vector< std::pair<base::Angle, base::Angle> >::iterator it = drivableDirections.begin(); it != drivableDirections.end(); it++)
+            std::cout << "Start dir " << it->first << " End Dir " << it->second << std::endl;
+    }
+    
     return drivableDirections;
 }
 
@@ -150,7 +173,7 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
     const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
     const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
     const Vector3d robotPosInGrid = curPose.position - cornerPos;
-    const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
+    const envire::TraversabilityGrid::ArrayType &gridData = traversabillityGrid->getGridData();
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
     const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
 
@@ -178,7 +201,7 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
 //		throw std::runtime_error("Accessed cell outside of grid");
 	    }
 
-	    switch(gridData[rx][ry]) {
+	    switch(gridData[ry][rx]) {
 		case OBSTACLE:
 		    worstTerrain = OBSTACLE;
 		    break;
@@ -211,7 +234,7 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
     const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
     const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
     const Vector3d robotPosInGrid = curPose.position - cornerPos;
-    const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
+    const envire::TraversabilityGrid::ArrayType &gridData = traversabillityGrid->getGridData();
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
     const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
 
@@ -230,10 +253,10 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 	    int rx = robotX + x;
 	    int ry = robotY + y;
 	    
-	    Traversability terrainType =  OBSTACLE;
+	    envire::TraversabilityGrid::DataType terrainType = OBSTACLE;
 	    
 	    if(traversabillityGrid->inGrid(rx, ry))
-		terrainType = gridData[rx][ry];
+		terrainType = gridData[ry][rx];
 	    
 /*	    if(!traversabillityGrid->inGrid(rx, ry))
 	    {
@@ -261,11 +284,8 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 
 void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double senseRadius, double obstacleSafetyDist, double robotRadius) const
 {
-    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
-    
-    int nrDirs = histogram.size();
-    
-    double dirResolution = 2*M_PI / nrDirs;
+    const int nrDirs = histogram.size();
+    const double dirResolution = 2*M_PI / nrDirs;
     
     const double a = 2.0;
     const double b = 1.0/ (senseRadius * senseRadius);
@@ -274,48 +294,41 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
     std::vector<double> &dirs(histogram);    
     
     //calculate robot pos in grid coordinates
-    const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
-    const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
-    const Vector3d robotPosInGrid = curPose.position - cornerPos;
-    const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
-    const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
-    const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
+    size_t robotX, robotY;    
+    assert(traversabillityGrid->toGrid(curPose.position.x(), curPose.position.y(), robotX, robotY));
     
-/*    std::cout << "Grid pos " << gridPos->getTransform().translation().transpose() << std::endl;
-    std::cout << "to Corener " << toCorner.transpose() << std::endl;
-    std::cout << "robotPos " << curPose.position.transpose() << std::endl;
-    std::cout << "robotPos in Grid" << robotPosInGrid.transpose() << std::endl;
-    std::cout << "RobotX " << robotX << " Y " << robotY << std::endl;*/
-    
-    //TODO what happens if scale x an scale y differ...
-    int senseSize = senseRadius / traversabillityGrid->getScaleX();
-    
+    const envire::TraversabilityGrid::ArrayType &gridData = traversabillityGrid->getGridData();    
+    const int senseSize = senseRadius / traversabillityGrid->getScaleX();
+
 //     std::cout << "senseSize " << senseSize << std::endl;
     
-    /*//Debug code for printing local obstacle map  
+//     Debug code for printing local obstacle map  
 
-    std::cout <<  std::endl;
-
-    for(int y = senseSize; y >= -senseSize; y--)
+    if(printDebug)
     {
-	std::cout << std::setw(4) << y;
-	for(int x = -senseSize; x <= senseSize; x++)
-	{
-	    int rx = robotX + x;
-	    int ry = robotY + y;
-	    
-	    if(!traversabillityGrid->inGrid(rx, ry))
-		continue;
+        std::cout <<  std::endl;
 
-	    //go safe, if we do not know anything about something, it is an obstacle
-	    if(gridData[rx][ry] == OBSTACLE)
-		std::cout <<  "O";		
-	    else
-		std::cout <<  "T";
-		
-	}
-	std::cout <<  std::endl;
-    }*/
+        for(int y = senseSize; y >= -senseSize; y--)
+        {
+            std::cout << std::setw(4) << y;
+            for(int x = -senseSize; x <= senseSize; x++)
+            {
+                int rx = robotX + x;
+                int ry = robotY + y;
+                
+                if(!traversabillityGrid->inGrid(rx, ry))
+                    continue;
+
+                //go safe, if we do not know anything about something, it is an obstacle
+                if(gridData[ry][rx] == OBSTACLE)
+                    std::cout <<  "O";		
+                else
+                    std::cout <<  "T";
+                    
+            }
+            std::cout <<  std::endl;
+        }
+    }
     
     //walk over area of grid within of circle with radius senseRadius around the robot
     for(int y = -senseSize; y <= senseSize; y++)
@@ -333,22 +346,23 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 	    
 // 	    std::cout << "rx " << rx << " ry " << ry << std::endl;
 
+            bool inGrid = traversabillityGrid->inGrid(rx, ry);
+            if(!inGrid)
+            {
+                std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
+                std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
+                std::cout << "Sense size x:" << senseSize << " sense radius" << senseRadius << std::endl;
+                
+                throw std::runtime_error("Accessed cell outside of grid");
+            }
+            
 	    //go safe, if we do not know anything about something, it is an obstacle
-	    if(!traversabillityGrid->inGrid(rx, ry) || (gridData[rx][ry] == OBSTACLE))
+	    if(gridData[ry][rx] == OBSTACLE)
 	    {
-		if(!traversabillityGrid->inGrid(rx, ry))
-		{
-		    std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
-		    std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
-		    std::cout << "Sense size x:" << senseSize << " sense radius" << senseRadius << std::endl;
-		 
-		    throw std::runtime_error("Accessed cell outside of grid");
-		}
-		
 		double angleToObstace = lut.getAngle(x, y); // atan2(y, x);
 		
 		//convert to ENU
-		angleToObstace -= M_PI / 2.0;
+// 		angleToObstace -= M_PI / 2.0;
 		
 		//move to range 0 to 2*M_PI
 		angleToObstace = normalize(angleToObstace);
@@ -383,6 +397,17 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 		}
 	    }
 	}
+    }
+    
+    if(printDebug)
+    {
+        std::cout << "Dirs :" << std::endl;
+        
+        for(int i = 0; i < nrDirs; i++)
+        {
+            std::cout << 360.0 * i / nrDirs << ": " << dirs[i] << std::endl;
+        }
+        
     }
 }
 

@@ -16,83 +16,32 @@ VFHStar::~VFHStar()
 
 const VFHStarConf& VFHStar::getCostConf() const
 {
-    return cost_conf;
+    return vfhStarConf;
 }
 
 void VFHStar::setCostConf(const VFHStarConf& conf)
 {
-    cost_conf = conf;
+    vfhStarConf = conf;
 }
 
-base::geometry::Spline<3> VFHStar::getTrajectory(base::Pose const& start, double mainHeading, double horizon)
+// double VFHStar::getHeuristic(const TreeNode &node) const
+// {
+//     double d_to_goal = HorizonPlanner::getHeuristic(node);
+// 
+//     int steps = ceil(d_to_goal / search_conf.stepDistance);
+//     double result = 0;
+//     while (steps-- > 0)
+//         result = result * search_conf.discountFactor + 1;
+//     
+//     return result * search_conf.discountFactor * search_conf.stepDistance * vfhStarConf.distanceWeight;
+// }
+
+void VFHStar::setNewTraversabilityGrid(const envire::TraversabilityGrid* trGrid)
 {
-    return TreeSearch::waypointsToSpline(getWaypoints(start, mainHeading, horizon));
+    vfh.setNewTraversabilityGrid(trGrid);
 }
 
-std::vector<base::Waypoint> VFHStar::getWaypoints(base::Pose const& start, double mainHeading, double horizon)
-{
-    const TreeNode *node = computePath(start, mainHeading, horizon, Affine3d::Identity());
-    return tree.buildTrajectoryTo(node);
-}
-
-std::vector< base::Trajectory > VFHStar::getTrajectories(const base::Pose& start, double mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
-{
-    const TreeNode *node = computePath(start, mainHeading, horizon, body2Trajectory);
-    return tree.buildTrajectoriesTo(node, body2Trajectory);
-}
-
-const TreeNode* VFHStar::computePath(base::Pose const& start, double mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
-{
-    this->mainHeading = mainHeading;
-
-    // Used for heuristics
-    this->targetLineNormal =
-        Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitY();
-    this->targetLinePoint  =
-        start.position + targetLineNormal * horizon;
-	
-    this->targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitX();
-
-    targetLineNormal +=  Vector3d(0, 0, start.position.z());
-    
-    std::cout << "target:" << std::endl;
-    std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
-    std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
-    
-    return compute(start);
-}
-	
-double VFHStar::algebraicDistanceToGoalLine(const base::Position& pos) const
-{
-    //check weather we crossed the target line;
-    
-    //targetLineNormal is normalized
-    //so this solves to |(targetLinePoint - pos)| * cos alpha = b
-    //b is the adjecent which is the searched distance to the line.
-    return (targetLinePoint - pos).dot(targetLineNormal);
-}
-
-bool VFHStar::isTerminalNode(const TreeNode& node) const
-{
-    double d = algebraicDistanceToGoalLine(node.getPose().position);
-    return d <= 0;
-}
-
-double VFHStar::getHeuristic(const TreeNode &node) const
-{
-    double d_to_goal = algebraicDistanceToGoalLine(node.getPose().position);
-    if (d_to_goal < 0)
-        return 0;
-
-    int steps = ceil(d_to_goal / search_conf.stepDistance);
-    double result = 0;
-    while (steps-- > 0)
-        result = result * search_conf.discountFactor + 1;
-    
-    return result * search_conf.discountFactor * search_conf.stepDistance * cost_conf.distanceWeight;
-}
-
-double VFHStar::getCostForNode(const base::Pose& pose, double direction, const TreeNode& parentNode) const
+double VFHStar::getCostForNode(const base::Pose& pose, const base::Angle &direction, const TreeNode& parentNode) const
 {
     /**
     * cost is build from three factors:
@@ -103,27 +52,32 @@ double VFHStar::getCostForNode(const base::Pose& pose, double direction, const T
     * direction means the direction that was selected, in the previouse step, thus leading to this node
     */
 
-    const double a = cost_conf.mainHeadingWeight;
-    const double b = cost_conf.distanceWeight;
-    const double c = cost_conf.turningWeight;
+    const double a = vfhStarConf.mainHeadingWeight;
+    const double b = vfhStarConf.distanceWeight;
+    const double c = vfhStarConf.turningWeight;
     
-    double aPart = angleDiff(direction, mainHeading);
+    double aPart = fabs((base::Angle::fromRad(pose.getYaw()) - mainHeading).getRad());
     double bPart = (pose.position - parentNode.getPose().position).norm();
-    double cPart = angleDiff(direction, parentNode.getDirection());
+    double cPart = fabs((direction - parentNode.getDirection()).getRad());
 
+    double distToTarget = algebraicDistanceToGoalLine(pose.position);
+    if(distToTarget < bPart)
+        bPart = distToTarget;
+    
     return a * aPart + b * bPart + c * cPart;
 }
 
-double VFHStar::angleDiff(const double &a1, const double &a2) const
+TreeSearch::AngleIntervals VFHStar::getNextPossibleDirections(const vfh_star::TreeNode& curNode) const
 {
-    double d = a1-a2;
-    return std::min(std::min(fabs(d), fabs(d - M_PI*2)),fabs(d + M_PI*2));
-}
+    const double &obstacleSafetyDist(vfhStarConf.vfhConf.obstacleSafetyDistance);
+    const double &robotWidth(vfhStarConf.vfhConf.robotWidth);
+    
+    VFHDebugData dd;
+    TreeSearch::AngleIntervals ret;
+    ret = vfh.getNextPossibleDirections(curNode.getPose(), obstacleSafetyDist, robotWidth, &dd);
+//     debugData.steps.push_back(dd);
 
-double VFHStar::getMotionDirection(const Vector3d &start, const Vector3d &end) const
-{
-    //note, we define y as our zero heading
-    return atan2(end.y() - start.y(), end.x() - start.x()) + M_PI / 2.0;
+    return ret;
 }
 
 

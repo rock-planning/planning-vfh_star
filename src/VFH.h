@@ -2,15 +2,23 @@
 #define VFH_H
 
 #include <envire/maps/Grid.hpp>
-#include "TraversabilityGrid.h"
+#include <envire/maps/TraversabilityGrid.hpp>
 #include <vector>
 #include <base/pose.h>
 #include "RadialLookUpTable.hpp"
 
 #include "Types.h"
+#include <base/angle.h>
 
 namespace vfh_star
 {
+    enum Traversability {
+        UNCLASSIFIED = 0,
+        TRAVERSABLE = 1,
+        OBSTACLE = 2,
+        UNKNOWN_OBSTACLE = 3,
+    };
+    
     class TerrainStatistic
     {
 	public:
@@ -60,7 +68,7 @@ namespace vfh_star
     {
     public:
         VFH();
-        virtual std::vector< std::pair<double, double> >
+        virtual std::vector< std::pair<base::Angle, base::Angle> >
             getNextPossibleDirections(const base::Pose& curPose,
                     double obstacleSafetyDist,
                     double robotWidth, VFHDebugData* dd) const;
@@ -77,7 +85,7 @@ namespace vfh_star
 	    senseRadius = radius;
 	}
 	
-	void setNewTraversabilityGrid(const envire::Grid<Traversability> *trGrid);
+	void setNewTraversabilityGrid(const envire::TraversabilityGrid *trGrid);
 	
 	Traversability getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const;
 	std::pair<TerrainStatistic, TerrainStatistic> getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadius, double outerRadius) const;
@@ -89,7 +97,7 @@ namespace vfh_star
 
         void getBinaryHistogram(const std::vector< double > &histogram, std::vector< bool > &binHistogram, double lowThreshold, double highThreshold) const;
 	RadialLookUpTable lut;
-        const envire::Grid<Traversability> *traversabillityGrid;
+        const envire::TraversabilityGrid *traversabillityGrid;
 
         bool debugActive;
         VFHDebugData debugData;
