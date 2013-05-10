@@ -148,8 +148,12 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
         base::Position p = node->getPose().position;
         if (step == 0)
             step = (parent_p - p).norm();
-	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
-	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+//	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+//	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+
+	vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z() + 0.001));
+	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z() + 0.001));
+
 
         double cost = getDisplayCost(this->p->costMode, *node);
 
@@ -167,8 +171,12 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     base::Vector3d root_dir = q * Eigen::Vector3d::UnitY();
     base::Position parent_p = node->getPose().position;
     base::Position p = parent_p - root_dir * step;
-    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
-    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+//    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+//    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+
+    vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z() + 0.001));
+	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z() + 0.001));
+
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
     geom->setColorArray(colors);
@@ -215,8 +223,12 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::multimap<double, TreeNo
 
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
-	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
-	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
+//    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
+//    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
+
+	vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z()));
+	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z()));
+
 
         if (node->getHeuristic() < 0) // used to mark invalid nodes
             colors->push_back(osg::Vec4(0, 0, 0, 1));
@@ -262,9 +274,11 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
         osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
         osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
         base::Vector3d pt = p->segment[0];
-        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+//        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+        vertices->push_back(osg::Vec3(pt.y(), -pt.x(), pt.z()));
         pt = p->segment[1];
-        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+//        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+        vertices->push_back(osg::Vec3(pt.y(), -pt.x(), pt.z()));
         colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
         geom->setColorArray(colors);
