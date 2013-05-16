@@ -17,16 +17,13 @@ ElevationEntry::ElevationEntry()
     mean = 0;
     entryWindowSize = 50;
     stDev = 0;
-    timesStDev = 0.5;
+
+    entryHeightConf = 0;
 }
 
 void ElevationEntry::addHeightMeasurement(double measurement)
 {
     //median is the attribute that is finally used as elevation
-	// I've commented out the code where the median is computed
-	//now the mean + k*stdev is used
-//    std::vector<double> aux_heights;
-    double prev_mean = mean;
 
     if(min > measurement)
 	min = measurement;
@@ -34,27 +31,38 @@ void ElevationEntry::addHeightMeasurement(double measurement)
     if(max < measurement)
 	max = measurement;
 
-    int num_points = heights.size();
+    switch (entryHeightConf){
+    	case 0:
+		//Code 0 means mean
+    		addHeightMeasurementMeanStd(measurement, 0.0);
+    		break;
+    	case 1:
+    	//Code 1 means mean + 0.5*std
+    		addHeightMeasurementMeanStd(measurement, 0.5);
+    		break;
+    	case 2:
+    	//Code 2 means median
+    		addHeightMeasurementMedian(measurement);
+    		break;
+    	default:
+    		addHeightMeasurementMeanStd(measurement, 0.0);
+    }
+}
 
+void ElevationEntry::addHeightMeasurementMeanStd(double measurement,
+		double k_std)
+{
+    double prev_mean = mean;
+
+    int num_points = heights.size();
     if(num_points < entryWindowSize)
     {
 		heights.push_back(measurement);
 
 		sum += measurement;
 		count++;
-
-//		aux_heights = heights;
-//		if (num_points > 1)
-//			{
-//			//nth_element returns the nth element if the elements were ordered
-//			std::nth_element (aux_heights.begin(), aux_heights.begin()+(count/2), aux_heights.end());
-//			median = aux_heights[count/2];
-//			}
-//		else
-//			median = measurement;
-
 		mean = sum / count;
-    } else {
+    }else{
 		count = count % entryWindowSize;
 
 		heights[count] = measurement;
@@ -64,17 +72,41 @@ void ElevationEntry::addHeightMeasurement(double measurement)
 		for(int i = 0; i < num_points; i++)
 			sum += heights[i];
 
-//		aux_heights = heights;
-//		//nth_element returns the nth element if the elements were ordered
-//		std::nth_element (aux_heights.begin(), aux_heights.begin()+(entryWindowSize/2), aux_heights.end());
-//		median = aux_heights[entryWindowSize/2];
-	
 		mean = sum / num_points;
     }
-    // Using mean and stDeviation
-    stDev += (measurement - prev_mean) * (measurement - mean);
-    stDev = sqrt(stDev / count);
-    median = mean + timesStDev * stDev;
+	stDev += (measurement - prev_mean) * (measurement - mean);
+	stDev = sqrt(stDev / count);
+	median = mean + k_std * stDev;
+}
+
+void ElevationEntry::addHeightMeasurementMedian(double measurement)
+{
+	std::vector<double> aux_heights;
+	aux_heights = heights;
+
+	int num_points = heights.size();
+    if(num_points < entryWindowSize)
+    {
+    	heights.push_back(measurement);
+    	count++;
+
+    	if (num_points > 1)
+    	{
+			//nth_element returns the nth element if the elements were ordered
+			std::nth_element (aux_heights.begin(), aux_heights.begin()+(count/2), aux_heights.end());
+			median = aux_heights[count/2];
+		}else
+			median = measurement;
+
+	} else {
+		count = count % entryWindowSize;
+		heights[count] = measurement;
+		count++;
+
+		//nth_element returns the nth element if the elements were ordered
+		std::nth_element (aux_heights.begin(), aux_heights.begin()+(entryWindowSize/2), aux_heights.end());
+		median = aux_heights[entryWindowSize/2];
+	}
 }
 
 void ElevationEntry::setMaximumHeight(double measurement)
@@ -99,6 +131,11 @@ void ElevationEntry::setEntryWindowSize(int window_size)
 {
 	entryWindowSize = window_size;
 }
+
+void ElevationEntry::setHeightMeasureMethod(int entry_height_conf){
+	entryHeightConf = entry_height_conf;
+}
+
 ElevationGrid::ElevationGrid()
 {
    
@@ -277,4 +314,12 @@ void ElevationGrid::setEntriesWindowSize(int window_size){
 			getEntry(x,y).setEntryWindowSize(window_size);
 		}
 	}
+}
+
+void ElevationGrid::setHeightMeasureMethod(int entry_height_conf){
+	for(int x = 0;x < getWidth(); x++){
+			for(int y = 0;y < getHeight(); y++){
+				getEntry(x,y).setHeightMeasureMethod(entry_height_conf);
+			}
+		}
 }
