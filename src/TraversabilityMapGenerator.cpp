@@ -152,6 +152,17 @@ void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Af
     }
 }
 
+void TraversabilityMapGenerator::setGridEntriesWindowSize(int window_size)
+{
+	laserGrid.setEntriesWindowSize(window_size);
+	interpolatedGrid.setEntriesWindowSize(window_size);
+}
+
+void TraversabilityMapGenerator::setHeightMeasureMethod(int entry_height_conf){
+	laserGrid.setHeightMeasureMethod(entry_height_conf);
+	interpolatedGrid.setHeightMeasureMethod(entry_height_conf);
+}
+
 void TraversabilityMapGenerator::computeNewMap()
 {
     //interpolate grid
