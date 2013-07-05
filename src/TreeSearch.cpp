@@ -747,13 +747,23 @@ void NNLookup::extendGlobalGrid(int requestedSize)
 void NNLookup::setNode(TreeNode* node)
 {
     int x,y;
+    bool debug_var = false;
     if(!getIndex(*node, x, y))
     {
-	extendGlobalGrid(std::max(abs(x),abs(y)) + 1);
-	assert(getIndex(*node, x, y));
+//if ((y<0) or (x<0))
+//            return;
+    	extendGlobalGrid(std::max(abs(x),abs(y)) + 1);
+        if (!getIndex(*node, x, y))
+        {
+            std::cout << "x: " << x << ". y: "<< y << std::endl;
+            std::cout << "This is bad !" << std::endl;
+            debug_var = true;
+        }
+        //assert(getIndex(*node, x, y));
     }
 
     NNLookupBox *box = globalGrid[x][y];
+
     if(box == NULL)
     {
 	const Eigen::Vector3d boxPos = Eigen::Vector3d(floor(node->getPosition().x()),
@@ -774,8 +784,10 @@ void NNLookup::setNode(TreeNode* node)
 	usedBoxes.push_back(box);
 	globalGrid[x][y] = box;
     }
-    
-    box->setNode(node);
+    if(!debug_var)
+    {
+        box->setNode(node);
+    }
 }
 
 
