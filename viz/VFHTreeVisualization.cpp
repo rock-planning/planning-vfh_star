@@ -162,6 +162,7 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
         double blue = 0.5;
         double alpha = 1.0;
 	colors->push_back(osg::Vec4(red, green, blue, alpha));
+	colors->push_back(osg::Vec4(red, green, blue, alpha));
 
         node = node->getParent();
     }
@@ -178,9 +179,10 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
 	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z() + 0.001));
 
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+    colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
     geom->setColorArray(colors);
-    geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
+    geom->setColorBinding( osg::Geometry::BIND_PER_VERTEX );
     geom->setVertexArray(vertices);
 
     // Draw the vertices as points
@@ -231,7 +233,10 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::multimap<double, TreeNo
 
 
         if (node->getHeuristic() < 0) // used to mark invalid nodes
+        {
             colors->push_back(osg::Vec4(0, 0, 0, 1));
+            colors->push_back(osg::Vec4(0, 0, 0, 1));
+        }
         else
         {
             double cost = getDisplayCost(this->p->costMode, *node);
@@ -241,10 +246,11 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::multimap<double, TreeNo
             double blue = 0.5;
             double alpha = 1.0;
             colors->push_back(osg::Vec4(red, green, blue, alpha));
+            colors->push_back(osg::Vec4(red, green, blue, alpha));
         }        
     }
     geom->setColorArray(colors);
-    geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
+    geom->setColorBinding( osg::Geometry::BIND_PER_VERTEX );
     geom->setVertexArray(vertices);
 
     // Draw the vertices as points
