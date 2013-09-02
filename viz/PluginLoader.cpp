@@ -1,4 +1,4 @@
-#include <vizkit/VizPlugin.hpp>
+#include <vizkit/Vizkit3DPlugin.hpp>
 #include "TraversabilityMapGeneratorVisualization.h"
 #include "VFHTreeVisualization.hpp"
 
