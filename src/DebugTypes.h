@@ -2,6 +2,7 @@
 #define VFH_DEBUG_TYPES_H
 
 #include <stdint.h>
+#include <vector>
 
 namespace vfh_star {
 
