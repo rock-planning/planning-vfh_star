@@ -55,7 +55,7 @@ class ElevationEntry {
 	int entryHeightConf;
 };
 
-class ElevationGrid: public Grid<ElevationEntry, 600, 6>
+class ElevationGrid: public Grid<ElevationEntry, GRIDSIZE, GRIDRESOLUTION>
 {
     public:
 	ElevationGrid();

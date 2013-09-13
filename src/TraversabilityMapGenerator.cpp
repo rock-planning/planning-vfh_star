@@ -68,7 +68,8 @@ bool TraversabilityMapGenerator::getZCorrection(Eigen::Affine3d& body2Odo)
 bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo2, const Eigen::Affine3d& laser2Body)
 {
     Eigen::Affine3d body2Odo(body2Odo2);
-//     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
+    //std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
+    //std::cout << "body2Odo " << std::endl << body2Odo.matrix() << " laser2Body " << std::endl << laser2Body.matrix() << std::endl;
 
     moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
     
@@ -90,6 +91,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     YlastLaser2Odo.normalize();
     double laserChange = acos(Ylaser2Odo.dot(YlastLaser2Odo));
 
+    
     std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
     
     laser2Map = laser2Odo;
@@ -217,17 +219,17 @@ bool TraversabilityMapGenerator::moveGridIfRobotNearBoundary(ElevationGrid &grid
     double height = grid.getHeight() * grid.getGridResolution() / 2.0;
     
     if(fabs(posInGrid.x()) > (width - boundarySize) || fabs(posInGrid.y()) > (height - boundarySize)) {
-	
-	if(fabs(posInGrid.x()) > width || fabs(posInGrid.y()) > height)
-	{
-	    //inital case, robot might be out of grid
-	    posInGrid = Vector3d(0, 0, 0);
-	}
-	
-	//we assume the robot keeps moving into the same direction
-	grid.moveGrid(robotPosition_world + posInGrid * 2.0 / 3.0);
+    
+        if(fabs(posInGrid.x()) > width || fabs(posInGrid.y()) > height)
+        {
+            //inital case, robot might be out of grid
+            posInGrid = Vector3d(0, 0, 0);
+        }
 
-	return true;
+        //we assume the robot keeps moving into the same direction
+        grid.moveGrid(robotPosition_world + posInGrid * 2.0 / 3.0);
+
+        return true;
     }
     return false;
 }

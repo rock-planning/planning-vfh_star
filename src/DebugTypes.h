@@ -3,11 +3,9 @@
 
 #include <stdint.h>
 #include <vector>
+#include "Grid.h"
 
 namespace vfh_star {
-
-#define GRIDSIZE 600
-#define GRIDRESOLUTION 6
     
 struct GridDump {
     std::vector<float> height;

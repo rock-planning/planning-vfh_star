@@ -5,6 +5,9 @@
 
 namespace vfh_star
 {
+#define GRIDSIZE 600
+#define GRIDRESOLUTION 6
+
 template <class T, int size, int resolution>
 class Grid
 {

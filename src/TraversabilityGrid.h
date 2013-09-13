@@ -13,7 +13,7 @@ enum Traversability {
     UNKNOWN_OBSTACLE = 3,
 };
 
-class TraversabilityGrid: public Grid<Traversability, 600, 6>
+class TraversabilityGrid: public Grid<Traversability, GRIDSIZE, GRIDRESOLUTION>
 {
     public:
         TraversabilityGrid();
