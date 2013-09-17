@@ -748,9 +748,11 @@ void NNLookup::setNode(TreeNode* node)
 {
     int x,y;
     if(!getIndex(*node, x, y))
-    {
-	extendGlobalGrid(std::max(abs(x),abs(y)) + 1);
-	assert(getIndex(*node, x, y));
+    {	
+	int newSizeHalf = std::max(abs(floor(node->getPosition().x() / boxSize)),
+				abs(floor(node->getPosition().y() / boxSize))) + 1;
+    	extendGlobalGrid(newSizeHalf);
+        assert(getIndex(*node, x, y));
     }
 
     NNLookupBox *box = globalGrid[x][y];
