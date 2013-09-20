@@ -53,7 +53,7 @@ const TreeNode* VFHStar::computePath(base::Pose const& start, double mainHeading
 	
     this->targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitX();
 
-    targetLineNormal +=  Vector3d(0, 0, start.position.z());
+    this->targetLineNormal +=  Vector3d(0, 0, start.position.z());
     
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
