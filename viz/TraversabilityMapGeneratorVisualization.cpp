@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-namespace vizkit {
+namespace vizkit3d {
 
 TraversabilityMapGeneratorVisualization::TraversabilityMapGeneratorVisualization()
 {

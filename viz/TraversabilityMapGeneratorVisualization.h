@@ -1,14 +1,14 @@
 #ifndef GRIDMAPSEGMENTERVISUALIZATION_H
 #define GRIDMAPSEGMENTERVISUALIZATION_H
 
-#include <vizkit/Vizkit3DPlugin.hpp>
+#include <vizkit3d/Vizkit3DPlugin.hpp>
 #include <vfh_star/TraversabilityMapGenerator.h>
 #include <osg/Vec4>
 #include <osg/Vec3>
 
-namespace vizkit {
+namespace vizkit3d {
 
-class TraversabilityMapGeneratorVisualization: public vizkit::Vizkit3DPlugin<vfh_star::GridDump >
+class TraversabilityMapGeneratorVisualization: public vizkit3d::Vizkit3DPlugin<vfh_star::GridDump >
 {
     public:
 	TraversabilityMapGeneratorVisualization();
