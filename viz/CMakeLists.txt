@@ -5,6 +5,5 @@ rock_vizkit_plugin(vfh_star-viz
     PluginLoader.cpp
     MOC VFHTreeVisualization.cpp
     DEPS vfh_star
-    DEPS_PKGCONFIG vizkit
     HEADERS VFHTreeVisualization.hpp TraversabilityMapGeneratorVisualization.h)
 

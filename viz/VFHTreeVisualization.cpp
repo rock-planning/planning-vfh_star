@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-using namespace vizkit;
+using namespace vizkit3d;
 using namespace std;
 using vfh_star::TreeNode;
 

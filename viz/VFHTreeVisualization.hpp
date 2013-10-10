@@ -2,7 +2,7 @@
 #define vfh_star_VFHTreeVisualization_H
 
 #include <boost/noncopyable.hpp>
-#include <vizkit/Vizkit3DPlugin.hpp>
+#include <vizkit3d/Vizkit3DPlugin.hpp>
 #include <vfh_star/TreeSearch.h>
 
 namespace osg
@@ -10,11 +10,11 @@ namespace osg
     class Geometry;
 }
 
-namespace vizkit
+namespace vizkit3d
 {
     class VFHTreeVisualization
-        : public vizkit::Vizkit3DPlugin<vfh_star::Tree>
-	, public vizkit::VizPluginAddType< std::vector<base::Vector3d> >
+        : public vizkit3d::Vizkit3DPlugin<vfh_star::Tree>
+	, public vizkit3d::VizPluginAddType< std::vector<base::Vector3d> >
         , boost::noncopyable
     {
         Q_OBJECT

@@ -1,9 +1,9 @@
-#include <vizkit/Vizkit3DPlugin.hpp>
+#include <vizkit3d/Vizkit3DPlugin.hpp>
 #include "TraversabilityMapGeneratorVisualization.h"
 #include "VFHTreeVisualization.hpp"
 
-namespace vizkit {
-    class QtPluginVFHStar : public vizkit::VizkitPluginFactory {
+namespace vizkit3d {
+    class QtPluginVFHStar : public vizkit3d::VizkitPluginFactory {
     public:
         virtual QStringList* getAvailablePlugins() const
         {
