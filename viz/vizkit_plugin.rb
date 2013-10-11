@@ -12,5 +12,5 @@ Vizkit::UiLoader.register_3d_plugin_for('VFHTreeViewer', "/corridor_navigation/V
 end
 
 Vizkit::UiLoader.register_3d_plugin('VFHLocalMapViewer', 'vfh_star', 'TraversabilityMapGenerator')
-Vizkit::UiLoader.register_3d_plugin_for('VFHLocalMapViewer', "/vfh_star/GridDump", :update)
+Vizkit::UiLoader.register_3d_plugin_for('VFHLocalMapViewer', "/vfh_star/GridDump", :updateGridDump)
 
