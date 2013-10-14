@@ -269,6 +269,19 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::multimap<double, TreeNo
     return geom;
 }
 
+void VFHTreeVisualization::addRecursive(std::multimap<double, TreeNode const*> &sorted_nodes, TreeNode const* curNode) const
+{
+    for(std::vector<TreeNode *>::const_iterator it = curNode->getChildren().begin(); it != curNode->getChildren().end();it++)
+    {
+	if (p->removeLeaves && (*it)->isLeaf())
+	    continue;
+        
+	addRecursive(sorted_nodes, *it);
+    }
+    
+    sorted_nodes.insert(std::make_pair(curNode->getHeuristicCost(), curNode));
+}
+
 void VFHTreeVisualization::updateMainNode ( osg::Node* node )
 {
     osg::Geode* geode = static_cast<osg::Geode*>(node);
@@ -296,30 +309,13 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
         geode->addDrawable(geom);
     }
 
-    list<TreeNode> const& nodes = p->data.getNodes();
-    if (nodes.empty())
+    if (!p->data.getRootNode())
         return;
 
     //sort nodes by heuristic costs.
     std::multimap<double, TreeNode const*> sorted_nodes;
-    
-    if (p->removeLeaves)
-    {
-        for(list<TreeNode>::const_iterator it = nodes.begin();
-                it != nodes.end(); it++)
-        {
-            if(it->isLeaf() && !it->isRoot())
-                continue;
-            
-            sorted_nodes.insert(std::make_pair(it->getHeuristicCost(), &(*it)));
-        }
-    }
-    else
-    {
-        for(list<TreeNode>::const_iterator it = nodes.begin();
-                it != nodes.end(); it++)
-            sorted_nodes.insert(std::make_pair(it->getHeuristicCost(), &(*it)));
-    }
+
+    addRecursive(sorted_nodes, p->data.getRootNode());
     
     // Add the final node regardless of the leaf mode
     if (p->data.getFinalNode())

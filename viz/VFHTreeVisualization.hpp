@@ -60,6 +60,7 @@ namespace vizkit3d
         osg::Geometry* createSolutionNode(vfh_star::TreeNode const* node, double color_a, double color_b);
 
         std::pair<double, double> computeColorMapping(const std::multimap< double, const vfh_star::TreeNode* >& sorted_nodes) const;
+	void addRecursive(std::multimap<double, vfh_star::TreeNode const*> &sorted_nodes, vfh_star::TreeNode const* curNode) const;
         
     private:
         struct Data;
