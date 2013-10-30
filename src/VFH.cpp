@@ -173,7 +173,7 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
 	    {
 		std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
 		std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
-		std::cout << "Sense size x:" << localSenseSize << " sense radius" << robotWidth << std::endl;
+		std::cout << "Sense size x:" << localSenseSize << " sense radius" << radius << std::endl;
 		return OBSTACLE;
 //		throw std::runtime_error("Accessed cell outside of grid");
 	    }
