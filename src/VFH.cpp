@@ -143,7 +143,7 @@ bool VFH::validPosition(const base::Pose& curPose) const
     return !(gridHeightHalf  - (distanceToCenter + senseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + senseRadius) < 0);    
 }
 
-vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const
+vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose, double radius) const
 {
     vfh_star::Traversability worstTerrain = TRAVERSABLE;
     const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
@@ -154,7 +154,7 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
     const int robotY = robotPosInGrid.y() / traversabillityGrid->getScaleY();
 
-    int localSenseSize = robotWidth / 2.0 / traversabillityGrid->getScaleX();
+    int localSenseSize = (radius) / traversabillityGrid->getScaleX();
 
     for(int y = -localSenseSize; y <= localSenseSize; y++)
     {
@@ -163,7 +163,7 @@ vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose,
 	    double distToRobot = lut.getDistance(x, y);
 	    
 	    //check if outside circle
-	    if(distToRobot > robotWidth)
+	    if(distToRobot > radius)
 		continue;
 	  
 	    int rx = robotX + x;
