@@ -38,7 +38,7 @@ void TreeSearchConf::computePosAndYawThreshold()
 }
     
     
-TreeSearch::TreeSearch(): nnLookup(NULL)
+TreeSearch::TreeSearch(): maxDriveModes(1), nnLookup(NULL)
 {
     search_conf.computePosAndYawThreshold();
 }
@@ -151,7 +151,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 {
     tree.clear();
     if(!nnLookup)
-	nnLookup = new NNLookup(1.0, search_conf.identityPositionThreshold / 2.0 , search_conf.identityYawThreshold / 2.0);
+	nnLookup = new NNLookup(1.0, search_conf.identityPositionThreshold / 2.0 , search_conf.identityYawThreshold / 2.0, maxDriveModes);
     
     nnLookup->clear();
     TreeNode *curNode = tree.createRoot(start, start.getYaw());
@@ -229,54 +229,61 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             const double curDirection(*it);
 
             //generate new node
-            std::pair<base::Pose, bool> projected =
-                getProjectedPose(*curNode, curDirection,
+            std::vector<ProjectedPose> projectedPoses =
+                getProjectedPoses(*curNode, curDirection,
                         search_conf.stepDistance);
-            if (!projected.second)
-                continue;
 
-            //compute cost for it
-            double nodeCost = curDiscount * getCostForNode(projected.first, curDirection, *curNode);
+            for(std::vector<ProjectedPose>::const_iterator projected = projectedPoses.begin(); projected != projectedPoses.end();projected++ )
+            {
 
-            // Check that we are not doing the same work multiple times.
-            //
-            // searchNode should be used only here !
-            TreeNode searchNode(projected.first, curDirection);
-	    
-	    const double searchNodeCost = nodeCost + curNode->getCost();
-	    TreeNode *closest_node = nnLookup->getNodeWithinBounds(searchNode);
-	    if(closest_node)
-	    {
-		if(closest_node->getCost() <= searchNodeCost)
-		{
-		    //Existing node is better than current node
-		    //discard the current node
-		    continue;
-		} 
-		else
-		{
-                    //remove from parent
-                    closest_node->parent->removeChild(closest_node);
-                    
-                    //remove closest node and subnodes
-                    removeSubtreeFromSearch(closest_node);                    
-		}
-	    }
-	    
+                if(!projected->nextPoseExists)
+                    continue;
 
-            // Finally, create the new node and add it in the tree
-            TreeNode *newNode = tree.createChild(curNode, projected.first, curDirection);
-            newNode->setCost(curNode->getCost() + nodeCost);
-	    newNode->setCostFromParent(nodeCost);
-            newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
-            newNode->setHeadingTolerance(std::numeric_limits< double >::signaling_NaN());
-            newNode->setHeuristic(curDiscount * getHeuristic(*newNode));
+                //compute cost for it
+                double nodeCost = curDiscount * getCostForNode(*projected, curDirection, *curNode);
 
-            // Add it to the expand list
-            newNode->candidate_it = expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
+                
+                // Check that we are not doing the same work multiple times.
+                //
+                // searchNode should be used only here !
+                TreeNode searchNode(projected->pose, curDirection, projected->driveMode);
+                
+                const double searchNodeCost = nodeCost + curNode->getCost();
+                TreeNode *closest_node = nnLookup->getNodeWithinBounds(searchNode);
+                if(closest_node)
+                {
+                    if(closest_node->getCost() <= searchNodeCost)
+                    {
+                        //Existing node is better than current node
+                        //discard the current node
+                        continue;
+                    } 
+                    else
+                    {
+                        //remove from parent
+                        closest_node->parent->removeChild(closest_node);
+                        
+                        //remove closest node and subnodes
+                        removeSubtreeFromSearch(closest_node);                    
+                    }
+                }
+                
 
-	    //add new node to nearest neighbour lookup
-	    nnLookup->setNode(newNode);
+                // Finally, create the new node and add it in the tree
+                TreeNode *newNode = tree.createChild(curNode, projected->pose, curDirection);
+                newNode->setDriveMode(projected->driveMode);
+                newNode->setCost(curNode->getCost() + nodeCost);
+                newNode->setCostFromParent(nodeCost);
+                newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
+                newNode->setHeadingTolerance(std::numeric_limits< double >::signaling_NaN());
+                newNode->setHeuristic(curDiscount * getHeuristic(*newNode));
+
+                // Add it to the expand list
+                newNode->candidate_it = expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
+
+                //add new node to nearest neighbour lookup
+                nnLookup->setNode(newNode);
+            }
         }
     }
 
@@ -645,8 +652,11 @@ void Tree::verifyHeuristicConsistency(const TreeNode* from) const
         std::cerr << "WARN: the chosen heuristic does not seem to be a minorant" << std::endl;
 }
 
-NNLookup::NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta): curSize(0), curSizeHalf(0), boxSize(boxSize), boxResolutionXY(boxResolutionXY), boxResolutionTheta(boxResolutionTheta)
+NNLookup::NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta, uint8_t maxDriveModes): 
+        curSize(0), curSizeHalf(0), boxSize(boxSize), boxResolutionXY(boxResolutionXY), 
+        boxResolutionTheta(boxResolutionTheta), maxDriveModes(maxDriveModes)
 {
+    std::cout << "NNLookup created with boxSize " << boxSize << " boxResolutionXY " << boxResolutionXY << " boxResolutionTheta " << boxResolutionTheta << " maxDriveModes " << ((int) maxDriveModes) << std::endl;
 }
 
 NNLookup::~NNLookup()
@@ -771,7 +781,7 @@ void NNLookup::setNode(TreeNode* node)
 	}
 	else
 	{
-	    box = new NNLookupBox(boxResolutionXY, boxResolutionTheta, boxSize, boxPos);
+	    box = new NNLookupBox(boxResolutionXY, boxResolutionTheta, boxSize, boxPos, maxDriveModes);
 	}
 	usedBoxes.push_back(box);
 	globalGrid[x][y] = box;
@@ -781,11 +791,11 @@ void NNLookup::setNode(TreeNode* node)
 }
 
 
-NNLookupBox::NNLookupBox(double resolutionXY, double angularReosultion, double size, const Eigen::Vector3d& centerPos) : resolutionXY(resolutionXY), angularResolution(angularReosultion), size(size)
+NNLookupBox::NNLookupBox(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d& centerPos, uint8_t maxDriveModes) : resolutionXY(resolutionXY), angularResolution(angularResoultion), size(size), maxDriveModes(maxDriveModes)
 {
     xCells = size / resolutionXY + 1;
     yCells = xCells;
-    aCells = M_PI / angularReosultion * 2 + 1;
+    aCells = M_PI / angularResoultion * 2 + 1;
 
     hashMap.resize(xCells);
     for(int x = 0; x < xCells; x++)
@@ -793,7 +803,11 @@ NNLookupBox::NNLookupBox(double resolutionXY, double angularReosultion, double s
 	hashMap[x].resize(yCells);
 	for(int y = 0; y < yCells; y++)
 	{
-	    hashMap[x][y].resize(aCells, NULL);
+	    hashMap[x][y].resize(aCells);
+            for(int a = 0; a < aCells; a++)
+            {
+                hashMap[x][y][a].resize(maxDriveModes, NULL);
+            }
 	}
     }
     
@@ -813,7 +827,8 @@ void NNLookupBox::clear()
 	{
 	    for(int a = 0; a < aCells; a++)
 	    {
-		hashMap[x][y][a] = NULL;
+                for(int dm= 0; dm < maxDriveModes; dm++)
+                    hashMap[x][y][a][dm] = NULL;
 	    }
 	}
     }
@@ -842,8 +857,9 @@ void NNLookupBox::clearIfSame(const vfh_star::TreeNode* node)
     if(!valid)
 	throw std::runtime_error("NNLookup::clearIfSame:Error, accessed node outside of lookup box");
 
-    if(hashMap[x][y][a] == node)
-	hashMap[x][y][a] = NULL;
+    assert(node->getDriveMode() < maxDriveModes);
+    if(hashMap[x][y][a][node->getDriveMode()] == node)
+	hashMap[x][y][a][node->getDriveMode()] = NULL;
 }
 
 TreeNode* NNLookupBox::getNearestNode(const vfh_star::TreeNode& node)
@@ -853,7 +869,8 @@ TreeNode* NNLookupBox::getNearestNode(const vfh_star::TreeNode& node)
     if(!valid)
 	throw std::runtime_error("NNLookup::getNearestNode:Error, accessed node outside of lookup box");
     
-    TreeNode *ret = hashMap[x][y][a];
+    assert(node.getDriveMode() < maxDriveModes);
+    TreeNode *ret = hashMap[x][y][a][node.getDriveMode()];
     return ret;
 }
 
@@ -864,7 +881,8 @@ void NNLookupBox::setNode(TreeNode* node)
     if(!valid)
 	throw std::runtime_error("NNLookup::setNode:Error, accessed node outside of lookup box");
     
-    hashMap[x][y][a] = node;
+    assert(node->getDriveMode() < maxDriveModes);
+    hashMap[x][y][a][node->getDriveMode()] = node;
 }
 
 
@@ -873,7 +891,7 @@ TreeNode::TreeNode()
     clear();
 }
 
-TreeNode::TreeNode(const base::Pose& pose, double dir)
+TreeNode::TreeNode(const base::Pose& pose, double dir, uint8_t driveMode)
     : parent(this)
     , is_leaf(true)
     , pose(pose)
@@ -881,6 +899,8 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
     , direction(dir)
     , cost(0)
     , heuristic(0)
+    , costFromParent(0)
+    , driveMode(driveMode)
     , depth(0)
     , index(0)
     , updated_cost(false)
@@ -891,6 +911,7 @@ TreeNode::TreeNode(const base::Pose& pose, double dir)
     direction = dir;
     this->pose = pose;
     yaw = pose.getYaw();
+    this->driveMode=driveMode;
 }
 
 void TreeNode::clear()
@@ -901,6 +922,8 @@ void TreeNode::clear()
     is_leaf = true;
     cost = 0;
     heuristic = 0;
+    costFromParent = 0;
+    driveMode = 0;
     depth = 0;
     index = 0;
     updated_cost = false;
@@ -933,6 +956,16 @@ void TreeNode::setHeuristic(double value)
 double TreeNode::getHeuristicCost() const
 {
     return cost + heuristic;
+}
+
+uint8_t TreeNode::getDriveMode() const
+{
+    return driveMode;
+}
+
+void TreeNode::setDriveMode(uint8_t mode)
+{
+    driveMode = mode;
 }
 
 double TreeNode::getCost() const

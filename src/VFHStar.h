@@ -54,8 +54,8 @@ class VFHStar : public TreeSearch
         /** Returns the cost of travelling from \c parent to \c node. It might
          * include a cost of "being at" \c node as well
          */
-        virtual double getCostForNode(const base::Pose& p, double direction, const TreeNode& parentNode) const;
-
+        virtual double getCostForNode(const vfh_star::ProjectedPose& projection, double direction, const vfh_star::TreeNode& parentNode) const;
+    
         /** Returns the algebraic distance from \c pos to the goal line. If
          * the returned distance is negative, it means we crossed it.
          */

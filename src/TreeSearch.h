@@ -1,17 +1,17 @@
 #ifndef VFHSTAR_TREESEARCH_H
 #define VFHSTAR_TREESEARCH_H
 
-#include <base/pose.h>
-#include <base/waypoint.h>
-#include <base/geometry/spline.h>
+#include <base/Pose.hpp>
+#include <base/Waypoint.hpp>
+#include <base/geometry/Spline.hpp>
 #include <vector>
 #include <list>
-#include <base/eigen.h>
+#include <base/Eigen.hpp>
 #include <kdtree++/kdtree.hpp>
 #include <map>
 
 #include <vfh_star/Types.h>
-#include <base/trajectory.h>
+#include <base/Trajectory.hpp>
 
 namespace vfh_star {
 
@@ -21,7 +21,7 @@ class NNLookupBox;
 class NNLookup
 {
 public:
-    NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta);
+    NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta, uint8_t maxDriveModes = 1);
     ~NNLookup();
     TreeNode *getNodeWithinBounds(const TreeNode &node);
     void clearIfSame(const TreeNode *node);
@@ -37,7 +37,8 @@ private:
     double boxSize;
     double boxResolutionXY;
     double boxResolutionTheta;
-
+    uint8_t maxDriveModes;
+    
     std::vector<std::vector<NNLookupBox *> > globalGrid;
     std::list<NNLookupBox *> usedBoxes;
     std::list<NNLookupBox *> freeBoxes;
@@ -47,7 +48,7 @@ class NNLookupBox
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    NNLookupBox(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d &centerPos);
+    NNLookupBox(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d &centerPos, uint8_t maxDriveModes);
     TreeNode *getNearestNode(const TreeNode &node);
     void clearIfSame(const TreeNode *node);
     void setNode(TreeNode *node);
@@ -63,7 +64,8 @@ private:
     double resolutionXY;
     double angularResolution;
     double size;
-    std::vector<std::vector<std::vector<TreeNode *> > > hashMap;
+    uint8_t maxDriveModes;
+    std::vector<std::vector<std::vector<std::vector<TreeNode *> > > > hashMap;
 };
     
 class TreeNode
@@ -74,7 +76,7 @@ class TreeNode
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	TreeNode();
-	TreeNode(const base::Pose &pose, double dir);
+	TreeNode(const base::Pose &pose, double dir, uint8_t driveMode);
         
         void clear();
 
@@ -101,6 +103,9 @@ class TreeNode
 	double getHeuristic() const;
 	void setHeuristic(double value);
         double getHeuristicCost() const;
+        
+        void setDriveMode(uint8_t mode);
+        uint8_t getDriveMode() const;
 
 	void setCostFromParent(double value);
 	double getCostFromParent() const;
@@ -132,12 +137,15 @@ class TreeNode
 	///cost from parent to this node
 	double costFromParent;
 	
+        ///the drive mode that was used to get to the current position
+        uint8_t driveMode;
+        
 	int depth;
         int index;
         bool updated_cost;
 
-        double positionTolerance;
-        double headingTolerance;
+        float positionTolerance;
+        float headingTolerance;
 
 	std::vector<TreeNode *> childs;
 	
@@ -208,6 +216,16 @@ class Tree
 	TreeNode *root_node;
 };
 
+class ProjectedPose 
+{
+    public:
+        ProjectedPose(): nextPoseExists(true), driveMode(0), angleTurned(0) {};
+        base::Pose pose;
+        bool nextPoseExists;
+        uint8_t driveMode;
+        double angleTurned;
+};
+
 /** The basic search algorithm used for planning */
 class TreeSearch
 {
@@ -238,12 +256,14 @@ class TreeSearch
         const TreeSearchConf& getSearchConf() const;
         Tree const& getTree() const;
 
+        
     protected:
 	Angles getDirectionsFromIntervals(double curDir, const AngleIntervals& intervals);
 
         // The tree generated at the last call to getTrajectory
         Tree tree;
         TreeSearchConf search_conf;
+        uint8_t maxDriveModes;
 	
         /** Returns true if the given node is a terminal node, i.e. if it
          * reached the goal
@@ -259,7 +279,7 @@ class TreeSearch
         /** Returns the cost of travelling from \c node's parent to \c node
          * itself. It might include a cost of "being at" \c node as well
          */
-	virtual double getCostForNode(const base::Pose& p,
+	virtual double getCostForNode(const ProjectedPose &projection,
                 double direction, const TreeNode& parentNode) const = 0;
 
 	/**
@@ -273,6 +293,8 @@ class TreeSearch
                 double obstacleSafetyDist,
                 double robotWidth) const = 0;
 
+                
+
 	/**
 	* This function returns a pose in which the robot would
 	* be if he would have driven towards the given direction.
@@ -284,7 +306,7 @@ class TreeSearch
         * returned pose and the curNode's pose must be UP TO \c distance, but
         * can be lower in case of e.g. obstacles.
 	*/
-	virtual std::pair<base::Pose, bool> getProjectedPose(const TreeNode& curNode,
+	virtual std::vector<ProjectedPose> getProjectedPoses(const TreeNode& curNode,
                 double heading,
                 double distance) const = 0;
 

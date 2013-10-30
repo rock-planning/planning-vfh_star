@@ -8,15 +8,13 @@ class StarTest: public vfh_star::VFHStar
     public:
 	StarTest();
 	virtual std::vector< std::pair< double, double > > getNextPossibleDirections(const vfh_star::TreeNode& curNode, double obstacleSafetyDist, double robotWidth) const;
-	virtual std::pair<base::Pose, bool> getProjectedPose(const vfh_star::TreeNode& curNode, double heading, double distance) const;
+        virtual std::vector< vfh_star::ProjectedPose > getProjectedPoses(const vfh_star::TreeNode& curNode, double heading, double distance) const;
 };
 
 StarTest::StarTest()
 {
 
 }
-
-
 
 std::vector< std::pair< double, double > > StarTest::getNextPossibleDirections(const vfh_star::TreeNode& curNode, double obstacleSafetyDist, double robotWidth) const
 {
@@ -29,16 +27,26 @@ std::vector< std::pair< double, double > > StarTest::getNextPossibleDirections(c
     return fakeDirs;
 }
 
-std::pair<base::Pose, bool> StarTest::getProjectedPose(const vfh_star::TreeNode& curNode, double heading, double distance) const
+
+std::vector< vfh_star::ProjectedPose > StarTest::getProjectedPoses(const vfh_star::TreeNode& curNode, double heading, double distance) const
 {
+    std::vector< vfh_star::ProjectedPose > ret;
     //super omnidirectional robot
     Vector3d p(0, distance, 0);
     
-    base::Pose ret;
-    ret.orientation = AngleAxisd(heading, Vector3d::UnitZ());
-    ret.position = curNode.getPose().position + ret.orientation * p;
+    base::Pose pose;
+    pose.orientation = AngleAxisd(heading, Vector3d::UnitZ());
+    pose.position = curNode.getPose().position + pose.orientation * p;
 
-    return std::make_pair(ret, true);
+    vfh_star::ProjectedPose proj;
+    proj.pose = pose;
+    proj.nextPoseExists = true;
+    proj.driveMode = 0;
+    proj.angleTurned = heading;
+    
+    ret.push_back(proj);
+    
+    return ret;
 }
 
 
@@ -49,6 +57,12 @@ int main()
     base::Pose start;
     start.orientation = Eigen::Quaterniond::Identity();
     double mainHeading = 0;
+    
+    start.orientation = AngleAxisd(-3, Vector3d::UnitZ());
+//     start.orientation = AngleAxisd(0.2, Vector3d::UnitX())*AngleAxisd(0.3, Vector3d::UnitY());
+    std::cout << start.getYaw() << std::endl;
+    return 0;
+    
 
     std::vector<base::Waypoint> trajectory = t.getWaypoints(start, mainHeading, 5);
     std::cout << "Starting from " << start.position.transpose() << " with heading " << start.getYaw() << " in direction of " << mainHeading << std::endl;
