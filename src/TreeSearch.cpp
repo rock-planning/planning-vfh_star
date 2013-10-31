@@ -48,15 +48,26 @@ TreeSearch::~TreeSearch()
     delete nnLookup;
 }
 
+void TreeSearch::configChanged()
+{
+   //trigger update of nearest neighbour lookup 
+    //will be reconstructed on next search
+    delete nnLookup;
+    nnLookup = 0;
+}
+
 void TreeSearch::setSearchConf(const TreeSearchConf& conf)
 {
     this->search_conf = conf;
     search_conf.computePosAndYawThreshold();
 
-    //trigger update of nearest neighbour lookup 
-    //will be reconstructed on next search
-    delete nnLookup;
-    nnLookup = 0;
+    configChanged();
+ }
+
+void TreeSearch::setMaxDriveModes(uint8_t driveModes)
+{
+    maxDriveModes = driveModes;
+    configChanged();
 }
 
 const TreeSearchConf& TreeSearch::getSearchConf() const

@@ -256,6 +256,14 @@ class TreeSearch
         const TreeSearchConf& getSearchConf() const;
         Tree const& getTree() const;
 
+        void setMaxDriveModes(uint8_t driveModes);
+        
+        /**
+         * This method is supposed to be called every time the 
+         * config changed. It will drop all cached nodes etc.
+         * to make shure that the new config is used later on.
+         * */
+        void configChanged();
         
     protected:
 	Angles getDirectionsFromIntervals(double curDir, const AngleIntervals& intervals);
@@ -263,7 +271,6 @@ class TreeSearch
         // The tree generated at the last call to getTrajectory
         Tree tree;
         TreeSearchConf search_conf;
-        uint8_t maxDriveModes;
 	
         /** Returns true if the given node is a terminal node, i.e. if it
          * reached the goal
@@ -334,7 +341,8 @@ class TreeSearch
         virtual bool updateCost(TreeNode& node, bool is_terminal) const;
 
     private:
-	
+        uint8_t maxDriveModes;
+
 	void updateNodeCosts(TreeNode *node);
 	void removeSubtreeFromSearch(TreeNode *node);
 	
