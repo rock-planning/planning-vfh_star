@@ -460,21 +460,20 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_
     bool lastNodeIsForward = true;
     if(!nodes.empty())
     {
-	posDir = base::Angle::fromRad ((*it)->getPose().getYaw());
-	nodeDir = base::Angle::fromRad((*it)->getDirection());
-	lastNodeIsForward = fabs((posDir - nodeDir).rad) < 4.0/5.0 * M_PI;
 
 	const Eigen::Affine3d body2Planner((*it)->getPose().toTransform());
 	const Eigen::Affine3d trajectory2Planner(body2Planner * body2Trajectory.inverse());
 	as_points.push_back((trajectory2Planner * Eigen::Vector3d(0,0,0)));
 	it++;
-
+        //HACK we don't actuall know the direction of the root node
+        //we set it to the direction of the first node of the generated
+        //trajectory
+        lastNodeIsForward = (*it)->getDriveMode() == 0;
     }
  
     for(;it != nodes.end(); it++)
     {
-	const vfh_star::TreeNode *curNode = *it;
-	bool curNodeIsForward = fabs((base::Angle::fromRad(curNode->getPose().getYaw()) - base::Angle::fromRad(curNode->getDirection())).rad) < 4.0/5.0 * M_PI;
+	bool curNodeIsForward = (*it)->getDriveMode() == 0;
 	//check if direction changed
 	if(lastNodeIsForward != curNodeIsForward)
 	{
