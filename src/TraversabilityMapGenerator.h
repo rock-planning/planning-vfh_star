@@ -39,7 +39,14 @@ class TraversabilityMapGenerator
 		
 	bool getZCorrection(Eigen::Affine3d& body2Odo);
 	
-	bool addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo, const Eigen::Affine3d& laser2Body);
+        /**
+         * Adds a vector of range points to the map
+         * the points are expected to be in odometry coordinates.
+         * Also the need to be taken in one laser scan.
+         * */
+        void addPointVector(const std::vector<Eigen::Vector3d> &rangePoints_odo);
+
+        bool addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo, const Eigen::Affine3d& laser2Body);
 
 	/**
 	* This function test if the robot is near the outer bound of

@@ -64,6 +64,11 @@ bool TraversabilityMapGenerator::getZCorrection(Eigen::Affine3d& body2Odo)
     return true;
 }
 
+void TraversabilityMapGenerator::addPointVector(const std::vector< Vector3d >& rangePoints_odo)
+{
+    laserGrid.addLaserScan(rangePoints_odo);
+}
+
 
 bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo2, const Eigen::Affine3d& laser2Body)
 {
