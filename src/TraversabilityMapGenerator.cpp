@@ -416,7 +416,7 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 	for(double y = -height / 2.0; y <= (height / 2.0 + forwardOffset); y += 0.03)
 	{
 	    Vector2i p_g;
-	    Vector3d p_w = pose.position + rot * Vector3d(x, y, 0);
+	    Vector3d p_w = pose.position + pose.orientation * Vector3d(x, y, 0);
 	    
 	    if(laserGrid.getGridPoint(p_w, p_g))
 	    {
@@ -430,7 +430,7 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 
 			if(!entry.getMeasurementCount())
 			{
-			    entry.addHeightMeasurement(pose.position.z() - vecToGround.z());
+			    entry.addHeightMeasurement(p_w.z() - vecToGround.z());
 			}
 		    }
 		}
