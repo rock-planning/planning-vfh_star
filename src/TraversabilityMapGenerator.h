@@ -77,7 +77,8 @@ class TraversabilityMapGenerator
 	 * */
 	void setBoundarySize(double size);
 
-	void setMaxStepSize(double size);
+        void setMaxStepSize(double size);
+        void setMaxSlope(double slope);
 	
 	void markUnknownInRadiusAsObstacle(const base::Pose& pose, double radius);
 	void markUnknownInRadiusAsTraversable(const base::Pose& pose, double radius);
@@ -115,13 +116,13 @@ class TraversabilityMapGenerator
 	/**
 	* Applys the Conservative Interpolation on the whole grid
 	**/
-	void smoothElevationGrid(const ElevationGrid &source, ElevationGrid &target);
+	void smoothElevationGrid(const ElevationGrid &source, ElevationGrid &target) const;
 	
 	/**
 	* The conservative interpolation fills holes in the Elevation grid, if the 
 	* sourounding cells of a hole are known.
 	**/
-	void doConservativeInterpolation(const ElevationGrid& source, ElevationGrid& target, Eigen::Vector2i p);
+	void doConservativeInterpolation(const ElevationGrid& source, ElevationGrid& target, Eigen::Vector2i p) const;
 	
 	/**
 	* This function calculates the slope to the sourounding cells of p
@@ -129,14 +130,19 @@ class TraversabilityMapGenerator
 	**/
 	void testNeighbourEntry(Eigen::Vector2i p, const ElevationGrid &elGrid, TraversabilityGrid &trGrid);
 
-	ElevationGrid laserGrid;
+        void computeSmoothElevelationGrid(const ElevationGrid &source, Grid<double, GRIDSIZE, GRIDRESOLUTION> &target) const;
+        bool getMeanHeightOfNeighbourhood(const vfh_star::ElevationGrid& grid, Eigen::Vector2i p, double& meanHeight) const;
+        
+        ElevationGrid laserGrid;
+        Grid<double, GRIDSIZE, GRIDRESOLUTION> smoothedGrid;
 	ElevationGrid interpolatedGrid;
-	TraversabilityGrid traversabilityGrid;
+        TraversabilityGrid traversabilityGrid;
 	Eigen::Affine3d laser2Map;
 	Eigen::Affine3d lastBody2Odo;
 	Eigen::Affine3d lastLaser2Odo;
 	double boundarySize;
-	double maxStepSize;
+        double maxStepSize;
+        double maxSlope;
 	double lastHeight;
 	//height from bodyFrame to ground
 	double heightToGround;

@@ -11,6 +11,7 @@ TraversabilityMapGenerator::TraversabilityMapGenerator()
 {
     boundarySize = 0;
     maxStepSize = 0.2;
+    maxSlope = 0.0;
     lastBody2Odo = Affine3d::Identity();
     lastLaser2Odo = Affine3d::Identity();
     lastHeight = 0.0;
@@ -35,6 +36,11 @@ void TraversabilityMapGenerator::setBoundarySize(double size)
 void TraversabilityMapGenerator::setMaxStepSize(double size)
 {
     maxStepSize = size;
+}
+
+void TraversabilityMapGenerator::setMaxSlope(double slope)
+{
+    maxSlope = slope;
 }
 
 bool TraversabilityMapGenerator::getZCorrection(Eigen::Affine3d& body2Odo)
@@ -175,6 +181,8 @@ void TraversabilityMapGenerator::computeNewMap()
     //interpolate grid
     smoothElevationGrid(laserGrid, interpolatedGrid);
     
+    computeSmoothElevelationGrid(interpolatedGrid, smoothedGrid);
+    
     updateTraversabilityGrid(interpolatedGrid, traversabilityGrid);    
 }
 
@@ -186,6 +194,7 @@ void TraversabilityMapGenerator::clearMap()
     laserGrid.clear();
     interpolatedGrid.clear();
     traversabilityGrid.clear();
+    smoothedGrid.clear();
 }
 
 void TraversabilityMapGenerator::getGridDump(GridDump& gd) const
@@ -274,11 +283,21 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 	curHeight = entry.getMedian();
     }
     
+    double curHeightSmooth = smoothedGrid.getEntry(p);
+
+    double meanSlope = 0.0;
+    double maximumSlope = -std::numeric_limits< double >::max();
+    double minimumSlope = std::numeric_limits< double >::max();
+    int neighbourCnt = 0;
 
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
-	    int rx = p.x() + x;
-	    int ry = p.y() + y;
+            //skip onw entry
+            if(x == 0 && y == 0)
+                continue;
+
+            const int rx = p.x() + x;
+	    const int ry = p.y() + y;
 	    if(elGrid.inGrid(rx, ry)) {
 		const ElevationEntry &neighbourEntry = elGrid.getEntry(rx, ry);
 		
@@ -297,13 +316,40 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 		    neighbourHeight = neighbourEntry.getMinimum();
 		}
 		
-		//TODO correct formula
 		if(fabs(neighbourHeight - curHeight) > maxStepSize) {
 		    cl = OBSTACLE;
+                    break;
 		} 
+		
+                const double a = smoothedGrid.getEntry(rx, ry) - curHeightSmooth;
+                const double b = smoothedGrid.getGridResolution();
+		
+		const double slope = atan2(a, b);
+                maximumSlope = std::max(slope, maximumSlope);
+                minimumSlope = std::min(slope, minimumSlope);
+                
+                meanSlope += slope;
+                neighbourCnt++;
 	    }
 	}
-    }    
+    }
+    
+    if((cl != OBSTACLE) && (neighbourCnt > 0))
+    {
+        /*
+         * A Perfect slope has actualy a mean slope of Zero.
+         * Therefor we filter by a low mean slope and a heigh 
+         * maximum slope.
+         * */
+        double angle = 10.0/180.0*M_PI;
+        meanSlope /= neighbourCnt;
+        if((maximumSlope > maxSlope) && (fabs(meanSlope) < angle)
+            && (fabs(minimumSlope + maximumSlope) < angle))
+        {
+            cl = OBSTACLE;
+        }
+    }
+    
     trGrid.getEntry(p) = cl;
 }
 
@@ -406,9 +452,6 @@ ConsistencyStats TraversabilityMapGenerator::checkMapConsistencyInArea(const bas
 
 void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose, double width, double height, double forwardOffset, Traversability type)
 {
-    double heading = pose.orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
-    AngleAxisd rot = AngleAxisd(heading, Vector3d::UnitZ());
-
     Vector3d vecToGround = pose.orientation * Vector3d(0,0, heightToGround);
 
     for(double x = -width / 2.0; x <= (width / 2.0); x += 0.03)
@@ -463,7 +506,7 @@ void TraversabilityMapGenerator::markUnknownInRadiusAsObstacle(const base::Pose&
     markUnknownInRadiusAs(pose, radius, OBSTACLE);
 }
 
-void TraversabilityMapGenerator::doConservativeInterpolation(const ElevationGrid& source, ElevationGrid& target, Eigen::Vector2i p) {
+void TraversabilityMapGenerator::doConservativeInterpolation(const vfh_star::ElevationGrid& source, vfh_star::ElevationGrid& target, Eigen::Vector2i p) const {
     if(!source.inGrid(p))
 	return;
 
@@ -531,8 +574,63 @@ void TraversabilityMapGenerator::doConservativeInterpolation(const ElevationGrid
     }
 }
 
+bool TraversabilityMapGenerator::getMeanHeightOfNeighbourhood(const vfh_star::ElevationGrid& grid, Eigen::Vector2i p, double &meanHeight) const
+{
+    double height = 0;
+    int neighbourCnt = 0;
+    bool gotValue = false;
+    
+    for(int x = -1; x <= 1; x++) {
+        for(int y = -1; y <= 1; y++) {
+            int rx = p.x() + x;
+            int ry = p.y() + y;
+            if(grid.inGrid(rx, ry)) {
+                const ElevationEntry &neighbourEntry = grid.getEntry(rx, ry);
+                
+                double neighbourHeight;
+                
+                if(neighbourEntry.getMeasurementCount()) 
+                {
+                    //use real measurement if available
+                    neighbourHeight = neighbourEntry.getMedian();
+                }
+                else
+                {
+                    if(neighbourEntry.getMaximum() == -std::numeric_limits<double>::max())
+                        continue;
+                    
+                    neighbourHeight = neighbourEntry.getMinimum();
+                }
+                
+                neighbourCnt++;
+                height += neighbourHeight;
+                
+                gotValue = true;
+            }
+        }
+    }
+    
+    meanHeight = height / neighbourCnt;
+    
+    return gotValue;
+}
 
-void TraversabilityMapGenerator::smoothElevationGrid(const ElevationGrid& source, ElevationGrid& target)
+
+void TraversabilityMapGenerator::computeSmoothElevelationGrid(const vfh_star::ElevationGrid& source, vfh_star::Grid< double, 600, 12 >& target) const
+{
+    target.setGridPosition(source.getGridPosition());
+    
+    for(int x = 0;x < source.getWidth(); x++) {
+        for(int y = 0;y < source.getHeight(); y++) {
+            double mean = std::numeric_limits< double >::quiet_NaN();
+            getMeanHeightOfNeighbourhood(source, Eigen::Vector2i(x, y), mean);
+            target.getEntry(x, y) = mean;;
+        }
+    }
+}
+
+
+void TraversabilityMapGenerator::smoothElevationGrid(const ElevationGrid& source, ElevationGrid& target) const
 {
     target.setGridPosition(source.getGridPosition());
     
