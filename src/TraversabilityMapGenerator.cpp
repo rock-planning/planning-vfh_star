@@ -228,6 +228,7 @@ void TraversabilityMapGenerator::getGridDump(GridDump& gd) const
 bool TraversabilityMapGenerator::moveGridIfRobotNearBoundary(ElevationGrid &grid, const Eigen::Vector3d& robotPosition_world)
 {
     Vector3d posInGrid = robotPosition_world - grid.getPosition();
+    posInGrid.z() = 0;
     
     double width = grid.getWidth() * grid.getGridResolution() / 2.0;
     double height = grid.getHeight() * grid.getGridResolution() / 2.0;
@@ -316,7 +317,8 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 		    neighbourHeight = neighbourEntry.getMinimum();
 		}
 		
-		if(fabs(neighbourHeight - curHeight) > maxStepSize) {
+		//only make the higher one an obstacle
+		if(fabs(neighbourHeight - curHeight) > maxStepSize && curHeight > neighbourHeight) {
 		    cl = OBSTACLE;
                     break;
 		} 
