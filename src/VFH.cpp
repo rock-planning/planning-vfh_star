@@ -47,7 +47,12 @@ void VFH::setNewTraversabilityGrid(const envire::Grid< Traversability >* trGrid)
     
     //precompute distances
     lut.recompute(traversabillityGrid->getScaleX(), 5.0);
+    const envire::FrameNode *gridPose = traversabillityGrid->getFrameNode();
     
+    gridPos = Vector3d(gridPose->getTransform().translation().x(), gridPose->getTransform().translation().y(), 0);
+    gridWidthHalf = traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX();
+    gridHeightHalf = traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY();
+
 }
 
 std::vector< std::pair<double, double> > VFH::getNextPossibleDirections(
@@ -134,11 +139,9 @@ double normalize(double ang)
 
 bool VFH::validPosition(const base::Pose& curPose) const
 {
-    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
+    const Vector3d curPos(curPose.position.x(), curPose.position.y(), 0);
     
-    double distanceToCenter = (gridPos->getTransform().translation() - curPose.position).norm();
-    double gridWidthHalf = traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX();
-    double gridHeightHalf = traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY();
+    double distanceToCenter = (gridPos - curPos).norm();
     
     return !(gridHeightHalf  - (distanceToCenter + senseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + senseRadius) < 0);    
 }
@@ -146,9 +149,8 @@ bool VFH::validPosition(const base::Pose& curPose) const
 vfh_star::Traversability VFH::getWorstTerrainInRadius(const base::Pose& curPose, double radius) const
 {
     vfh_star::Traversability worstTerrain = TRAVERSABLE;
-    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
-    const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
-    const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
+    const Vector3d toCorner(gridWidthHalf, gridHeightHalf, 0);   
+    const Vector3d cornerPos = gridPos - toCorner;
     const Vector3d robotPosInGrid = curPose.position - cornerPos;
     const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
@@ -207,9 +209,8 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
     TerrainStatistic innerStats;
     TerrainStatistic outerStats;
 
-    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
-    const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
-    const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
+    const Vector3d toCorner(gridWidthHalf, gridHeightHalf, 0);   
+    const Vector3d cornerPos = gridPos - toCorner;
     const Vector3d robotPosInGrid = curPose.position - cornerPos;
     const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
@@ -261,8 +262,6 @@ std::pair< TerrainStatistic, TerrainStatistic > VFH::getTerrainStatisticsForRadi
 
 void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double senseRadius, double obstacleSafetyDist, double robotRadius) const
 {
-    const envire::FrameNode *gridPos = traversabillityGrid->getFrameNode();
-    
     int nrDirs = histogram.size();
     
     double dirResolution = 2*M_PI / nrDirs;
@@ -274,8 +273,8 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
     std::vector<double> &dirs(histogram);    
     
     //calculate robot pos in grid coordinates
-    const Vector3d toCorner(traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX(), traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY(), 0);   
-    const Vector3d cornerPos = gridPos->getTransform().translation() - toCorner;
+    const Vector3d toCorner(gridWidthHalf, gridHeightHalf, 0);   
+    const Vector3d cornerPos = gridPos - toCorner;
     const Vector3d robotPosInGrid = curPose.position - cornerPos;
     const envire::Grid<Traversability>::ArrayType &gridData = traversabillityGrid->getGridData();
     const int robotX = robotPosInGrid.x() / traversabillityGrid->getScaleX();
