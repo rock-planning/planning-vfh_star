@@ -55,6 +55,8 @@ const TreeNode* VFHStar::computePath(base::Pose const& start, double mainHeading
 
     this->targetLineNormal +=  Vector3d(0, 0, start.position.z());
     
+    targetLineNormal.normalize();
+    
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
     std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
