@@ -290,6 +290,7 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
     double maximumSlope = -std::numeric_limits< double >::max();
     double minimumSlope = std::numeric_limits< double >::max();
     int neighbourCnt = 0;
+    const double diagonalDist = sqrt(smoothedGrid.getGridResolution() * 2);
 
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
@@ -322,9 +323,18 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 		    cl = OBSTACLE;
                     break;
 		} 
-		
-                const double a = smoothedGrid.getEntry(rx, ry) - curHeightSmooth;
-                const double b = smoothedGrid.getGridResolution();
+
+		const double a = smoothedGrid.getEntry(rx, ry) - curHeightSmooth;
+                double b = 0;
+                if((x == 0) || (y==0))
+                {
+                    b = smoothedGrid.getGridResolution();
+                }
+                else
+                {
+                    b = diagonalDist;
+                }
+                
 		
 		const double slope = atan2(a, b);
                 maximumSlope = std::max(slope, maximumSlope);
@@ -343,7 +353,7 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
          * Therefor we filter by a low mean slope and a heigh 
          * maximum slope.
          * */
-        double angle = 10.0/180.0*M_PI;
+        double angle = 15.0/180.0*M_PI;
         meanSlope /= neighbourCnt;
         if((maximumSlope > maxSlope) && (fabs(meanSlope) < angle)
             && (fabs(minimumSlope + maximumSlope) < angle))
