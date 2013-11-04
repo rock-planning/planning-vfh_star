@@ -290,7 +290,7 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
     double maximumSlope = -std::numeric_limits< double >::max();
     double minimumSlope = std::numeric_limits< double >::max();
     int neighbourCnt = 0;
-    const double diagonalDist = sqrt(smoothedGrid.getGridResolution() * 2);
+    const double diagonalDist = sqrt(smoothedGrid.getGridResolution() * smoothedGrid.getGridResolution()  * 2);
 
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
