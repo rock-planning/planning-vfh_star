@@ -2,6 +2,7 @@
 #include <Eigen/LU>
 #include <iostream>
 #include <envire/maps/MLSGrid.hpp>
+#include <numeric/PlaneFitting.hpp>
 
 using namespace Eigen;
 
@@ -284,13 +285,11 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 	curHeight = entry.getMedian();
     }
     
-    double curHeightSmooth = smoothedGrid.getEntry(p);
-
-    double meanSlope = 0.0;
-    double maximumSlope = -std::numeric_limits< double >::max();
-    double minimumSlope = std::numeric_limits< double >::max();
     int neighbourCnt = 0;
-    const double diagonalDist = sqrt(smoothedGrid.getGridResolution() * smoothedGrid.getGridResolution()  * 2);
+
+    base::PlaneFitting<double> fitter;
+    //center point
+    fitter.update(Vector3d(0,0,0));
 
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
@@ -317,46 +316,27 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 		    
 		    neighbourHeight = neighbourEntry.getMinimum();
 		}
-		
+				
 		//only make the higher one an obstacle
 		if(fabs(neighbourHeight - curHeight) > maxStepSize && curHeight > neighbourHeight) {
 		    cl = OBSTACLE;
                     break;
 		} 
 
-		const double a = smoothedGrid.getEntry(rx, ry) - curHeightSmooth;
-                double b = 0;
-                if((x == 0) || (y==0))
-                {
-                    b = smoothedGrid.getGridResolution();
-                }
-                else
-                {
-                    b = diagonalDist;
-                }
-                
+		fitter.update(base::PlaneFitting<double>::Vector3(x * elGrid.getGridResolution(), y * elGrid.getGridResolution(), curHeight - neighbourHeight));
 		
-		const double slope = atan2(a, b);
-                maximumSlope = std::max(slope, maximumSlope);
-                minimumSlope = std::min(slope, minimumSlope);
-                
-                meanSlope += slope;
                 neighbourCnt++;
 	    }
 	}
     }
     
-    if((cl != OBSTACLE) && (neighbourCnt > 0))
-    {
-        /*
-         * A Perfect slope has actualy a mean slope of Zero.
-         * Therefor we filter by a low mean slope and a heigh 
-         * maximum slope.
-         * */
-        double angle = 15.0/180.0*M_PI;
-        meanSlope /= neighbourCnt;
-        if((maximumSlope > maxSlope) && (fabs(meanSlope) < angle)
-            && (fabs(minimumSlope + maximumSlope) < angle))
+    if((cl != OBSTACLE) && (neighbourCnt > 5))
+    {        
+        Vector3d fit(fitter.getCoeffs());
+        const double divider = sqrt(fit.x() * fit.x() + fit.y() * fit.y() + 1);
+        double slope = acos(1 / divider);
+                
+        if(fabs(slope) > maxSlope)
         {
             cl = OBSTACLE;
         }
