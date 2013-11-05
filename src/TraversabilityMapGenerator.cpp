@@ -290,7 +290,8 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
     base::PlaneFitting<double> fitter;
     //center point
     fitter.update(Vector3d(0,0,0));
-
+    double curHeightSmooth = smoothedGrid.getEntry(p);
+    
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
             //skip onw entry
@@ -323,7 +324,7 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
                     break;
 		} 
 
-		fitter.update(base::PlaneFitting<double>::Vector3(x * elGrid.getGridResolution(), y * elGrid.getGridResolution(), curHeight - neighbourHeight));
+		fitter.update(base::PlaneFitting<double>::Vector3(x * elGrid.getGridResolution(), y * elGrid.getGridResolution(), curHeightSmooth - smoothedGrid.getEntry(rx, ry)));
 		
                 neighbourCnt++;
 	    }
