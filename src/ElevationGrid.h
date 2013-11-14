@@ -21,7 +21,7 @@ class ElevationEntry {
 	void setHeightMeasureMethod(int entry_height_conf);
 
 	int getMeasurementCount() const {
-	    return count;
+	    return heights.size();
 	}
 
 	double getMedian() const {
@@ -42,9 +42,9 @@ class ElevationEntry {
 	
     private:
 	std::vector<double> heights;
+	std::vector<bool> hasSample;
 	bool interpolated;
 	double sum;
-	int count;
 	double median;
 	double min;
 	double max;

@@ -105,7 +105,6 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
 
     
     std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
-    
     laser2Map = laser2Odo;
     
     laserGrid.addLaserScan(currentLaserPoints);
@@ -158,7 +157,7 @@ void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Af
 		    
 		    for(; cellIt != cellEndIt; cellIt++)
 		    {
-			entry.addHeightMeasurement(cellIt->mean + mls2LaserGrid.translation().z());
+			entry.setHeight(cellIt->mean + mls2LaserGrid.translation().z(), laserGrid.getCurrentAge());
 		    }
 		}
 	    }
@@ -387,7 +386,7 @@ void TraversabilityMapGenerator::markUnknownInRadiusAs(const base::Pose& pose, d
 		entry = type;
 		if(type == TRAVERSABLE)
 		{
-		    laserGrid.getEntry(rx, ry).addHeightMeasurement(laserGrid.getEntry(rx, ry).getMedian());
+		    laserGrid.getEntry(rx, ry).addHeightMeasurement(laserGrid.getEntry(rx, ry).getMedian(), laserGrid.getCurrentAge());
 		}
 	    }
 	}
@@ -466,7 +465,7 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 
 			if(!entry.getMeasurementCount())
 			{
-			    entry.addHeightMeasurement(p_w.z() - vecToGround.z());
+			    entry.addHeightMeasurement(p_w.z() - vecToGround.z(), laserGrid.getCurrentAge());
 			}
 		    }
 		}
@@ -556,13 +555,13 @@ void TraversabilityMapGenerator::doConservativeInterpolation(const vfh_star::Ele
 		int ry = p.y() + y;
 		if(source.inGrid(rx, ry)) {
 		    if(source.getEntry(rx, ry).getMeasurementCount()) {
-			target.getEntry(p).addHeightMeasurement(source.getEntry(rx, ry).getMedian());
+			target.getEntry(p).addHeightMeasurement(source.getEntry(rx, ry).getMedian(), target.getCurrentAge());
 // 			std::cout << "Adding height " << source.getEntry(rx, ry).getMedian() << std::endl;
 		    }
 		}
 	    }
 	}
-	target.getEntry(p).setInterpolatedMeasurement(target.getEntry(p).getMedian());
+	target.getEntry(p).setInterpolatedMeasurement(true);
 // 	std::cout << "Resulting height " << target.getEntry(p).getMedian() << std::endl;
     }
 }

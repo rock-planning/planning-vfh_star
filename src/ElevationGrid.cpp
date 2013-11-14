@@ -13,12 +13,11 @@ ElevationEntry::ElevationEntry()
     currentAge = 0;
  
     interpolated = false;
-    count = 0;
 
     sum = base::unset<double>();
-    median = base::unset<double>();
-    stDev = base::unset<double>();
-    mean = base::unset<double>();
+    median = 0;
+    stDev = 0;
+    mean = 0;
     setEntryWindowSize(50);
 
     entryHeightConf = 0;
@@ -31,11 +30,9 @@ void ElevationEntry::setInterpolatedMeasurement(bool interpolated)
 
 void ElevationEntry::setHeight(double value, boost::uint64_t age)
 {
-    mean = median = value;
-    stDev = 0;
-    std::fill(heights.begin(), heights.end(), base::unset<double>());
-    heights.back() = value;
-    currentAge = age;
+    std::fill(hasSample.begin(), hasSample.end(), false);
+    heights.clear();
+    addHeightMeasurement(value, age);
 }
 
 void ElevationEntry::addHeightMeasurement(double measurement, boost::uint64_t age)
@@ -49,18 +46,11 @@ void ElevationEntry::addHeightMeasurement(double measurement, boost::uint64_t ag
 
     updateHeightWindow(measurement, age);
 
+    int count = heights.size();
     mean = 0;
-    count = 0;
-    std::vector<double> aux_heights;
-    for(int i = 0; i < entryWindowSize; i++)
-    {
-        if (!base::isUnset(heights[i]))
-        {
-            ++count;
-            mean += heights[i];
-            aux_heights.push_back(heights[i]);
-        }
-    }
+    std::vector<double> aux_heights = heights;
+    for(int i = 0; i < count; i++)
+        mean += heights[i];
     mean = mean / count;
     stDev = sqrt(computeHeightVariance());
 
@@ -73,17 +63,27 @@ void ElevationEntry::addHeightMeasurement(double measurement, boost::uint64_t ag
 
 void ElevationEntry::updateHeightWindow(double measurement, uint64_t age)
 {
-    // Remove points at the beginning so that the first sample is at age -
-    // entryWindowSize
-    for (boost::uint64_t i = 0; i < age - currentAge; ++i)
+    boost::uint64_t time_shift = age - currentAge;
+    if (time_shift > entryWindowSize)
     {
-        if (!base::isUnset(heights.front()))
-            count--;
-        heights.erase(heights.begin());
-        heights.push_back(base::unset<double>());
+        heights.clear();
+        hasSample.clear();
     }
-    heights[heights.size()-1] = measurement;
-    ++count;
+    else
+    {
+        int count = heights.size();
+        for (boost::uint64_t i = 0; count && (i < time_shift); ++i)
+        {
+            if (hasSample[i])
+                count--;
+        }
+
+        heights.erase(heights.begin(), heights.end() - count); 
+        hasSample.erase(hasSample.begin(), hasSample.begin() + time_shift);
+    }
+    hasSample.resize(entryWindowSize, false);
+    heights.push_back(measurement);
+    hasSample.back() = true;
     currentAge = age;
 
     sum = base::unset<double>();
@@ -99,11 +99,9 @@ double ElevationEntry::computeHeightVariance() const
     int count = 0;
     double mean = 0;
     double mean2 = 0;
-    for(int i = 0; i < entryWindowSize; i++)
+    for(int i = 0; i < heights.size(); i++)
     {
         double h = heights[i];
-        if (base::isUnset(h))
-            continue;
 
         count++;
         double delta = h - mean;
@@ -130,8 +128,9 @@ void ElevationEntry::setMinimumHeight(double measurement)
 void ElevationEntry::setEntryWindowSize(int window_size)
 {
     entryWindowSize = window_size;
+    hasSample.clear();
+    hasSample.resize(entryWindowSize, false);
     heights.clear();
-    heights.resize(entryWindowSize, base::unset<double>());
 }
 
 void ElevationEntry::setHeightMeasureMethod(int entry_height_conf){

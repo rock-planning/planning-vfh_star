@@ -96,11 +96,10 @@ void TraversabilityMapGeneratorVisualization::updateDataIntern(const vfh_star::G
 	for(int y = 0; y < egrid.getHeight(); y++) {
 	    
 	    if(data.height[x*egrid.getWidth() + y] != std::numeric_limits< double >::infinity()) {
-		if(data.interpolated[x*egrid.getWidth() + y]) {
-		    egrid.getEntry(x,y).setInterpolatedMeasurement(data.height[x*egrid.getWidth() + y]);
-		} else
-		    egrid.getEntry(x,y).addHeightMeasurement(data.height[x*egrid.getWidth() + y]);
-	    }
+                egrid.getEntry(x,y).setHeight(data.height[x*egrid.getWidth() + y], 0);
+		if(data.interpolated[x*egrid.getWidth() + y])
+		    egrid.getEntry(x,y).setInterpolatedMeasurement(true);
+            }
 	    
 	    egrid.getEntry(x, y).setMaximumHeight(data.max[x*egrid.getWidth() + y]);
 	    
