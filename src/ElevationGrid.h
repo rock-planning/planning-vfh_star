@@ -4,24 +4,24 @@
 #include "Grid.h"
 #include <Eigen/Core>
 #include <vector>
+#include <boost/cstdint.hpp>
 
 namespace vfh_star
 {
 class ElevationEntry {
     public:
 	ElevationEntry();
-	void addHeightMeasurement(double measurement);
-	void addHeightMeasurementMeanStd(double measurement, double k_std);
-	void addHeightMeasurementMedian(double measurement);
-	void setInterpolatedMeasurement(double measurement);
+	void addHeightMeasurement(double measurement, boost::uint64_t age);
 	void setMaximumHeight(double measurement);
 	void setMinimumHeight(double measurement);
+        void setInterpolatedMeasurement(bool interpolated);
+        void setHeight(double value, boost::uint64_t age);
 	
 	void setEntryWindowSize(int window_size);
 	void setHeightMeasureMethod(int entry_height_conf);
 
 	int getMeasurementCount() const {
-	    return heights.size();
+	    return count;
 	}
 
 	double getMedian() const {
@@ -53,6 +53,11 @@ class ElevationEntry {
 	double stDev;
 
 	int entryHeightConf;
+
+        boost::uint64_t currentAge;
+
+        void updateHeightWindow(double measurement, uint64_t age);
+        double computeHeightVariance() const;
 };
 
 class ElevationGrid: public Grid<ElevationEntry, GRIDSIZE, GRIDRESOLUTION>
@@ -66,8 +71,11 @@ class ElevationGrid: public Grid<ElevationEntry, GRIDSIZE, GRIDRESOLUTION>
 	
 	void setEntriesWindowSize(int window_size);
 	void setHeightMeasureMethod(int entry_height_conf);
+
+        boost::uint64_t getCurrentAge() const;
 	
     private:
+        boost::uint64_t currentAge;
 };
 }
 

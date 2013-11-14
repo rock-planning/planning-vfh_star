@@ -3,110 +3,116 @@
 
 #include <algorithm>
 #include <math.h>
+#include <base/Float.hpp>
 using namespace vfh_star;
 
 ElevationEntry::ElevationEntry()
 {
     min = std::numeric_limits< double >::max();
     max = -std::numeric_limits< double >::max();
+    currentAge = 0;
  
     interpolated = false;
-    sum = 0;
     count = 0;
-    median = 0;
-    mean = 0;
-    entryWindowSize = 50;
-    stDev = 0;
+
+    sum = base::unset<double>();
+    median = base::unset<double>();
+    stDev = base::unset<double>();
+    mean = base::unset<double>();
+    setEntryWindowSize(50);
 
     entryHeightConf = 0;
 }
 
-void ElevationEntry::addHeightMeasurement(double measurement)
+void ElevationEntry::setInterpolatedMeasurement(bool interpolated)
+{
+    this->interpolated = interpolated;
+}
+
+void ElevationEntry::setHeight(double value, boost::uint64_t age)
+{
+    mean = median = value;
+    stDev = 0;
+    std::fill(heights.begin(), heights.end(), base::unset<double>());
+    heights.back() = value;
+    currentAge = age;
+}
+
+void ElevationEntry::addHeightMeasurement(double measurement, boost::uint64_t age)
 {
     //median is the attribute that is finally used as elevation
-
     if(min > measurement)
 	min = measurement;
     
     if(max < measurement)
 	max = measurement;
 
-    switch (entryHeightConf){
-    	case 0:
-		//Code 0 means mean
-    		addHeightMeasurementMeanStd(measurement, 0.0);
-    		break;
-    	case 1:
-    	//Code 1 means mean + 0.5*std
-    		addHeightMeasurementMeanStd(measurement, 0.5);
-    		break;
-    	case 2:
-    	//Code 2 means median
-    		addHeightMeasurementMedian(measurement);
-    		break;
-    	default:
-    		addHeightMeasurementMeanStd(measurement, 0.0);
+    updateHeightWindow(measurement, age);
+
+    mean = 0;
+    count = 0;
+    std::vector<double> aux_heights;
+    for(int i = 0; i < entryWindowSize; i++)
+    {
+        if (!base::isUnset(heights[i]))
+        {
+            ++count;
+            mean += heights[i];
+            aux_heights.push_back(heights[i]);
+        }
     }
+    mean = mean / count;
+    stDev = sqrt(computeHeightVariance());
+
+    std::nth_element(
+            aux_heights.begin(),
+            aux_heights.begin()+(count/2),
+            aux_heights.end());
+    median = aux_heights[count/2];
 }
 
-void ElevationEntry::addHeightMeasurementMeanStd(double measurement,
-		double k_std)
+void ElevationEntry::updateHeightWindow(double measurement, uint64_t age)
 {
-    double prev_mean = mean;
-
-    int num_points = heights.size();
-    if(num_points < entryWindowSize)
+    // Remove points at the beginning so that the first sample is at age -
+    // entryWindowSize
+    for (boost::uint64_t i = 0; i < age - currentAge; ++i)
     {
-		heights.push_back(measurement);
-
-		sum += measurement;
-		count++;
-		mean = sum / count;
-    }else{
-		count = count % entryWindowSize;
-
-		heights[count] = measurement;
-		count++;
-
-		sum = 0;
-		for(int i = 0; i < num_points; i++)
-			sum += heights[i];
-
-		mean = sum / num_points;
+        if (!base::isUnset(heights.front()))
+            count--;
+        heights.erase(heights.begin());
+        heights.push_back(base::unset<double>());
     }
-	stDev += (measurement - prev_mean) * (measurement - mean);
-	stDev = sqrt(stDev / count);
-	median = mean + k_std * stDev;
+    heights[heights.size()-1] = measurement;
+    ++count;
+    currentAge = age;
+
+    sum = base::unset<double>();
+    median = base::unset<double>();
+    stDev = base::unset<double>();
+    mean = base::unset<double>();
 }
 
-void ElevationEntry::addHeightMeasurementMedian(double measurement)
+double ElevationEntry::computeHeightVariance() const
 {
-	std::vector<double> aux_heights;
-	aux_heights = heights;
-
-	int num_points = heights.size();
-    if(num_points < entryWindowSize)
+    // Online algorithm at
+    // http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+    int count = 0;
+    double mean = 0;
+    double mean2 = 0;
+    for(int i = 0; i < entryWindowSize; i++)
     {
-    	heights.push_back(measurement);
-    	count++;
+        double h = heights[i];
+        if (base::isUnset(h))
+            continue;
 
-    	if (num_points > 1)
-    	{
-			//nth_element returns the nth element if the elements were ordered
-			std::nth_element (aux_heights.begin(), aux_heights.begin()+(count/2), aux_heights.end());
-			median = aux_heights[count/2];
-		}else
-			median = measurement;
-
-	} else {
-		count = count % entryWindowSize;
-		heights[count] = measurement;
-		count++;
-
-		//nth_element returns the nth element if the elements were ordered
-		std::nth_element (aux_heights.begin(), aux_heights.begin()+(entryWindowSize/2), aux_heights.end());
-		median = aux_heights[entryWindowSize/2];
-	}
+        count++;
+        double delta = h - mean;
+        mean += delta / count;
+        // NOTE: mean below is NOT the same than mean above, so
+        // the next line is NOT delta * delta !!!
+        mean2 += delta * (h - mean);
+    }
+    return mean2 / (count - 1);
 }
 
 void ElevationEntry::setMaximumHeight(double measurement)
@@ -121,22 +127,19 @@ void ElevationEntry::setMinimumHeight(double measurement)
 	min = measurement;
 }
 
-void ElevationEntry::setInterpolatedMeasurement(double measurement)
-{
-    interpolated = true;
-    median = measurement;
-}
-
 void ElevationEntry::setEntryWindowSize(int window_size)
 {
-	entryWindowSize = window_size;
+    entryWindowSize = window_size;
+    heights.clear();
+    heights.resize(entryWindowSize, base::unset<double>());
 }
 
 void ElevationEntry::setHeightMeasureMethod(int entry_height_conf){
-	entryHeightConf = entry_height_conf;
+    entryHeightConf = entry_height_conf;
 }
 
 ElevationGrid::ElevationGrid()
+    : currentAge(0)
 {
    
 }
@@ -144,12 +147,12 @@ ElevationGrid::ElevationGrid()
 void ElevationGrid::addLineBetweenPoints(const Eigen::Vector3d &start, const Eigen::Vector3d &end)
 {
     Eigen::Vector2i start_g;
-    Eigen::Vector2i end_g;    
+    Eigen::Vector2i end_g;
     
     bool startInGrid = getGridPoint(start, start_g);
     bool endInGrid = getGridPoint(end, end_g); 
     if(endInGrid)
-	getEntry(end_g).addHeightMeasurement(end.z());
+	getEntry(end_g).addHeightMeasurement(end.z(), currentAge);
     
     const Eigen::Vector2f start_gf(start_g.x(), start_g.y());
     const Eigen::Vector2f end_gf(end_g.x(), end_g.y());
@@ -184,7 +187,7 @@ void ElevationGrid::addLineBetweenPoints(const Eigen::Vector3d &start, const Eig
 
 void ElevationGrid::addLineBetweenPoints(const Eigen::Vector2i &start_g, double start_val, const Eigen::Vector2i &end_g, double end_val)
 {
-    getEntry(end_g).addHeightMeasurement(end_val);    
+    getEntry(end_g).addHeightMeasurement(end_val, currentAge);
     
     const Eigen::Vector2f start_gf(start_g.x(), start_g.y());
     const Eigen::Vector2f end_gf(end_g.x(), end_g.y());
@@ -295,14 +298,15 @@ void ElevationGrid::addLaserScan(const std::vector< Eigen::Vector3d>& laserPoint
     if(binnedPoints.empty())
 	return;
     
+    ++currentAge;
     std::vector< binnedPoint >::const_iterator last_p = binnedPoints.begin();
-    getEntry(last_p->gridPos).addHeightMeasurement(last_p->heightValue);
+    getEntry(last_p->gridPos).addHeightMeasurement(last_p->heightValue, currentAge);
     
     for(std::vector< binnedPoint >::const_iterator it = last_p + 1; it != binnedPoints.end(); it++) {
 	if(it->validNeighbour)
 	    addLineBetweenPoints(last_p->gridPos, last_p->heightValue, it->gridPos, it->heightValue);
 	else
-	    getEntry(it->gridPos).addHeightMeasurement(it->heightValue);
+	    getEntry(it->gridPos).addHeightMeasurement(it->heightValue, currentAge);
 	last_p = it;
     }
 
@@ -323,3 +327,9 @@ void ElevationGrid::setHeightMeasureMethod(int entry_height_conf){
 			}
 		}
 }
+
+boost::uint64_t ElevationGrid::getCurrentAge() const
+{
+    return currentAge;
+}
+
