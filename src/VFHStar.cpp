@@ -10,6 +10,10 @@ VFHStar::VFHStar()
 {
 }
 
+VFHStar::~VFHStar()
+{
+}
+
 const VFHStarConf& VFHStar::getCostConf() const
 {
     return cost_conf;
@@ -49,7 +53,9 @@ const TreeNode* VFHStar::computePath(base::Pose const& start, double mainHeading
 	
     this->targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading, Vector3d::UnitZ())) * Vector3d::UnitX();
 
-    targetLineNormal +=  Vector3d(0, 0, start.position.z());
+    this->targetLineNormal +=  Vector3d(0, 0, start.position.z());
+    
+    targetLineNormal.normalize();
     
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
@@ -88,7 +94,7 @@ double VFHStar::getHeuristic(const TreeNode &node) const
     return result * search_conf.discountFactor * search_conf.stepDistance * cost_conf.distanceWeight;
 }
 
-double VFHStar::getCostForNode(const base::Pose& pose, double direction, const TreeNode& parentNode) const
+double VFHStar::getCostForNode(const vfh_star::ProjectedPose& projection, double direction, const vfh_star::TreeNode& parentNode) const
 {
     /**
     * cost is build from three factors:
@@ -104,7 +110,7 @@ double VFHStar::getCostForNode(const base::Pose& pose, double direction, const T
     const double c = cost_conf.turningWeight;
     
     double aPart = angleDiff(direction, mainHeading);
-    double bPart = (pose.position - parentNode.getPose().position).norm();
+    double bPart = (projection.pose.position - parentNode.getPose().position).norm();
     double cPart = angleDiff(direction, parentNode.getDirection());
 
     return a * aPart + b * bPart + c * cPart;

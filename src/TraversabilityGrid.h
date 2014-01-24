@@ -1,5 +1,5 @@
-#ifndef TRAVERSABILITYGRID_H
-#define TRAVERSABILITYGRID_H
+#ifndef VFH_STAR_TRAVERSABILITYGRID_H
+#define VFH_STAR_TRAVERSABILITYGRID_H
 
 #include "Grid.h"
 #include "ElevationGrid.h"
@@ -13,7 +13,7 @@ enum Traversability {
     UNKNOWN_OBSTACLE = 3,
 };
 
-class TraversabilityGrid: public Grid<Traversability, 600, 6>
+class TraversabilityGrid: public Grid<Traversability, GRIDSIZE, GRIDRESOLUTION>
 {
     public:
         TraversabilityGrid();

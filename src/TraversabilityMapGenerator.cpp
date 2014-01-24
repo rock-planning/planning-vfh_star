@@ -2,6 +2,7 @@
 #include <Eigen/LU>
 #include <iostream>
 #include <envire/maps/MLSGrid.hpp>
+#include <numeric/PlaneFitting.hpp>
 
 using namespace Eigen;
 
@@ -11,10 +12,21 @@ TraversabilityMapGenerator::TraversabilityMapGenerator()
 {
     boundarySize = 0;
     maxStepSize = 0.2;
+    maxSlope = 0.0;
     lastBody2Odo = Affine3d::Identity();
     lastLaser2Odo = Affine3d::Identity();
     lastHeight = 0.0;
-    heightToGround = 0.18;
+    heightToGround = 0.0;
+}
+
+void TraversabilityMapGenerator::setHeightToGround(double value)
+{
+    heightToGround = value;
+}
+
+double TraversabilityMapGenerator::getHeightToGround() const
+{
+    return heightToGround;
 }
 
 void TraversabilityMapGenerator::setBoundarySize(double size)
@@ -25,6 +37,11 @@ void TraversabilityMapGenerator::setBoundarySize(double size)
 void TraversabilityMapGenerator::setMaxStepSize(double size)
 {
     maxStepSize = size;
+}
+
+void TraversabilityMapGenerator::setMaxSlope(double slope)
+{
+    maxSlope = slope;
 }
 
 bool TraversabilityMapGenerator::getZCorrection(Eigen::Affine3d& body2Odo)
@@ -54,11 +71,17 @@ bool TraversabilityMapGenerator::getZCorrection(Eigen::Affine3d& body2Odo)
     return true;
 }
 
+void TraversabilityMapGenerator::addPointVector(const std::vector< Vector3d >& rangePoints_odo)
+{
+    laserGrid.addLaserScan(rangePoints_odo);
+}
+
 
 bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls, const Eigen::Affine3d& body2Odo2, const Eigen::Affine3d& laser2Body)
 {
     Eigen::Affine3d body2Odo(body2Odo2);
-//     std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
+    //std::cout << "TraversabilityMapGenerator: Got laserScan" << std::endl;
+    //std::cout << "body2Odo " << std::endl << body2Odo.matrix() << " laser2Body " << std::endl << laser2Body.matrix() << std::endl;
 
     moveGridIfRobotNearBoundary(laserGrid, body2Odo.translation());
     
@@ -80,6 +103,7 @@ bool TraversabilityMapGenerator::addLaserScan(const base::samples::LaserScan& ls
     YlastLaser2Odo.normalize();
     double laserChange = acos(Ylaser2Odo.dot(YlastLaser2Odo));
 
+    
     std::vector<Vector3d> currentLaserPoints = ls.convertScanToPointCloud(laser2Odo);
     
     laser2Map = laser2Odo;
@@ -142,10 +166,23 @@ void TraversabilityMapGenerator::addKnowMap(envire::MLSGrid const *mls, const Af
     }
 }
 
+void TraversabilityMapGenerator::setGridEntriesWindowSize(int window_size)
+{
+	laserGrid.setEntriesWindowSize(window_size);
+	interpolatedGrid.setEntriesWindowSize(window_size);
+}
+
+void TraversabilityMapGenerator::setHeightMeasureMethod(int entry_height_conf){
+	laserGrid.setHeightMeasureMethod(entry_height_conf);
+	interpolatedGrid.setHeightMeasureMethod(entry_height_conf);
+}
+
 void TraversabilityMapGenerator::computeNewMap()
 {
     //interpolate grid
     smoothElevationGrid(laserGrid, interpolatedGrid);
+    
+    computeSmoothElevelationGrid(interpolatedGrid, smoothedGrid);
     
     updateTraversabilityGrid(interpolatedGrid, traversabilityGrid);    
 }
@@ -158,6 +195,7 @@ void TraversabilityMapGenerator::clearMap()
     laserGrid.clear();
     interpolatedGrid.clear();
     traversabilityGrid.clear();
+    smoothedGrid.clear();
 }
 
 void TraversabilityMapGenerator::getGridDump(GridDump& gd) const
@@ -191,22 +229,23 @@ void TraversabilityMapGenerator::getGridDump(GridDump& gd) const
 bool TraversabilityMapGenerator::moveGridIfRobotNearBoundary(ElevationGrid &grid, const Eigen::Vector3d& robotPosition_world)
 {
     Vector3d posInGrid = robotPosition_world - grid.getPosition();
+    posInGrid.z() = 0;
     
     double width = grid.getWidth() * grid.getGridResolution() / 2.0;
     double height = grid.getHeight() * grid.getGridResolution() / 2.0;
     
     if(fabs(posInGrid.x()) > (width - boundarySize) || fabs(posInGrid.y()) > (height - boundarySize)) {
-	
-	if(fabs(posInGrid.x()) > width || fabs(posInGrid.y()) > height)
-	{
-	    //inital case, robot might be out of grid
-	    posInGrid = Vector3d(0, 0, 0);
-	}
-	
-	//we assume the robot keeps moving into the same direction
-	grid.moveGrid(robotPosition_world + posInGrid * 2.0 / 3.0);
+    
+        if(fabs(posInGrid.x()) > width || fabs(posInGrid.y()) > height)
+        {
+            //inital case, robot might be out of grid
+            posInGrid = Vector3d(0, 0, 0);
+        }
 
-	return true;
+        //we assume the robot keeps moving into the same direction
+        grid.moveGrid(robotPosition_world + posInGrid * 2.0 / 3.0);
+
+        return true;
     }
     return false;
 }
@@ -246,11 +285,21 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 	curHeight = entry.getMedian();
     }
     
+    int neighbourCnt = 0;
 
+    base::PlaneFitting<double> fitter;
+    //center point
+    fitter.update(Vector3d(0,0,0));
+    double curHeightSmooth = smoothedGrid.getEntry(p);
+    
     for(int x = -1; x <= 1; x++) {
 	for(int y = -1; y <= 1; y++) {
-	    int rx = p.x() + x;
-	    int ry = p.y() + y;
+            //skip onw entry
+            if(x == 0 && y == 0)
+                continue;
+
+            const int rx = p.x() + x;
+	    const int ry = p.y() + y;
 	    if(elGrid.inGrid(rx, ry)) {
 		const ElevationEntry &neighbourEntry = elGrid.getEntry(rx, ry);
 		
@@ -268,14 +317,32 @@ void TraversabilityMapGenerator::testNeighbourEntry(Eigen::Vector2i p, const Ele
 		    
 		    neighbourHeight = neighbourEntry.getMinimum();
 		}
-		
-		//TODO correct formula
-		if(fabs(neighbourHeight - curHeight) > maxStepSize) {
+				
+		//only make the higher one an obstacle
+		if(fabs(neighbourHeight - curHeight) > maxStepSize && curHeight > neighbourHeight) {
 		    cl = OBSTACLE;
+                    break;
 		} 
+
+		fitter.update(base::PlaneFitting<double>::Vector3(x * elGrid.getGridResolution(), y * elGrid.getGridResolution(), curHeightSmooth - smoothedGrid.getEntry(rx, ry)));
+		
+                neighbourCnt++;
 	    }
 	}
-    }    
+    }
+    
+    if((cl != OBSTACLE) && (neighbourCnt > 5))
+    {        
+        Vector3d fit(fitter.getCoeffs());
+        const double divider = sqrt(fit.x() * fit.x() + fit.y() * fit.y() + 1);
+        double slope = acos(1 / divider);
+                
+        if(fabs(slope) > maxSlope)
+        {
+            cl = OBSTACLE;
+        }
+    }
+    
     trGrid.getEntry(p) = cl;
 }
 
@@ -378,9 +445,6 @@ ConsistencyStats TraversabilityMapGenerator::checkMapConsistencyInArea(const bas
 
 void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose, double width, double height, double forwardOffset, Traversability type)
 {
-    double heading = pose.orientation.toRotationMatrix().eulerAngles(2,1,0)[0];
-    AngleAxisd rot = AngleAxisd(heading, Vector3d::UnitZ());
-
     Vector3d vecToGround = pose.orientation * Vector3d(0,0, heightToGround);
 
     for(double x = -width / 2.0; x <= (width / 2.0); x += 0.03)
@@ -388,7 +452,7 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 	for(double y = -height / 2.0; y <= (height / 2.0 + forwardOffset); y += 0.03)
 	{
 	    Vector2i p_g;
-	    Vector3d p_w = pose.position + rot * Vector3d(x, y, 0);
+	    Vector3d p_w = pose.position + pose.orientation * Vector3d(x, y, 0);
 	    
 	    if(laserGrid.getGridPoint(p_w, p_g))
 	    {
@@ -402,7 +466,7 @@ void TraversabilityMapGenerator::markUnknownInRectangeAs(const base::Pose& pose,
 
 			if(!entry.getMeasurementCount())
 			{
-			    entry.addHeightMeasurement(pose.position.z() - vecToGround.z());
+			    entry.addHeightMeasurement(p_w.z() - vecToGround.z());
 			}
 		    }
 		}
@@ -435,7 +499,7 @@ void TraversabilityMapGenerator::markUnknownInRadiusAsObstacle(const base::Pose&
     markUnknownInRadiusAs(pose, radius, OBSTACLE);
 }
 
-void TraversabilityMapGenerator::doConservativeInterpolation(const ElevationGrid& source, ElevationGrid& target, Eigen::Vector2i p) {
+void TraversabilityMapGenerator::doConservativeInterpolation(const vfh_star::ElevationGrid& source, vfh_star::ElevationGrid& target, Eigen::Vector2i p) const {
     if(!source.inGrid(p))
 	return;
 
@@ -503,8 +567,63 @@ void TraversabilityMapGenerator::doConservativeInterpolation(const ElevationGrid
     }
 }
 
+bool TraversabilityMapGenerator::getMeanHeightOfNeighbourhood(const vfh_star::ElevationGrid& grid, Eigen::Vector2i p, double &meanHeight) const
+{
+    double height = 0;
+    int neighbourCnt = 0;
+    bool gotValue = false;
+    
+    for(int x = -1; x <= 1; x++) {
+        for(int y = -1; y <= 1; y++) {
+            int rx = p.x() + x;
+            int ry = p.y() + y;
+            if(grid.inGrid(rx, ry)) {
+                const ElevationEntry &neighbourEntry = grid.getEntry(rx, ry);
+                
+                double neighbourHeight;
+                
+                if(neighbourEntry.getMeasurementCount()) 
+                {
+                    //use real measurement if available
+                    neighbourHeight = neighbourEntry.getMedian();
+                }
+                else
+                {
+                    if(neighbourEntry.getMaximum() == -std::numeric_limits<double>::max())
+                        continue;
+                    
+                    neighbourHeight = neighbourEntry.getMinimum();
+                }
+                
+                neighbourCnt++;
+                height += neighbourHeight;
+                
+                gotValue = true;
+            }
+        }
+    }
+    
+    meanHeight = height / neighbourCnt;
+    
+    return gotValue;
+}
 
-void TraversabilityMapGenerator::smoothElevationGrid(const ElevationGrid& source, ElevationGrid& target)
+
+void TraversabilityMapGenerator::computeSmoothElevelationGrid(const vfh_star::ElevationGrid& source, vfh_star::Grid< double, 600, 12 >& target) const
+{
+    target.setGridPosition(source.getGridPosition());
+    
+    for(int x = 0;x < source.getWidth(); x++) {
+        for(int y = 0;y < source.getHeight(); y++) {
+            double mean = std::numeric_limits< double >::quiet_NaN();
+            getMeanHeightOfNeighbourhood(source, Eigen::Vector2i(x, y), mean);
+            target.getEntry(x, y) = mean;;
+        }
+    }
+}
+
+
+void TraversabilityMapGenerator::smoothElevationGrid(const ElevationGrid& source, ElevationGrid& target) const
 {
     target.setGridPosition(source.getGridPosition());
     

@@ -63,7 +63,7 @@ namespace vfh_star
         virtual std::vector< std::pair<double, double> >
             getNextPossibleDirections(const base::Pose& curPose,
                     double obstacleSafetyDist,
-                    double robotWidth, VFHDebugData* dd) const;
+                    double robotWidth, VFHDebugData* dd = NULL) const;
 
         const VFHDebugData &getDebugData();	
 
@@ -90,6 +90,9 @@ namespace vfh_star
         void getBinaryHistogram(const std::vector< double > &histogram, std::vector< bool > &binHistogram, double lowThreshold, double highThreshold) const;
 	RadialLookUpTable lut;
         const envire::Grid<Traversability> *traversabillityGrid;
+        Eigen::Vector3d gridPos;
+        double gridWidthHalf;
+        double gridHeightHalf;
 
         bool debugActive;
         VFHDebugData debugData;

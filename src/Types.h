@@ -40,11 +40,23 @@ namespace vfh_star
 	 * Max height of step between two cells in height map,
 	 * that will caount as traversable
 	 * */
-	double maxStepSize;
+        double maxStepSize;
+
+        /**
+         * Maximum slope of the terrain, the robot is allowed
+         * to drive onto.
+         * */
+        double maxSlop;
 
 	base::Time maxSeekTime;
 	
         TreeSearchConf();
+                
+        /**
+         * This function computes the position and yaw threshold
+         * from the stepdistance and angularSamplingMin parameters
+         * */
+        void computePosAndYawThreshold();
     };
 
     struct VFHStarConf

@@ -11,3 +11,6 @@ rock_library(vfh_star
 rock_executable(vfh_star_test VFHStarTest.cpp
     DEPS vfh_star)
 
+rock_executable(nnlookup_test NNLookupTest.cpp
+    DEPS vfh_star)
+

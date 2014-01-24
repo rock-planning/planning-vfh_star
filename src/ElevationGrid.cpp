@@ -1,6 +1,8 @@
 #include "ElevationGrid.h"
 #include "Bresenham.h"
 
+#include <algorithm>
+#include <math.h>
 using namespace vfh_star;
 
 ElevationEntry::ElevationEntry()
@@ -12,39 +14,99 @@ ElevationEntry::ElevationEntry()
     sum = 0;
     count = 0;
     median = 0;
+    mean = 0;
+    entryWindowSize = 50;
+    stDev = 0;
+
+    entryHeightConf = 0;
 }
 
 void ElevationEntry::addHeightMeasurement(double measurement)
 {
-    const int maxPoints = 50;
+    //median is the attribute that is finally used as elevation
+
     if(min > measurement)
 	min = measurement;
     
     if(max < measurement)
 	max = measurement;
 
-    int num_points = heights.size();
-
-    if(num_points < 50)
-    {
-	heights.push_back(measurement);
-
-	sum += measurement;
-	count++;
-        
-	median = sum / count;
-    } else {
-	count++;
-	count = count % 50;
-	
-	heights[count] = measurement;
-	
-	sum = 0;
-	for(int i = 0; i < num_points; i++)
-	    sum += heights[i];
-
-	median = sum / num_points;
+    switch (entryHeightConf){
+    	case 0:
+		//Code 0 means mean
+    		addHeightMeasurementMeanStd(measurement, 0.0);
+    		break;
+    	case 1:
+    	//Code 1 means mean + 0.5*std
+    		addHeightMeasurementMeanStd(measurement, 0.5);
+    		break;
+    	case 2:
+    	//Code 2 means median
+    		addHeightMeasurementMedian(measurement);
+    		break;
+    	default:
+    		addHeightMeasurementMeanStd(measurement, 0.0);
     }
+}
+
+void ElevationEntry::addHeightMeasurementMeanStd(double measurement,
+		double k_std)
+{
+    double prev_mean = mean;
+
+    int num_points = heights.size();
+    if(num_points < entryWindowSize)
+    {
+		heights.push_back(measurement);
+
+		sum += measurement;
+		count++;
+		mean = sum / count;
+    }else{
+		count = count % entryWindowSize;
+
+		heights[count] = measurement;
+		count++;
+
+		sum = 0;
+		for(int i = 0; i < num_points; i++)
+			sum += heights[i];
+
+		mean = sum / num_points;
+    }
+	stDev += (measurement - prev_mean) * (measurement - mean);
+	stDev = sqrt(stDev / count);
+	median = mean + k_std * stDev;
+}
+
+void ElevationEntry::addHeightMeasurementMedian(double measurement)
+{
+	std::vector<double> aux_heights;
+	aux_heights = heights;
+
+	int num_points = heights.size();
+    if(num_points < entryWindowSize)
+    {
+    	heights.push_back(measurement);
+    	count++;
+
+    	if (num_points > 1)
+    	{
+			//nth_element returns the nth element if the elements were ordered
+			std::nth_element (aux_heights.begin(), aux_heights.begin()+(count/2), aux_heights.end());
+			median = aux_heights[count/2];
+		}else
+			median = measurement;
+
+	} else {
+		count = count % entryWindowSize;
+		heights[count] = measurement;
+		count++;
+
+		//nth_element returns the nth element if the elements were ordered
+		std::nth_element (aux_heights.begin(), aux_heights.begin()+(entryWindowSize/2), aux_heights.end());
+		median = aux_heights[entryWindowSize/2];
+	}
 }
 
 void ElevationEntry::setMaximumHeight(double measurement)
@@ -63,6 +125,15 @@ void ElevationEntry::setInterpolatedMeasurement(double measurement)
 {
     interpolated = true;
     median = measurement;
+}
+
+void ElevationEntry::setEntryWindowSize(int window_size)
+{
+	entryWindowSize = window_size;
+}
+
+void ElevationEntry::setHeightMeasureMethod(int entry_height_conf){
+	entryHeightConf = entry_height_conf;
 }
 
 ElevationGrid::ElevationGrid()
@@ -235,4 +306,20 @@ void ElevationGrid::addLaserScan(const std::vector< Eigen::Vector3d>& laserPoint
 	last_p = it;
     }
 
+}
+
+void ElevationGrid::setEntriesWindowSize(int window_size){
+	for(int x = 0;x < getWidth(); x++){
+		for(int y = 0;y < getHeight(); y++){
+			getEntry(x,y).setEntryWindowSize(window_size);
+		}
+	}
+}
+
+void ElevationGrid::setHeightMeasureMethod(int entry_height_conf){
+	for(int x = 0;x < getWidth(); x++){
+			for(int y = 0;y < getHeight(); y++){
+				getEntry(x,y).setHeightMeasureMethod(entry_height_conf);
+			}
+		}
 }

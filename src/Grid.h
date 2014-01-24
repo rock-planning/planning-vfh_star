@@ -5,6 +5,9 @@
 
 namespace vfh_star
 {
+#define GRIDSIZE 600
+#define GRIDRESOLUTION 12
+
 template <class T, int size, int resolution>
 class Grid
 {
@@ -62,9 +65,12 @@ class Grid
 	    
 	    Eigen::Vector3d diff = newPosition - gridPosition; 
     
-	    int diffx = diff.x() / gridResolution;
-	    int diffy = diff.y() / gridResolution;    
+            int diffx = diff.x() / gridResolution;
+            int diffy = diff.y() / gridResolution;    
 
+            if(diffx == 0 && diffy == 0)
+                return;
+        
 	    //copy grid to tempgrid
 	    for(int x = 0; x < gridWidth; x++) {
 		for(int y = 0; y < gridHeight; y++) {

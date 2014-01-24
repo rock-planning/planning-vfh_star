@@ -100,23 +100,24 @@ static double getDisplayCost(VFHTreeVisualization::COST_MODE mode, vfh_star::Tre
     return 0;
 }
 
-pair<double, double> VFHTreeVisualization::computeColorMapping(std::set<TreeNode const*> const& nodes) const
+pair<double, double> VFHTreeVisualization::computeColorMapping(std::multimap<double, TreeNode const*> const &sorted_nodes) const
 {
     // NOTE: we assume that nodes is not empty. This is checked by
     // updateMainNode
-    if (nodes.empty())
+    if (sorted_nodes.empty())
         return make_pair(0, 0);
 
     double min_cost, max_cost;
-    min_cost = max_cost = getDisplayCost(p->costMode, **nodes.begin());
+    min_cost = max_cost = getDisplayCost(p->costMode, *(sorted_nodes.begin()->second));
     
-    for (std::set<TreeNode const*>::const_iterator it = nodes.begin();
-            it != nodes.end(); ++it)
+    for (std::map<double, TreeNode const*>::const_iterator it = sorted_nodes.begin();
+            it != sorted_nodes.end(); ++it)
     {
-        if ((*it)->getHeuristic() < 0)
+        const TreeNode &node(*(it->second));
+        if (node.getHeuristic() < 0)
             continue;
 
-        double c = getDisplayCost(p->costMode, **it);
+        double c = getDisplayCost(p->costMode, node);
 
         if (c < min_cost)
             min_cost = c;
@@ -130,6 +131,7 @@ pair<double, double> VFHTreeVisualization::computeColorMapping(std::set<TreeNode
 
     return make_pair(1.0/max_cost, -min_cost);
 }
+
 
 osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, double color_a, double color_b)
 {
@@ -147,8 +149,33 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
         base::Position p = node->getPose().position;
         if (step == 0)
             step = (parent_p - p).norm();
-	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
-	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+        
+        
+//	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+//	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+
+	vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z() + 0.001));
+	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z() + 0.001));
+
+        Eigen::Vector3d halfWay((p - parent_p ) / 2.0);
+        Eigen::Vector3d middle(parent_p + halfWay);
+        Eigen::Vector3d driveToPoint(middle + node->getPose().orientation * Eigen::Vector3d(0, step / 2.0, 0));
+        
+        //make it an arrow
+        Eigen::Vector3d left(middle - driveToPoint);
+        left = left.normalized() * step * 0.3;
+        left = Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ()) * left;
+        left += driveToPoint;
+        vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
+        vertices->push_back(osg::Vec3(left.y(), -left.x(), left.z() + 0.001));
+
+        Eigen::Vector3d right(middle - driveToPoint);
+        right = right.normalized() * step * 0.3;
+        right = Eigen::AngleAxisd(-M_PI/4, Eigen::Vector3d::UnitZ()) * right;
+        right += driveToPoint;
+        vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
+        vertices->push_back(osg::Vec3(right.y(), -right.x(), right.z() + 0.001));
+
 
         double cost = getDisplayCost(this->p->costMode, *node);
 
@@ -156,7 +183,12 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
         double green = 1.0 - red;
         double blue = 0.5;
         double alpha = 1.0;
-	colors->push_back(osg::Vec4(red, green, blue, alpha));
+        colors->push_back(osg::Vec4(red, green, blue, alpha));
+        colors->push_back(osg::Vec4(red, green, blue, alpha));
+        colors->push_back(osg::Vec4(red, green, blue, alpha));
+        colors->push_back(osg::Vec4(red, green, blue, alpha));
+        colors->push_back(osg::Vec4(red, green, blue, alpha));
+        colors->push_back(osg::Vec4(red, green, blue, alpha));
 
         node = node->getParent();
     }
@@ -166,12 +198,40 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     base::Vector3d root_dir = q * Eigen::Vector3d::UnitY();
     base::Position parent_p = node->getPose().position;
     base::Position p = parent_p - root_dir * step;
-    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
-    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+//    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+//    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
+
+    vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z() + 0.001));
+    vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z() + 0.001));
+
+    Eigen::Vector3d halfWay((p - parent_p ) / 2.0);
+    Eigen::Vector3d middle(parent_p + halfWay);
+    Eigen::Vector3d driveToPoint(middle + node->getPose().orientation * Eigen::Vector3d(0, step / 2.0, 0));
+    
+    //make it an arrow
+    Eigen::Vector3d left(middle - driveToPoint);
+    left = left.normalized() * step * 0.3;
+    left = Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ()) * left;
+    left += driveToPoint;
+    vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
+    vertices->push_back(osg::Vec3(left.y(), -left.x(), left.z() + 0.001));
+
+    Eigen::Vector3d right(middle - driveToPoint);
+    right = right.normalized() * step * 0.3;
+    right = Eigen::AngleAxisd(-M_PI/4, Eigen::Vector3d::UnitZ()) * right;
+    right += driveToPoint;
+    vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
+    vertices->push_back(osg::Vec3(right.y(), -right.x(), right.z() + 0.001));
+        
+    colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+    colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+    colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+    colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+    colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
     geom->setColorArray(colors);
-    geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
+    geom->setColorBinding( osg::Geometry::BIND_PER_VERTEX );
     geom->setVertexArray(vertices);
 
     // Draw the vertices as points
@@ -187,7 +247,7 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     return geom;
 }
 
-osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> const& nodes, double color_a, double color_b)
+osg::Geometry* VFHTreeVisualization::createTreeNode(std::multimap<double, TreeNode const*> const &sorted_nodes, double color_a, double color_b)
 {
     osg::Geometry* geom = new osg::Geometry;
 
@@ -196,21 +256,36 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
     osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
 
     int count = p->treeNodeCount;
-    for(set<TreeNode const*>::const_iterator it = nodes.begin();
-            it != nodes.end(); ++it)
-    {
-        if (count != 0 && (*it)->getIndex() > count)
-            continue;
 
-        TreeNode const* node = (*it);
+    int nodeCounter = 0;
+    
+    for(std::map<double, TreeNode const*>::const_iterator it = sorted_nodes.begin();
+            it != sorted_nodes.end(); ++it)
+    {
+        if (count != 0 && nodeCounter > count)
+            break;
+
+        nodeCounter++;
+        
+        TreeNode const* node = (it->second);
+        
+        if(node->isRoot())
+            continue;
 
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
-	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
-	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
+//    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
+//    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
+
+	vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z()));
+	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z()));
+
 
         if (node->getHeuristic() < 0) // used to mark invalid nodes
+        {
             colors->push_back(osg::Vec4(0, 0, 0, 1));
+            colors->push_back(osg::Vec4(0, 0, 0, 1));
+        }
         else
         {
             double cost = getDisplayCost(this->p->costMode, *node);
@@ -220,10 +295,11 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
             double blue = 0.5;
             double alpha = 1.0;
             colors->push_back(osg::Vec4(red, green, blue, alpha));
-        }
+            colors->push_back(osg::Vec4(red, green, blue, alpha));
+        }        
     }
     geom->setColorArray(colors);
-    geom->setColorBinding( osg::Geometry::BIND_PER_PRIMITIVE );
+    geom->setColorBinding( osg::Geometry::BIND_PER_VERTEX );
     geom->setVertexArray(vertices);
 
     // Draw the vertices as points
@@ -242,6 +318,19 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::set<TreeNode const*> co
     return geom;
 }
 
+void VFHTreeVisualization::addRecursive(std::multimap<double, TreeNode const*> &sorted_nodes, TreeNode const* curNode) const
+{
+    for(std::vector<TreeNode *>::const_iterator it = curNode->getChildren().begin(); it != curNode->getChildren().end();it++)
+    {
+	if (p->removeLeaves && (*it)->isLeaf())
+	    continue;
+        
+	addRecursive(sorted_nodes, *it);
+    }
+    
+    sorted_nodes.insert(std::make_pair(curNode->getHeuristicCost(), curNode));
+}
+
 void VFHTreeVisualization::updateMainNode ( osg::Node* node )
 {
     osg::Geode* geode = static_cast<osg::Geode*>(node);
@@ -253,9 +342,11 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
         osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
         osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
         base::Vector3d pt = p->segment[0];
-        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+//        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+        vertices->push_back(osg::Vec3(pt.y(), -pt.x(), pt.z()));
         pt = p->segment[1];
-        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+//        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+        vertices->push_back(osg::Vec3(pt.y(), -pt.x(), pt.z()));
         colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
         geom->setColorArray(colors);
@@ -267,36 +358,23 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
         geode->addDrawable(geom);
     }
 
-    list<TreeNode> const& nodes = p->data.getNodes();
-    if (nodes.empty())
+    if (!p->data.getRootNode())
         return;
 
-    std::set<TreeNode const*> enabled_nodes;
-    if (p->removeLeaves)
-    {
-        for(list<TreeNode>::const_iterator it = nodes.begin();
-                it != nodes.end(); it++)
-        {
-            if (!it->isRoot() && !it->getParent()->isRoot())
-                enabled_nodes.insert(it->getParent());
-        }
-    }
-    else
-    {
-        for(list<TreeNode>::const_iterator it = nodes.begin();
-                it != nodes.end(); it++)
-            if (!it->isRoot())
-                enabled_nodes.insert(&(*it));
-    }
+    //sort nodes by heuristic costs.
+    std::multimap<double, TreeNode const*> sorted_nodes;
+
+    addRecursive(sorted_nodes, p->data.getRootNode());
+    
     // Add the final node regardless of the leaf mode
     if (p->data.getFinalNode())
-        enabled_nodes.insert(p->data.getFinalNode());
+        sorted_nodes.insert(std::make_pair(p->data.getFinalNode()->getHeuristicCost(), p->data.getFinalNode()));
 
     // Gets the mapping from cost to color
     double cost_a, cost_b;
-    boost::tie(cost_a, cost_b) = computeColorMapping(enabled_nodes);
+    boost::tie(cost_a, cost_b) = computeColorMapping(sorted_nodes);
 
-    geode->addDrawable(createTreeNode(enabled_nodes, cost_a, cost_b));
+    geode->addDrawable(createTreeNode(sorted_nodes, cost_a, cost_b));
     if (p->data.getFinalNode())
         geode->addDrawable(createSolutionNode(p->data.getFinalNode(), cost_a, cost_b));
 }

@@ -56,10 +56,11 @@ namespace vizkit3d
         virtual void updateDataIntern(vfh_star::Tree const& plan);
         virtual void updateDataIntern(std::vector<base::Vector3d> const& segment);
 
-        osg::Geometry* createTreeNode(std::set<vfh_star::TreeNode const*> const& nodes, double color_a, double color_b);
+        osg::Geometry* createTreeNode(const std::multimap< double, const vfh_star::TreeNode* >& sorted_nodes, double color_a, double color_b);
         osg::Geometry* createSolutionNode(vfh_star::TreeNode const* node, double color_a, double color_b);
 
-        std::pair<double, double> computeColorMapping(std::set<vfh_star::TreeNode const*> const& nodes) const;
+        std::pair<double, double> computeColorMapping(const std::multimap< double, const vfh_star::TreeNode* >& sorted_nodes) const;
+	void addRecursive(std::multimap<double, vfh_star::TreeNode const*> &sorted_nodes, vfh_star::TreeNode const* curNode) const;
         
     private:
         struct Data;
