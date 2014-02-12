@@ -2,15 +2,23 @@
 #define VFH_H
 
 #include <envire/maps/Grid.hpp>
-#include "TraversabilityGrid.h"
+#include <envire/maps/TraversabilityGrid.hpp>
 #include <vector>
-#include <base/pose.h>
+#include <base/Pose.hpp>
 #include "RadialLookUpTable.hpp"
 
 #include "Types.h"
+#include <base/Angle.hpp>
 
 namespace vfh_star
 {
+    enum Traversability {
+        UNCLASSIFIED = 0,
+        TRAVERSABLE = 1,
+        OBSTACLE = 2,
+        UNKNOWN_OBSTACLE = 3,
+    };
+    
     class TerrainStatistic
     {
 	public:
@@ -60,7 +68,7 @@ namespace vfh_star
     {
     public:
         VFH();
-        virtual std::vector< std::pair<double, double> >
+        virtual std::vector< base::AngleSegment >
             getNextPossibleDirections(const base::Pose& curPose,
                     double obstacleSafetyDist,
                     double robotWidth, VFHDebugData* dd = NULL) const;
@@ -77,19 +85,16 @@ namespace vfh_star
 	    senseRadius = radius;
 	}
 	
-	void setNewTraversabilityGrid(const envire::Grid<Traversability> *trGrid);
-	
-	Traversability getWorstTerrainInRadius(const base::Pose& curPose, double robotWidth) const;
-	std::pair<TerrainStatistic, TerrainStatistic> getTerrainStatisticsForRadius(const base::Pose& curPose, double innerRadius, double outerRadius) const;
-
+        void setNewTraversabilityGrid(const envire::TraversabilityGrid *trGrid);
+        const envire::TraversabilityGrid *getTraversabilityGrid() const;
+        
     private:
         void generateHistogram(std::vector< double > &histogram,
-                const base::Pose &curPose,
-                double senseRadius, double obstacleSafetyDist, double robotRadius) const;
+                const base::Pose &curPose, double obstacleSafetyDist, double robotRadius) const;
 
         void getBinaryHistogram(const std::vector< double > &histogram, std::vector< bool > &binHistogram, double lowThreshold, double highThreshold) const;
 	RadialLookUpTable lut;
-        const envire::Grid<Traversability> *traversabillityGrid;
+        const envire::TraversabilityGrid *traversabillityGrid;
         Eigen::Vector3d gridPos;
         double gridWidthHalf;
         double gridHeightHalf;

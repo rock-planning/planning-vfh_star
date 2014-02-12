@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stdlib.h>
-
+#include <base/Angle.hpp>
 #define private public 
 #include "vfh_star/TreeSearch.h"
 
@@ -29,8 +29,8 @@ int main()
 
 	nodes[i].pose.position.x() = x;
 	nodes[i].pose.position.y() = y;
-	nodes[i].direction = 0.1;
-	nodes[i].yaw = 0.1;
+	nodes[i].direction = base::Angle::fromRad(0.1);
+	nodes[i].yaw = base::Angle::fromRad(0.1);
 	
 	l.setNode(&(nodes[i]));
     }

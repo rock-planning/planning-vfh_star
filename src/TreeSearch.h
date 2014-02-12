@@ -7,11 +7,12 @@
 #include <vector>
 #include <list>
 #include <base/Eigen.hpp>
-#include <kdtree++/kdtree.hpp>
 #include <map>
 
 #include <vfh_star/Types.h>
 #include <base/Trajectory.hpp>
+#include <base/Angle.hpp>
+#include "Types.h"
 
 namespace vfh_star {
 
@@ -76,7 +77,7 @@ class TreeNode
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	TreeNode();
-	TreeNode(const base::Pose &pose, double dir, uint8_t driveMode);
+	TreeNode(const base::Pose &pose, const base::Angle &dir, uint8_t driveMode);
         
         void clear();
 
@@ -90,11 +91,11 @@ class TreeNode
 	void removeChild(TreeNode *child);
 	const std::vector<TreeNode *> &getChildren() const;
 	
-	double getDirection() const;
+	const base::Angle &getDirection() const;
 	int getDepth() const;
 
-	double getYaw() const;
-	const base::Vector3d getPosition() const;
+	const base::Angle &getYaw() const;
+	const base::Vector3d &getPosition() const;
 	
         int getIndex() const;
 
@@ -123,10 +124,11 @@ class TreeNode
 	///because of kinematic constrains of the robot
 	base::Pose pose;
 
-	double yaw;
+        ///yaw of the pose
+	base::Angle yaw;
 	
 	///direction, that was choosen, that lead to this node
-	double direction;
+	base::Angle direction;
 	
 	///cost from start to this node
 	double cost;
@@ -164,9 +166,9 @@ class Tree
         Tree(Tree const& other);
         Tree& operator = (Tree const& other);
 	
-        TreeNode* createRoot(base::Pose const& pose, double dir);
-        TreeNode* createNode(base::Pose const& pose, double dir);
-	TreeNode* createChild(TreeNode *parent, base::Pose const& pose, double dir);
+        TreeNode* createRoot(const base::Pose& pose, const base::Angle& dir);
+        TreeNode* createNode(const base::Pose& pose, const base::Angle& dir);
+	TreeNode* createChild(vfh_star::TreeNode* parent, const base::Pose& pose, const base::Angle& dir);
 
 	TreeNode *getParent(TreeNode *child);
         const TreeNode *getRootNode() const;
@@ -230,8 +232,8 @@ class ProjectedPose
 class TreeSearch
 {
     public:
-        typedef std::vector<double> Angles;
-        typedef std::vector< std::pair<double, double> > AngleIntervals;
+        typedef std::vector<base::Angle> Angles;
+        typedef std::vector<base::AngleSegment> AngleIntervals;
 
 	TreeSearch();
         virtual ~TreeSearch();
@@ -266,7 +268,7 @@ class TreeSearch
         void configChanged();
         
     protected:
-	Angles getDirectionsFromIntervals(double curDir, const AngleIntervals& intervals);
+	Angles getDirectionsFromIntervals(const base::Angle &curDir, const AngleIntervals& intervals);
 
         // The tree generated at the last call to getTrajectory
         Tree tree;
@@ -287,18 +289,18 @@ class TreeSearch
          * itself. It might include a cost of "being at" \c node as well
          */
 	virtual double getCostForNode(const ProjectedPose &projection,
-                double direction, const TreeNode& parentNode) const = 0;
+                const base::Angle &direction, const TreeNode& parentNode) const = 0;
 
 	/**
 	* This method returns possible directions where 
-	* the robot can drive to, from the given position
+	* the robot can drive to, from the given position.
+        * The returned directions are given as intervals
+        * of drivable angles. The intervals must be in map frame. 
         *
         * The returned vector is a list of angle intervals
 	**/
 	virtual AngleIntervals getNextPossibleDirections(
-                const TreeNode& curNode,
-                double obstacleSafetyDist,
-                double robotWidth) const = 0;
+                const TreeNode& curNode) const = 0;
 
                 
 
@@ -314,7 +316,7 @@ class TreeSearch
         * can be lower in case of e.g. obstacles.
 	*/
 	virtual std::vector<ProjectedPose> getProjectedPoses(const TreeNode& curNode,
-                double heading,
+                const base::Angle &heading,
                 double distance) const = 0;
 
         /**
@@ -342,9 +344,10 @@ class TreeSearch
 
     private:
         uint8_t maxDriveModes;
-
+        void addDirections(vfh_star::TreeSearch::Angles& directions, const base::AngleSegment &segement, const double minStep, const double maxStep, const int minNodes) const;
 	void updateNodeCosts(TreeNode *node);
 	void removeSubtreeFromSearch(TreeNode *node);
+        
 	
 	std::multimap<double, TreeNode *> expandCandidates;
 	NNLookup *nnLookup;

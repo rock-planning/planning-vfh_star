@@ -3,15 +3,10 @@
 
 #include "Grid.h"
 #include "ElevationGrid.h"
+#include "vfh_star/VFH.h"
 
 namespace vfh_star
 {
-enum Traversability {
-    UNCLASSIFIED = 0,
-    TRAVERSABLE = 1,
-    OBSTACLE = 2,
-    UNKNOWN_OBSTACLE = 3,
-};
 
 class TraversabilityGrid: public Grid<Traversability, GRIDSIZE, GRIDRESOLUTION>
 {

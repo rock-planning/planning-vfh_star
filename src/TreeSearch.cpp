@@ -3,25 +3,12 @@
 #include <map>
 #include <stdexcept>
 #include <iostream>
-#include <base/angle.h>
-#include <base/float.h>
+#include <base/Angle.hpp>
+#include <base/Float.hpp>
 
 using namespace vfh_star;
 
-TreeSearchConf::TreeSearchConf()
-    : maxTreeSize(10000)
-    , stepDistance(0.3)
-    , angularSamplingMin(2 * M_PI / 120)
-    , angularSamplingMax(2 * M_PI / 20)
-    , angularSamplingNominalCount(5)
-    , discountFactor(1.0)
-    , obstacleSafetyDistance(0.1)
-    , robotWidth(0.5)
-    , identityPositionThreshold(0.06)
-    , identityYawThreshold(0.05)
-    , maxStepSize(0.2)
-    {}
-
+bool printDebug = false;
             
 void TreeSearchConf::computePosAndYawThreshold()
 {
@@ -36,7 +23,6 @@ void TreeSearchConf::computePosAndYawThreshold()
     }
 
 }
-    
     
 TreeSearch::TreeSearch(): maxDriveModes(1), nnLookup(NULL)
 {
@@ -75,62 +61,70 @@ const TreeSearchConf& TreeSearch::getSearchConf() const
     return search_conf;
 }
 
-TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(double curDir, const TreeSearch::AngleIntervals& intervals)
+void TreeSearch::addDirections(TreeSearch::Angles& directions, const base::AngleSegment& segement, const double minStep, const double maxStep, const int minNodes) const
 {
-    std::vector< double > ret;
+    const double intervalOpening = segement.getWidth();
+    
+    double step = intervalOpening / minNodes;
+    if (step < minStep)
+        step = minStep;
+    else if (step > maxStep)
+        step = maxStep;
 
-    double minStep = search_conf.angularSamplingMin;
-    double maxStep = search_conf.angularSamplingMax;
-    int minNodes = search_conf.angularSamplingNominalCount;
-    
-    // double size = intervals.size();
-    // std::cout << "Interval vector size " << size << std::endl;
-    bool straight = false;
-    
-    for (AngleIntervals::const_iterator it = intervals.begin(); it != intervals.end(); it++) 
+    int intervalSize = floor(intervalOpening / step);
+    base::Angle delta = base::Angle::fromRad(step);
+    base::Angle result = segement.getStart();
+    for (int i = 0; i < intervalSize + 1; ++i)
     {
-	double start = (it->first);
-	double end  = (it->second);
+        directions.push_back(result);
+        result += delta;
+    }
+}
 
-        double intervalOpening;
 
-	// Special case, wrapping interval
-	if (start > end)
+TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const base::Angle &curDir, const TreeSearch::AngleIntervals& intervals)
+{
+    TreeSearch::Angles ret;
+    
+    if(printDebug)
+    {
+        for (AngleIntervals::const_iterator it = intervals.begin(); it != intervals.end(); it++) 
         {
-            if ((curDir > start && curDir < end - 2 * M_PI) || (curDir < end && curDir + 2 * M_PI > start))
-                straight = true;
-
-            intervalOpening = end + 2 * M_PI - start;
-        }
-        else
-        {
-            if (curDir > start && curDir < end)
-                straight = true;
-
-            intervalOpening = end - start;
-        }
-
-        double step = intervalOpening / minNodes;
-        if (step < minStep)
-            step = minStep;
-        else if (step > maxStep)
-            step = maxStep;
-
-        int intervalSize = floor(intervalOpening / step);
-        double delta = (intervalOpening - (intervalSize * step)) / 2.0;
-        for (int i = 0; i < intervalSize + 1; ++i)
-        {
-            double angle = start + delta + i * step;
-            if (angle > 2 * M_PI)
-                ret.push_back(angle - 2 * M_PI);
-            else
-                ret.push_back(angle);
+            std::cout << "Drivable Interval start " << it->startRad << " end " << it->endRad << std::endl; 
         }
     }
 
-    if (straight)
-        ret.push_back(curDir);
-    //std::cerr << "found " << ret.size() << " possible directions" << std::endl;
+    //sample the giben intervals with the different sampling policies
+    for(std::vector<AngleSampleConf>::const_iterator it = search_conf.sampleAreas.begin(); it != search_conf.sampleAreas.end(); it++)
+    {
+        //create a sample interval aligned to the robot direction
+        base::AngleSegment sampleInterval(base::Angle::fromRad(it->intervalStart) + curDir, it->intervalWidth);
+        
+        if(printDebug)
+        {
+            std::cout << "Sample interval is " << sampleInterval << std::endl;
+        }        
+        for (AngleIntervals::const_iterator it2 = intervals.begin(); it2 != intervals.end(); it2++) 
+        {
+            const base::AngleSegment &interval(*it2);
+
+            std::vector<base::AngleSegment> intersections = sampleInterval.getIntersections(interval);
+            for(std::vector<base::AngleSegment>::const_iterator it3 = intersections.begin(); it3 != intersections.end(); it3++)
+            {
+                addDirections(ret, *it3, it->angularSamplingMin, it->angularSamplingMax, it->angularSamplingNominalCount);
+                
+                if(it3->isInside(curDir))
+                    ret.push_back(curDir);
+            }
+        }
+    }
+
+    if(printDebug)
+    {
+        std::cerr << "found " << ret.size() << " possible directions" << std::endl;
+        for(Angles::iterator it = ret.begin(); it != ret.end(); it++)        
+            std::cout << *it << std::endl;
+    }
     
     return ret;
 }
@@ -165,7 +159,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
 	nnLookup = new NNLookup(1.0, search_conf.identityPositionThreshold / 2.0 , search_conf.identityYawThreshold / 2.0, maxDriveModes);
     
     nnLookup->clear();
-    TreeNode *curNode = tree.createRoot(start, start.getYaw());
+    TreeNode *curNode = tree.createRoot(start, base::Angle::fromRad(start.getYaw()));
     curNode->setHeuristic(getHeuristic(*curNode));
     curNode->setCost(0.0);
     nnLookup->setNode(curNode);
@@ -179,9 +173,18 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
     while(!expandCandidates.empty()) 
     {
         curNode = expandCandidates.begin()->second;
+	if(curNode->getHeuristicCost() != expandCandidates.begin()->first)
+	{
+	    std::cout << "Warning map is mixed up " << curNode->getHeuristicCost() << " " << expandCandidates.begin()->first << std::endl;
+	    std::cout << curNode->getPosition().transpose() << " Ori " << curNode->getYaw() << std::endl;
+	}
+
+// 	std::cout << "Expanding " << curNode->getPose().position.transpose() << " " << " val in queue " << expandCandidates.begin()->first << " Cost " << curNode->getCost() << " HC " << curNode->getHeuristic() << std::endl; 
         expandCandidates.erase(expandCandidates.begin());
         curNode->candidate_it = expandCandidates.end();
 
+
+	
 	if(!search_conf.maxSeekTime.isNull() && base::Time::now() - startTime > search_conf.maxSeekTime)
 	    break;
 	
@@ -215,10 +218,13 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         if (max_depth > 0 && tree.getSize() > max_depth)
             continue;
 
+//         printDebug = false;
+//         if(curNode->getPosition().x() > 1.0 && curNode->getPosition().x() < 2.0)
+//             ; //printDebug = true;
+        
         // Get possible ways to go out of this node
         AngleIntervals driveIntervals =
-            getNextPossibleDirections(*curNode,
-                    search_conf.obstacleSafetyDistance, search_conf.robotWidth);
+            getNextPossibleDirections(*curNode);
 
         if (driveIntervals.empty())
             continue;
@@ -237,7 +243,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
             if (max_depth > 0 && tree.getSize() >= max_depth)
                 break;
 
-            const double curDirection(*it);
+            const base::Angle &curDirection(*it);
 
             //generate new node
             std::vector<ProjectedPose> projectedPoses =
@@ -298,6 +304,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
         }
     }
 
+    std::cout << "Created " << tree.getSize() << " Nodes " << " cur usage " << tree.nodes.size() << std::endl;
     expandCandidates.clear();
     
     curNode = tree.getFinalNode();
@@ -425,6 +432,7 @@ Tree& Tree::operator = (Tree const& other)
         copyNodeChilds(other.root_node, root_node, other);
     }
     
+//     std::cout << "Copied " << getSize() << " Nodes " << std::endl;
     
     return *this;
 }
@@ -460,6 +468,9 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_
     bool lastNodeIsForward = true;
     if(!nodes.empty())
     {
+// 	posDir = (*it)->getYaw();
+// 	nodeDir = (*it)->getDirection();
+// 	lastNodeIsForward = fabs((posDir - nodeDir).rad) < 4.0/5.0 * M_PI;
 
 	const Eigen::Affine3d body2Planner((*it)->getPose().toTransform());
 	const Eigen::Affine3d trajectory2Planner(body2Planner * body2Trajectory.inverse());
@@ -470,10 +481,13 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_
         //trajectory
         lastNodeIsForward = (*it)->getDriveMode() == 0;
     }
- 
+  
     for(;it != nodes.end(); it++)
     {
 	bool curNodeIsForward = (*it)->getDriveMode() == 0;
+// 	const vfh_star::TreeNode *curNode = *it;
+// 	bool curNodeIsForward = curNode->getDirection().isInRange(backIntervalStart, backIntervalEnd);
+        
 	//check if direction changed
 	if(lastNodeIsForward != curNodeIsForward)
 	{
@@ -512,8 +526,12 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_
 
 std::vector<base::Waypoint> Tree::buildTrajectoryTo(TreeNode const* node) const
 {
-    int size = node->getDepth() + 1;
     std::vector< base::Waypoint > result; 
+    
+    if(!node)
+        return result;
+    
+    int size = node->getDepth() + 1;
     result.resize(size);
     for (int i = 0; i < size; ++i)
     {
@@ -563,7 +581,7 @@ void Tree::reserve(int size)
         nodes.push_back(TreeNode());
 }
 
-TreeNode* Tree::createNode(base::Pose const& pose, double dir)
+TreeNode* Tree::createNode(base::Pose const& pose, const base::Angle &dir)
 {
     TreeNode* n;
     if (!free_nodes.empty())
@@ -579,14 +597,14 @@ TreeNode* Tree::createNode(base::Pose const& pose, double dir)
 
     n->clear();
     n->pose = pose;
-    n->yaw = pose.getYaw();
+    n->yaw = base::Angle::fromRad(pose.getYaw());
     n->direction = dir;
     n->index  = size;
     ++size;
     return n;
 }
 
-TreeNode* Tree::createRoot(base::Pose const& pose, double dir)
+TreeNode* Tree::createRoot(base::Pose const& pose, const base::Angle &dir)
 {
     if (root_node)
         throw std::runtime_error("trying to create a root node of an non-empty tree");
@@ -596,7 +614,7 @@ TreeNode* Tree::createRoot(base::Pose const& pose, double dir)
     return root_node;
 }
 
-TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, double dir)
+TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, const base::Angle &dir)
 {
     TreeNode* child = createNode(pose, dir);
     child->depth  = parent->depth + 1;
@@ -847,11 +865,14 @@ void NNLookupBox::clear()
 bool NNLookupBox::getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const
 {
     const Eigen::Vector3d mapPos = node.getPosition() - toWorld;
+//     std::cout << "NodePos " << node.getPosition().transpose() << " mapPos " << mapPos.transpose() << std::endl;
     x = mapPos.x() / resolutionXY;
     y = mapPos.y() / resolutionXY;
-    a = node.getYaw() / angularResolution;
+    a = node.getYaw().getRad() / angularResolution;
     if(a < 0)
 	a+= M_PI/angularResolution * 2.0;
+
+//     std::cout << "X " << x << " Y " << y << " A " << a << std::endl;
     
     assert((x >= 0) && (x < xCells) &&
 	    (y >= 0) && (y < yCells) &&
@@ -901,11 +922,11 @@ TreeNode::TreeNode()
     clear();
 }
 
-TreeNode::TreeNode(const base::Pose& pose, double dir, uint8_t driveMode)
+TreeNode::TreeNode(const base::Pose& pose, const base::Angle &dir, uint8_t driveMode)
     : parent(this)
     , is_leaf(true)
     , pose(pose)
-    , yaw(pose.getYaw())
+    , yaw(base::Angle::fromRad(pose.getYaw()))
     , direction(dir)
     , cost(0)
     , heuristic(0)
@@ -920,15 +941,16 @@ TreeNode::TreeNode(const base::Pose& pose, double dir, uint8_t driveMode)
     clear();
     direction = dir;
     this->pose = pose;
-    yaw = pose.getYaw();
+//     yaw = pose.getYaw();
     this->driveMode=driveMode;
+    yaw = base::Angle::fromRad(pose.getYaw());
 }
 
 void TreeNode::clear()
 {
     parent = this;
     pose = base::Pose();
-    yaw = base::unset<double>();
+    yaw = base::Angle();
     is_leaf = true;
     cost = 0;
     heuristic = 0;
@@ -939,16 +961,16 @@ void TreeNode::clear()
     updated_cost = false;
     positionTolerance = 0;
     headingTolerance = 0;
-    direction = 0;
+    direction = base::Angle();
     childs.clear();
 }
 
-const base::Vector3d TreeNode::getPosition() const
+const base::Vector3d &TreeNode::getPosition() const
 {
     return pose.position;
 }
 
-double TreeNode::getYaw() const
+const base::Angle &TreeNode::getYaw() const
 {
     return yaw;
 }
@@ -1045,7 +1067,7 @@ bool TreeNode::isLeaf() const
     return is_leaf;
 }
 
-double TreeNode::getDirection() const
+const base::Angle &TreeNode::getDirection() const
 {
     return direction;
 }
