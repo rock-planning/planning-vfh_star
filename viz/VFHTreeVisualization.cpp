@@ -151,30 +151,26 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
             step = (parent_p - p).norm();
         
         
-//	vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
-//	vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
-
-	vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z() + 0.001));
-	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z() + 0.001));
-
+        vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+        vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
         Eigen::Vector3d halfWay((p - parent_p ) / 2.0);
         Eigen::Vector3d middle(parent_p + halfWay);
-        Eigen::Vector3d driveToPoint(middle + node->getPose().orientation * Eigen::Vector3d(0, step / 2.0, 0));
+        Eigen::Vector3d driveToPoint(middle + node->getPose().orientation * Eigen::Vector3d(step / 2.0, 0, 0));
         
         //make it an arrow
         Eigen::Vector3d left(middle - driveToPoint);
         left = left.normalized() * step * 0.3;
         left = Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ()) * left;
         left += driveToPoint;
-        vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
-        vertices->push_back(osg::Vec3(left.y(), -left.x(), left.z() + 0.001));
+        vertices->push_back(osg::Vec3(driveToPoint.x(), driveToPoint.y(), driveToPoint.z() + 0.001));
+        vertices->push_back(osg::Vec3(left.x(), left.y(), left.z() + 0.001));
 
         Eigen::Vector3d right(middle - driveToPoint);
         right = right.normalized() * step * 0.3;
         right = Eigen::AngleAxisd(-M_PI/4, Eigen::Vector3d::UnitZ()) * right;
         right += driveToPoint;
-        vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
-        vertices->push_back(osg::Vec3(right.y(), -right.x(), right.z() + 0.001));
+        vertices->push_back(osg::Vec3(driveToPoint.x(), driveToPoint.y(), driveToPoint.z() + 0.001));
+        vertices->push_back(osg::Vec3(right.x(), right.y(), right.z() + 0.001));
 
 
         double cost = getDisplayCost(this->p->costMode, *node);
@@ -194,15 +190,12 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     }
 
     // Add a node for the root's direction
-    Eigen::Quaterniond q(Eigen::AngleAxisd(node->getDirection(), Eigen::Vector3d::UnitZ()));
-    base::Vector3d root_dir = q * Eigen::Vector3d::UnitY();
-    base::Position parent_p = node->getPose().position;
+    Eigen::Quaterniond q(Eigen::AngleAxisd(node->getYaw().getRad(), Eigen::Vector3d::UnitZ()));
+    base::Vector3d root_dir = q * Eigen::Vector3d::UnitX();
+    base::Position parent_p = node->getPosition();
     base::Position p = parent_p - root_dir * step;
-//    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
-//    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
-
-    vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z() + 0.001));
-    vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z() + 0.001));
+    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
 
     Eigen::Vector3d halfWay((p - parent_p ) / 2.0);
     Eigen::Vector3d middle(parent_p + halfWay);
@@ -213,15 +206,15 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(TreeNode const* node, do
     left = left.normalized() * step * 0.3;
     left = Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ()) * left;
     left += driveToPoint;
-    vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
-    vertices->push_back(osg::Vec3(left.y(), -left.x(), left.z() + 0.001));
+    vertices->push_back(osg::Vec3(driveToPoint.x(), driveToPoint.y(), driveToPoint.z() + 0.001));
+    vertices->push_back(osg::Vec3(left.x(), left.y(), left.z() + 0.001));
 
     Eigen::Vector3d right(middle - driveToPoint);
     right = right.normalized() * step * 0.3;
     right = Eigen::AngleAxisd(-M_PI/4, Eigen::Vector3d::UnitZ()) * right;
     right += driveToPoint;
-    vertices->push_back(osg::Vec3(driveToPoint.y(), -driveToPoint.x(), driveToPoint.z() + 0.001));
-    vertices->push_back(osg::Vec3(right.y(), -right.x(), right.z() + 0.001));
+    vertices->push_back(osg::Vec3(driveToPoint.x(), driveToPoint.y(), driveToPoint.z() + 0.001));
+    vertices->push_back(osg::Vec3(right.x(), right.y(), right.z() + 0.001));
         
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
@@ -274,12 +267,8 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(std::multimap<double, TreeNo
 
         base::Position parent_p = node->getParent()->getPose().position;
         base::Position p = node->getPose().position;
-//    vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z()));
-//    vertices->push_back(osg::Vec3(p.x(), p.y(), p.z()));
-
-	vertices->push_back(osg::Vec3(parent_p.y(), -parent_p.x(), parent_p.z()));
-	vertices->push_back(osg::Vec3(p.y(), -p.x(), p.z()));
-
+        vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
+        vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
 
         if (node->getHeuristic() < 0) // used to mark invalid nodes
         {
@@ -342,11 +331,9 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
         osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
         osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
         base::Vector3d pt = p->segment[0];
-//        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
-        vertices->push_back(osg::Vec3(pt.y(), -pt.x(), pt.z()));
+        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
         pt = p->segment[1];
-//        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
-        vertices->push_back(osg::Vec3(pt.y(), -pt.x(), pt.z()));
+        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
         colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
         geom->setColorArray(colors);
