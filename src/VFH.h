@@ -68,44 +68,33 @@ namespace vfh_star
     {
     public:
         VFH();
-        virtual std::vector< base::AngleSegment >
-            getNextPossibleDirections(const base::Pose& curPose,
-                    double obstacleSafetyDist,
-                    double robotWidth, VFHDebugData* dd = NULL) const;
+        std::vector< base::AngleSegment >
+            getNextPossibleDirections(const base::Pose& curPose) const;
 
-        const VFHDebugData &getDebugData();	
-
+        void setConfig(const VFHConf &conf);
+        
 	/**
 	 * Return weather vfh can return possible directions for this position
 	 * */
 	bool validPosition(const base::Pose& curPose) const;
 	
-	void setSenseRadius(double radius)
-	{
-	    senseRadius = radius;
-	}
-	
         void setNewTraversabilityGrid(const envire::TraversabilityGrid *trGrid);
         const envire::TraversabilityGrid *getTraversabilityGrid() const;
         
     private:
-        void generateHistogram(std::vector< double > &histogram,
-                const base::Pose &curPose, double obstacleSafetyDist, double robotRadius) const;
+        void generateHistogram(std::vector< double >& histogram, const base::Pose& curPose) const;
 
-        void getBinaryHistogram(const std::vector< double > &histogram, std::vector< bool > &binHistogram, double lowThreshold, double highThreshold) const;
+        void getBinaryHistogram(const std::vector< double >& histogram, std::vector< bool >& binHistogram) const;
+        void addDir(std::vector< base::AngleSegment >& drivableDirections, int start, int end) const;
 	RadialLookUpTable lut;
         const envire::TraversabilityGrid *traversabillityGrid;
         Eigen::Vector3d gridPos;
         double gridWidthHalf;
         double gridHeightHalf;
 
+        VFHConf config;
+        double angularResolution;
         bool debugActive;
-        VFHDebugData debugData;
-        double senseRadius;
-        int narrowThreshold;
-        int histogramSize;
-        double lowThreshold;
-        double highThreshold;
     };
 
 }

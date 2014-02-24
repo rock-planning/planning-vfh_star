@@ -5,36 +5,36 @@ using namespace Eigen;
 namespace vfh_star
 {
 
-VFH::VFH()
+VFH::VFH() : angularResolution(2*M_PI / config.histogramSize)
 {
-    senseRadius = 0.9;
-    histogramSize = 90;
-    narrowThreshold = 10;
-    lowThreshold = 6;
-    highThreshold = 8;
+}
+
+void VFH::setConfig(const VFHConf& conf)
+{
+    config = conf;
+    angularResolution = 2*M_PI / config.histogramSize;
 }
 
 
-
-void addDir(std::vector< base::AngleSegment > &drivableDirections, double angularResoultion, int narrowThreshold, int start, int end, int histSize)
+void VFH::addDir(std::vector<base::AngleSegment> &drivableDirections, int start, int end) const
 {
 //     std::cout << "adding area " << start << " end " << end << " is narrow " << (abs(end-start) < narrowThreshold) <<  std::endl;
     
     int gapSize = end-start;
     
     if(gapSize < 0)
-	gapSize += histSize;
+	gapSize += config.histogramSize;
 	
-    if(gapSize < narrowThreshold) {
+    if(gapSize < config.narrowThreshold) {
 	double middle = start + (gapSize / 2.0);
-	if(middle > histSize)
-	    middle -= histSize;
+	if(middle > config.histogramSize)
+	    middle -= config.histogramSize;
 	
-	const base::Angle dir = base::Angle::fromRad((middle * angularResoultion));
-	drivableDirections.push_back(base::AngleSegment(dir, angularResoultion));
+	const base::Angle dir = base::Angle::fromRad((middle * angularResolution));
+	drivableDirections.push_back(base::AngleSegment(dir, angularResolution));
     } else {
-	const base::Angle left = base::Angle::fromRad(start * angularResoultion);
-        double width = (gapSize ) * angularResoultion;
+	const base::Angle left = base::Angle::fromRad(start * angularResolution);
+        double width = (gapSize ) * angularResolution;
 	drivableDirections.push_back(base::AngleSegment(left, width));
     }    
 }
@@ -60,23 +60,20 @@ const envire::TraversabilityGrid* VFH::getTraversabilityGrid() const
     return traversabillityGrid;
 }
 
-std::vector<base::AngleSegment> VFH::getNextPossibleDirections(
-        const base::Pose& curPose, double obstacleSafetyDist, double robotWidth,
-        vfh_star::VFHDebugData* dd) const
+std::vector<base::AngleSegment> VFH::getNextPossibleDirections(const base::Pose& curPose) const
 {
     std::vector<base::AngleSegment> drivableDirections;
     std::vector<double> histogram;
     std::vector<bool> bHistogram;
 
     //4 degree steps
-    histogram.resize(histogramSize);
+    histogram.resize(config.histogramSize);
 
-    double angularResoultion = 2*M_PI / histogram.size();
-       
-    generateHistogram(histogram, curPose, obstacleSafetyDist, robotWidth / 2.0);
+    generateHistogram(histogram, curPose);
 
     //we ignore one obstacle
-    getBinaryHistogram(histogram, bHistogram, lowThreshold, highThreshold);
+    getBinaryHistogram(histogram, bHistogram);
+
     
     int start = -1;
     int end = -1;
@@ -99,31 +96,24 @@ std::vector<base::AngleSegment> VFH::getNextPossibleDirections(
 	    
 	    end = i;
 	    
-	    addDir(drivableDirections, angularResoultion, narrowThreshold, start, end, histogramSize);
+	    addDir(drivableDirections, start, end);
 	    start = -1;
 	}   
     }
     
     if(start >= 0)
     {
-	addDir(drivableDirections, angularResoultion, narrowThreshold, start, firstEnd, histogramSize);
+	addDir(drivableDirections, start, firstEnd);
     }
     else 
     {
 	if(firstEnd != static_cast<signed int>(bHistogram.size()))
 	{
-	    addDir(drivableDirections, angularResoultion, narrowThreshold, 0, firstEnd, histogramSize);
+	    addDir(drivableDirections, 0, firstEnd);
 	}
     }
     
-    if(dd) 
     {
-        dd->histogram.resize(bHistogram.size());
-	copy(bHistogram.begin(), bHistogram.end(), dd->histogram.begin());
-	dd->obstacleSafetyDist = obstacleSafetyDist;
-	dd->pose = curPose;
-	dd->robotWidth = robotWidth;
-	dd->senseRadius = senseRadius;
     }
     
     return drivableDirections;
@@ -145,17 +135,17 @@ bool VFH::validPosition(const base::Pose& curPose) const
     const Vector3d curPos(curPose.position.x(), curPose.position.y(), 0);     
     double distanceToCenter = (gridPos - curPos).norm();
     
-    return !(gridHeightHalf  - (distanceToCenter + senseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + senseRadius) < 0);    
+    return !(gridHeightHalf  - (distanceToCenter + config.obstacleSenseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + config.obstacleSenseRadius) < 0);    
 }
 
-void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose, double obstacleSafetyDist, double robotRadius) const
+void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& curPose) const
 {
     const int nrDirs = histogram.size();
-    const double dirResolution = 2*M_PI / nrDirs;
     
     const double a = 2.0;
-    const double b = 1.0/ (senseRadius * senseRadius);
+    const double b = 1.0/ (config.obstacleSenseRadius * config.obstacleSenseRadius);
 
+    const double radius = config.robotWidth / 2.0 + config.obstacleSafetyDistance;
     
     std::vector<double> &dirs(histogram);    
     
@@ -164,7 +154,7 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
     assert(traversabillityGrid->toGrid(curPose.position.x(), curPose.position.y(), robotX, robotY));
     
     const envire::TraversabilityGrid::ArrayType &gridData = traversabillityGrid->getGridData();    
-    const int senseSize = senseRadius / traversabillityGrid->getScaleX();
+    const int senseSize = config.obstacleSenseRadius / traversabillityGrid->getScaleX();
 
 //     std::cout << "senseSize " << senseSize << std::endl;
     
@@ -193,7 +183,7 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 	std::cout <<  std::endl;
     }*/
     
-    //walk over area of grid within of circle with radius senseRadius around the robot
+    //walk over area of grid within of circle with radius config.obstacleSenseRadius around the robot
     for(int y = -senseSize; y <= senseSize; y++)
     {
 	for(int x = -senseSize; x <= senseSize; x++)
@@ -201,7 +191,7 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 	    double distToRobot = lut.getDistance(x, y);
 	    
 	    //check if outside circle
-	    if(distToRobot > senseRadius)
+	    if(distToRobot > config.obstacleSenseRadius)
 		continue;
 	  
 	    int rx = robotX + x;
@@ -214,7 +204,7 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
             {
                 std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
                 std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
-                std::cout << "Sense size x:" << senseSize << " sense radius" << senseRadius << std::endl;
+                std::cout << "Sense size x:" << senseSize << " sense radius" << config.obstacleSenseRadius << std::endl;
                 
                 throw std::runtime_error("Accessed cell outside of grid");
             }
@@ -239,15 +229,15 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 		//in case we are allready hit the obstacle, we set distToRobot
 		//to (robotWidth + obstacleSafetyDist) which results in a 90 degree masking
 		//of the area where the collided obstable is
-		if((robotRadius + obstacleSafetyDist) > distToRobot)
-		    distToRobot = (robotRadius + obstacleSafetyDist);
+		if((radius) > distToRobot)
+		    distToRobot = (radius);
 		
 		//boundary of obstacle including robot width and safety distance
-		double y_t = asin((robotRadius + obstacleSafetyDist) / distToRobot);
+		double y_t = asin(radius / distToRobot);
 		
 		//add to histogramm
-		int s = (angleToObstace - y_t) / dirResolution;
-		int e = (angleToObstace + y_t) / dirResolution;
+		int s = (angleToObstace - y_t) / angularResolution;
+		int e = (angleToObstace + y_t) / angularResolution;
 		for(int a = s; a <= e; a++) {
 		    int ac = a;
 		    if(ac < 0)
@@ -264,14 +254,14 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 }
 
 
-void VFH::getBinaryHistogram(const std::vector< double >& histogram, std::vector< bool >& binHistogram, double lowThreshold, double highThreshold) const
+void VFH::getBinaryHistogram(const std::vector< double >& histogram, std::vector< bool >& binHistogram) const
 {
     binHistogram.clear();
     binHistogram.reserve(histogram.size());
     for(std::vector<double>::const_iterator it = histogram.begin(); it != histogram.end(); it++) {
 	bool drivable = false;
 	
-	if(*it <= lowThreshold)
+	if(*it <= config.lowThreshold)
 	    drivable = true;
 	
 	//FIXME we are missing out the last binary histogramm

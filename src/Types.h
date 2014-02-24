@@ -30,8 +30,11 @@ namespace vfh_star
     };
     
     struct TreeSearchConf {
+        ///maximum number of expanded nodes
         int maxTreeSize;
-        double stepDistance; //! the distance in meters between two steps in the search
+        
+        //! the distance in meters between two steps in the search
+        double stepDistance; 
 
         /**
          * A vector containing the different sampling policies around the robot
@@ -41,9 +44,6 @@ namespace vfh_star
         
         //! the cost discount factor applied on the cost of nodes at depth D + 1 w.r.t. the node at depth D
         double discountFactor; 
-
-        //! the margin distance between the robot and the obstacles
-        double obstacleSafetyDistance; 
 
         /** if two nodes are below this threshhold in position
          * and are pointing in the same direction, they are 
@@ -63,7 +63,9 @@ namespace vfh_star
             , discountFactor(1.0)
             , identityPositionThreshold(-1)
             , identityYawThreshold(-1)
-    {};
+    {
+        sampleAreas.push_back(AngleSampleConf());
+    };
                 
         /**
          * This function computes the position and yaw threshold
@@ -76,7 +78,10 @@ namespace vfh_star
     {
         VFHConf(): obstacleSafetyDistance(0.0),
                     robotWidth(0.0),
-                    obstacleSenseRadius(0.0)
+                    obstacleSenseRadius(0.0), 
+                    narrowThreshold(10), 
+                    lowThreshold(6.0),
+                    histogramSize(90)
         {
         }
         
@@ -91,6 +96,25 @@ namespace vfh_star
          * per step.
          * */
         double obstacleSenseRadius;
+        
+        /**
+         * If the historgram contains a 'slot' of directions
+         * which is narrower than this threshhold, it is considered
+         * narrow. In this case only one drive direction (the middle of 
+         * the slot) is generatred instead of an interval of drive directions
+         * */
+        int narrowThreshold;
+        
+        /**
+         * Any part of the histogram, were the magnitude value
+         * is smaller than this is considered drivable
+         * */
+        double lowThreshold;
+
+        /**
+         * Number of directions covered by the histogram
+         * */
+        int histogramSize;
     };
     
     struct VFHStarConf
