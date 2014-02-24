@@ -1,4 +1,4 @@
-#include "VFHStar.h"
+#include <vfh_star/VFHStar.h>
 #include <iostream>
 #include <vizkit3d/QtThreadedWidget.hpp>
 #include <vizkit3d/Vizkit3DWidget.hpp>
@@ -154,7 +154,7 @@ int main()
     
     base::Time startTime = base::Time::now();
     
-    std::vector<base::Waypoint> trajectory = t.getWaypoints(start, mainHeading, 5);
+    std::vector<base::Trajectory> trajectory = t.getTrajectories(start, mainHeading, 5.0, Eigen::Affine3d::Identity());
     
     base::Time endTime = base::Time::now();
 
@@ -163,10 +163,10 @@ int main()
     std::cout << "Resulting tree is " << t.getTree().getSize() << " took " << endTime-startTime << std::endl;
 
     std::cout << "Result: " << std::endl;
-    for(std::vector<base::Waypoint>::const_iterator it = trajectory.begin(); it != trajectory.end(); it++) 
-    {
-	std::cout << "  " << it->position.transpose() << std::endl;
-    }
+//     for(std::vector<base::Waypoint>::const_iterator it = trajectory.begin(); it != trajectory.end(); it++) 
+//     {
+// 	std::cout << "  " << it->position.transpose() << std::endl;
+//     }
 
 //     for (int i = 0; i < 2; ++i)
 //     {

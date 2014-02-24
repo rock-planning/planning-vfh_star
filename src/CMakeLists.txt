@@ -8,10 +8,6 @@ rock_library(vfh_star
         TraversabilityMapGenerator.h TreeSearch.h VFH.h VFHStar.h Types.h 
 	RadialLookUpTable.hpp HorizonPlanner.hpp)
 
-rock_executable(vfh_star_test VFHStarTest.cpp
-    DEPS vfh_star 
-    DEPS_PKGCONFIG vizkit3d vfh_star-viz envire-viz)
-
 rock_executable(nnlookup_test NNLookupTest.cpp
     DEPS vfh_star)
 
