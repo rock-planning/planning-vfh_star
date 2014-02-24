@@ -13,8 +13,8 @@ class HorizonPlanner : public TreeSearch
         HorizonPlanner();
         virtual ~HorizonPlanner();
 
-        std::vector<base::Trajectory> getTrajectories(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory);
-        const TreeNode* computePath(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory);
+        std::vector<base::Trajectory> getTrajectories(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory = Eigen::Affine3d::Identity());
+        const TreeNode* computePath(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory = Eigen::Affine3d::Identity());
         
         const base::Vector3d &getHorizonOrigin() const
         {
@@ -48,7 +48,6 @@ class HorizonPlanner : public TreeSearch
          * the returned distance is negative, it means we crossed it.
          */
         double algebraicDistanceToGoalLine(const base::Position& pos) const;
-
 };
 
 }
