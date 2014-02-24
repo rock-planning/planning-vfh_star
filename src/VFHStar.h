@@ -15,15 +15,7 @@ class VFHStar : public HorizonPlanner
         void setCostConf(const VFHStarConf& config);
         const VFHStarConf& getCostConf() const;
 
-	base::Vector3d getHorizonOrigin() 
-	{
-	    return targetLinePoint;
-	}
 
-	base::Vector3d getHorizonVector() 
-	{
-	    return targetLine;
-	}
 	
         /**
          * Sets a new traversability map.
