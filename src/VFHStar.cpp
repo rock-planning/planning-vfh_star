@@ -22,6 +22,7 @@ const VFHStarConf& VFHStar::getCostConf() const
 void VFHStar::setCostConf(const VFHStarConf& conf)
 {
     vfhStarConf = conf;
+    vfh.setConfig(vfhStarConf.vfhConf);
 }
 
 double VFHStar::getHeuristic(const TreeNode &node) const
@@ -71,15 +72,39 @@ double VFHStar::getCostForNode(const vfh_star::ProjectedPose& projection, const 
 
 TreeSearch::AngleIntervals VFHStar::getNextPossibleDirections(const vfh_star::TreeNode& curNode) const
 {
-    const double &obstacleSafetyDist(vfhStarConf.vfhConf.obstacleSafetyDistance);
-    const double &robotWidth(vfhStarConf.vfhConf.robotWidth);
-    
-    VFHDebugData dd;
-    TreeSearch::AngleIntervals ret;
-    ret = vfh.getNextPossibleDirections(curNode.getPose(), obstacleSafetyDist, robotWidth, &dd);
-//     debugData.steps.push_back(dd);
-
-    return ret;
+    return vfh.getNextPossibleDirections(curNode.getPose());
 }
 
+VFHStarDebugData VFHStar::getVFHStarDebugData(const std::vector< base::Waypoint >& trajectory)
+{
+    VFHStarDebugData dd_out;
+    dd_out.horizonOrigin = getHorizonOrigin();
+    dd_out.horizonVector = getHorizonVector();
+//     for(std::vector<base::Waypoint>::const_iterator it = trajectory.begin(); it != trajectory.end(); it++)
+//     {
+//         bool found = false;
+//         for(std::vector<vfh_star::VFHDebugData>::const_iterator it2 = debugData.steps.begin(); it2 != debugData.steps.end(); it2++) 
+//         {
+//             if(it->position == base::Vector3d(it2->pose.position))
+//             {
+//                 dd_out.steps.push_back(*it2);
+//                 found = true;
+//                 break;
+//             }
+//             
+//         }
+//         if(!found && (it + 1) != trajectory.end() )
+//         {
+//             std::cerr << "BAD debug data is fishy" << std::endl;
+//             throw std::runtime_error("Could not build VFHStarDebugData");
+//         }
+//     }
+    return dd_out;
+}
+
+// void VFHStar::clearDebugData()
+// {
+//     debugData.generatedTrajectory.clear();
+//     debugData.steps.clear();
+// }
 

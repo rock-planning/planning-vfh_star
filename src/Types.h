@@ -140,6 +140,12 @@ namespace vfh_star
         double robotWidth;
     };
 
+    struct VFHStarDebugData {
+        std::vector<vfh_star::VFHDebugData> steps;
+        std::vector<base::Waypoint> generatedTrajectory;
+        base::Vector3d horizonOrigin;
+        base::Vector3d horizonVector;   
+    };
 }
 
 #endif

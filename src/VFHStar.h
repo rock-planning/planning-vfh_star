@@ -3,6 +3,7 @@
 
 #include "HorizonPlanner.hpp"
 #include "VFH.h"
+#include "Types.h"
 
 namespace vfh_star {
 class VFHStar : public HorizonPlanner
@@ -23,9 +24,15 @@ class VFHStar : public HorizonPlanner
 	{
 	    return targetLine;
 	}
-
+	
+        /**
+         * Sets a new traversability map.
+         * The map is used while computing the optimal path
+         * to the horizon.
+         * */
 	void setNewTraversabilityGrid(const envire::TraversabilityGrid *trGrid);
 
+        VFHStarDebugData getVFHStarDebugData(const std::vector< base::Waypoint >& trajectory);
         
     protected:
         VFHStarConf vfhStarConf;
