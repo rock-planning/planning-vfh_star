@@ -5,6 +5,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <osg/LineWidth>
 #include <base/float.h>
+#include <vizkit3d/Vizkit3DHelper.hpp>
 
 #include <iostream>
 
@@ -83,10 +84,12 @@ osg::ref_ptr<osg::Node> VFHTreeVisualization::createMainNode()
 {
     // Geode is a common node used for vizkit plugins. It allows to display
     // "arbitrary" geometries
+    osg::ref_ptr<osg::PositionAttitudeTransform> transform = new osg::PositionAttitudeTransform();
     osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+    transform->addChild(geode);
     osg::StateSet *state = geode->getOrCreateStateSet();
     state->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-    return geode;
+    return transform;
 }
 
 static double getDisplayCost(VFHTreeVisualization::COST_MODE mode, vfh_star::TreeNode const& node)
@@ -322,7 +325,11 @@ void VFHTreeVisualization::addRecursive(std::multimap<double, TreeNode const*> &
 
 void VFHTreeVisualization::updateMainNode ( osg::Node* node )
 {
-    osg::Geode* geode = static_cast<osg::Geode*>(node);
+    osg::PositionAttitudeTransform* transform = dynamic_cast<osg::PositionAttitudeTransform*>(node);
+    transform->setPosition(eigenVectorToOsgVec3(p->data.getTreeToWorld().translation()));
+    transform->setAttitude(eigenQuatToOsgQuat(Eigen::Quaterniond(p->data.getTreeToWorld().linear())));
+    
+    osg::Geode* geode = transform->getChild(0)->asGeode();
     while(geode->removeDrawables(0));
 
     if (p->hasSegment)
