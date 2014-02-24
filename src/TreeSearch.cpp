@@ -32,6 +32,7 @@ TreeSearch::TreeSearch(): tree2World(Eigen::Affine3d::Identity()), nnLookup(NULL
 void TreeSearch::setTreeToWorld(Eigen::Affine3d tree2World)
 {
     this->tree2World = tree2World;
+    tree.setTreeToWorld(tree2World);
 }
 
 const Eigen::Affine3d& TreeSearch::getTreeToWorld() const
@@ -398,7 +399,8 @@ const Tree& TreeSearch::getTree() const
 Tree::Tree()
     : size(0)
     , final_node(0)
-    , root_node(0)    
+    , root_node(0)
+    , tree2World(Eigen::Affine3d::Identity())
 {
 }
 
@@ -617,6 +619,16 @@ void Tree::clear()
     final_node = 0;
     root_node = 0;
     size = 0;
+}
+
+const Eigen::Affine3d& Tree::getTreeToWorld() const
+{
+    return tree2World;
+}
+
+void Tree::setTreeToWorld(Eigen::Affine3d tree2World)
+{
+    this->tree2World = tree2World;
 }
 
 std::list<TreeNode> const& Tree::getNodes() const

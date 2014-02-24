@@ -192,6 +192,10 @@ class Tree
          * */
         void removeNode(TreeNode *node);
 
+        void setTreeToWorld(Eigen::Affine3d tree2World);
+        
+        const Eigen::Affine3d &getTreeToWorld() const;
+
     private:
 	void copyNodeChilds(const vfh_star::TreeNode* otherNode, vfh_star::TreeNode* ownNode, const vfh_star::Tree& other);
 
@@ -212,6 +216,10 @@ class Tree
 	
 	///Root node of the tree
 	TreeNode *root_node;
+        
+        ///Pose of tree in world frame, only needed for displaying
+        Eigen::Affine3d tree2World;
+
 };
 
 class ProjectedPose 
