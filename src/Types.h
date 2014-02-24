@@ -9,6 +9,7 @@
 
 namespace vfh_star
 {
+    class Tree;
     struct AngleSampleConf
     {
         AngleSampleConf() : angularSamplingMin(0), angularSamplingMax(0), angularSamplingNominalCount(1), intervalStart(0), intervalWidth(-1) {}
@@ -143,6 +144,12 @@ namespace vfh_star
     struct VFHStarDebugData {
         std::vector<vfh_star::VFHDebugData> steps;
         std::vector<base::Waypoint> generatedTrajectory;
+        base::Vector3d horizonOrigin;
+        base::Vector3d horizonVector;   
+    };
+
+    struct HorizonPlannerDebugData {
+        const vfh_star::Tree *planningTree;
         base::Vector3d horizonOrigin;
         base::Vector3d horizonVector;   
     };

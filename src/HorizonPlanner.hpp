@@ -2,6 +2,7 @@
 #define HORIZONPLANNER_HPP
 
 #include "TreeSearch.h"
+#include "Types.h"
 
 namespace vfh_star
 {
@@ -15,16 +16,18 @@ class HorizonPlanner : public TreeSearch
         std::vector<base::Trajectory> getTrajectories(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory);
         const TreeNode* computePath(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory);
         
-        base::Vector3d getHorizonOrigin() 
+        const base::Vector3d &getHorizonOrigin() const
         {
             return targetLinePoint;
         }
 
-        base::Vector3d getHorizonVector() 
+        const base::Vector3d &getHorizonVector() const
         {
             return targetLine;
         }
 
+        HorizonPlannerDebugData getDebugData() const;
+        
     protected:
         base::Angle mainHeading;
         base::Vector3d targetLinePoint;

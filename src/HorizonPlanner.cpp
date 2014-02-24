@@ -40,7 +40,17 @@ const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base:
     
     return compute(start);
 }
-        
+
+HorizonPlannerDebugData HorizonPlanner::getDebugData() const
+{
+    HorizonPlannerDebugData ret;
+    ret.horizonOrigin = getHorizonOrigin();
+    ret.horizonVector = getHorizonVector();
+    ret.planningTree = &tree;
+    
+    return ret;
+}
+
 double HorizonPlanner::algebraicDistanceToGoalLine(const base::Position& pos) const
 {
     //check weather we crossed the target line;
