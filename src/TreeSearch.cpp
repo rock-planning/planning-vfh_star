@@ -50,11 +50,6 @@ void TreeSearch::setSearchConf(const TreeSearchConf& conf)
     configChanged();
  }
 
-void TreeSearch::setMaxDriveModes(uint8_t driveModes)
-{
-    maxDriveModes = driveModes;
-    configChanged();
-}
 
 const TreeSearchConf& TreeSearch::getSearchConf() const
 {
@@ -129,11 +124,17 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const base::Angle &cur
     return ret;
 }
 
+void TreeSearch::addDriveMode(DriveMode& driveMode)
 base::geometry::Spline<3> TreeSearch::waypointsToSpline(const std::vector<base::Waypoint>& waypoints)
 {
+    driveModes.push_back(&driveMode);
+}
     if (waypoints.empty())
         return base::geometry::Spline<3>();
 
+void TreeSearch::clearDriveModes()
+{
+    driveModes.clear();
     std::vector<base::Vector3d> as_points;
     for(std::vector<base::Waypoint>::const_iterator it = waypoints.begin();
             it != waypoints.end(); it++)
@@ -144,19 +145,41 @@ base::geometry::Spline<3> TreeSearch::waypointsToSpline(const std::vector<base::
     return spline;
 }
 
+double TreeSearch::getCostForNode(const ProjectedPose& projection, const base::Angle& direction, const TreeNode& parentNode)
 base::geometry::Spline<3> TreeSearch::getTrajectory(const base::Pose& start)
 {
+    return driveModes[projection.driveMode]->getCostForNode(projection, direction, parentNode);
+}
     std::vector<base::Waypoint> waypoints =
         getWaypoints(start);
 
+std::vector< ProjectedPose > TreeSearch::getProjectedPoses(const TreeNode& curNode, const base::Angle& heading, double distance)
+{
+    int i = 0;
+    std::vector< ProjectedPose > ret;
+    for(std::vector<DriveMode *>::const_iterator it = driveModes.begin(); it != driveModes.end(); it++)
+    {
+        ProjectedPose newPose;
+        if((*it)->projectPose(newPose, curNode, heading, distance))
+        {
+            newPose.driveMode = i;
+            ret.push_back(newPose);
+        }
+        i++;
+    }
+    return ret;
     return waypointsToSpline(waypoints);
 }
 
 TreeNode const* TreeSearch::compute(const base::Pose& start)
 {
+    if(!driveModes.size())
+    {
+        throw std::runtime_error("TreeSearch:: Error, no drive mode was registered");
+    }
     tree.clear();
     if(!nnLookup)
-	nnLookup = new NNLookup(1.0, search_conf.identityPositionThreshold / 2.0 , search_conf.identityYawThreshold / 2.0, maxDriveModes);
+	nnLookup = new NNLookup(1.0, search_conf.identityPositionThreshold / 2.0 , search_conf.identityYawThreshold / 2.0, driveModes.size());
     
     nnLookup->clear();
     TreeNode *curNode = tree.createRoot(start, base::Angle::fromRad(start.getYaw()));
@@ -291,7 +314,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start)
                 newNode->setDriveMode(projected->driveMode);
                 newNode->setCost(curNode->getCost() + nodeCost);
                 newNode->setCostFromParent(nodeCost);
-                newNode->setPositionTolerance(search_conf.obstacleSafetyDistance);
+                newNode->setPositionTolerance(std::numeric_limits< double >::signaling_NaN());
                 newNode->setHeadingTolerance(std::numeric_limits< double >::signaling_NaN());
                 newNode->setHeuristic(curDiscount * getHeuristic(*newNode));
 

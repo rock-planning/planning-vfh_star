@@ -228,6 +228,28 @@ class ProjectedPose
         double angleTurned;
 };
 
+class DriveMode
+{
+public:
+    /**
+     * Sets the parameters of this drive mode on the trajectory
+     * */
+    virtual void setTrajectoryParameters(base::Trajectory &tr) const = 0;
+    
+    /**
+     * Returns the pose in which the robot will be after traveling from the curNode
+     * over a distance of 'distance' towards the moveDirection, using this drive mode.
+     * 
+     * returns false if pose could not be projected using this drive mode
+     * */
+    virtual bool projectPose(ProjectedPose &result, const TreeNode& curNode, const base::Angle& moveDirection, double distance) const = 0;
+    
+    /**
+     * Returns the cost of driving from the parentNode to the projected position using this drive mode;
+     * */
+    virtual double getCostForNode(const ProjectedPose& projection,const base::Angle &direction, const TreeNode& parentNode) const = 0;
+};
+
 /** The basic search algorithm used for planning */
 class TreeSearch
 {
@@ -258,8 +280,6 @@ class TreeSearch
         const TreeSearchConf& getSearchConf() const;
         Tree const& getTree() const;
 
-        void setMaxDriveModes(uint8_t driveModes);
-        
         /**
          * This method is supposed to be called every time the 
          * config changed. It will drop all cached nodes etc.
@@ -288,8 +308,8 @@ class TreeSearch
         /** Returns the cost of travelling from \c node's parent to \c node
          * itself. It might include a cost of "being at" \c node as well
          */
-	virtual double getCostForNode(const ProjectedPose &projection,
-                const base::Angle &direction, const TreeNode& parentNode) const = 0;
+	double getCostForNode(const ProjectedPose &projection,
+                const base::Angle &direction, const TreeNode& parentNode);
 
 	/**
 	* This method returns possible directions where 
@@ -304,20 +324,12 @@ class TreeSearch
 
                 
 
-	/**
-	* This function returns a pose in which the robot would
-	* be if he would have driven towards the given direction.
-	* This method should take the robot driving constrains
-	* into account. 
-        *
-        * The boolean in the pair is true if a next pose existed given the
-        * provided parameters, and false otherwise. The distance between the
-        * returned pose and the curNode's pose must be UP TO \c distance, but
-        * can be lower in case of e.g. obstacles.
-	*/
-	virtual std::vector<ProjectedPose> getProjectedPoses(const TreeNode& curNode,
+        /**
+        * Project the curNode to new node candidat using all registered drive modes. 
+        */
+	std::vector<ProjectedPose> getProjectedPoses(const TreeNode& curNode,
                 const base::Angle &heading,
-                double distance) const = 0;
+                double distance);
 
         /**
          * This function is called to validate a node that has previously been
@@ -342,14 +354,20 @@ class TreeSearch
          */
         virtual bool updateCost(TreeNode& node, bool is_terminal) const;
 
+        /**
+         * Adds a drive mode to the planner
+         * */
+        void addDriveMode(vfh_star::DriveMode &driveMode);
+        
+        void clearDriveModes();
     private:
-        uint8_t maxDriveModes;
         void addDirections(vfh_star::TreeSearch::Angles& directions, const base::AngleSegment &segement, const double minStep, const double maxStep, const int minNodes) const;
 	void updateNodeCosts(TreeNode *node);
 	void removeSubtreeFromSearch(TreeNode *node);
         
 	
 	std::multimap<double, TreeNode *> expandCandidates;
+        std::vector<DriveMode *> driveModes;
 	NNLookup *nnLookup;
 };
 } // vfh_star namespace
