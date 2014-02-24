@@ -12,8 +12,6 @@ class HorizonPlanner : public TreeSearch
         HorizonPlanner();
         virtual ~HorizonPlanner();
 
-        std::vector<base::Waypoint> getWaypoints(const base::Pose& start, const base::Angle& mainHeading, double horizon);
-        base::geometry::Spline<3> getTrajectory(const base::Pose& start, const base::Angle& mainHeading, double horizon);
         std::vector<base::Trajectory> getTrajectories(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory);
         const TreeNode* computePath(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory);
         

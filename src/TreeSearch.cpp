@@ -24,9 +24,19 @@ void TreeSearchConf::computePosAndYawThreshold()
 
 }
     
-TreeSearch::TreeSearch(): maxDriveModes(1), nnLookup(NULL)
+TreeSearch::TreeSearch(): tree2World(Eigen::Affine3d::Identity()), nnLookup(NULL)
 {
     search_conf.computePosAndYawThreshold();
+}
+
+void TreeSearch::setTreeToWorld(Eigen::Affine3d tree2World)
+{
+    this->tree2World = tree2World;
+}
+
+const Eigen::Affine3d& TreeSearch::getTreeToWorld() const
+{
+    return tree2World;
 }
 
 TreeSearch::~TreeSearch()
@@ -125,33 +135,19 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const base::Angle &cur
 }
 
 void TreeSearch::addDriveMode(DriveMode& driveMode)
-base::geometry::Spline<3> TreeSearch::waypointsToSpline(const std::vector<base::Waypoint>& waypoints)
 {
     driveModes.push_back(&driveMode);
 }
-    if (waypoints.empty())
-        return base::geometry::Spline<3>();
 
 void TreeSearch::clearDriveModes()
 {
     driveModes.clear();
-    std::vector<base::Vector3d> as_points;
-    for(std::vector<base::Waypoint>::const_iterator it = waypoints.begin();
-            it != waypoints.end(); it++)
-        as_points.push_back(it->position);
-
-    base::geometry::Spline<3> spline;
-    spline.interpolate(as_points);
-    return spline;
 }
 
 double TreeSearch::getCostForNode(const ProjectedPose& projection, const base::Angle& direction, const TreeNode& parentNode)
-base::geometry::Spline<3> TreeSearch::getTrajectory(const base::Pose& start)
 {
     return driveModes[projection.driveMode]->getCostForNode(projection, direction, parentNode);
 }
-    std::vector<base::Waypoint> waypoints =
-        getWaypoints(start);
 
 std::vector< ProjectedPose > TreeSearch::getProjectedPoses(const TreeNode& curNode, const base::Angle& heading, double distance)
 {
@@ -168,15 +164,16 @@ std::vector< ProjectedPose > TreeSearch::getProjectedPoses(const TreeNode& curNo
         i++;
     }
     return ret;
-    return waypointsToSpline(waypoints);
 }
 
-TreeNode const* TreeSearch::compute(const base::Pose& start)
+TreeNode const* TreeSearch::compute(const base::Pose& start_world)
 {
     if(!driveModes.size())
     {
         throw std::runtime_error("TreeSearch:: Error, no drive mode was registered");
     }
+    
+    base::Pose start(tree2World.inverse() * start_world.toTransform());
     tree.clear();
     if(!nnLookup)
 	nnLookup = new NNLookup(1.0, search_conf.identityPositionThreshold / 2.0 , search_conf.identityYawThreshold / 2.0, driveModes.size());
@@ -383,15 +380,6 @@ void TreeSearch::removeSubtreeFromSearch(TreeNode* node)
     tree.removeNode(node);
 }
 
-std::vector< base::Waypoint > TreeSearch::getWaypoints(const base::Pose& start)
-{
-    TreeNode const* curNode = compute(start);
-    if (curNode)
-        return tree.buildTrajectoryTo(curNode);
-    else
-        return std::vector<base::Waypoint>();
-}
-
 bool TreeSearch::validateNode(const TreeNode& node) const
 {
     return true;
@@ -460,7 +448,7 @@ Tree& Tree::operator = (Tree const& other)
     return *this;
 }
 
-std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNode* node, const Eigen::Affine3d& body2Trajectory) const
+std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(const vfh_star::TreeNode* node, const Eigen::Affine3d& world2Trajectory) const
 {
     std::vector<const vfh_star::TreeNode *> nodes;
     const vfh_star::TreeNode* nodeTmp = node;
@@ -473,10 +461,10 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(const vfh_star::TreeNo
 	nodeTmp = nodeTmp->getParent();
     }    
 
-    return buildTrajectoriesTo(nodes, body2Trajectory);
+    return buildTrajectoriesTo(nodes, world2Trajectory);
 }
 
-std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_star::TreeNode *> nodes, const Eigen::Affine3d &body2Trajectory) const
+std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(std::vector<const vfh_star::TreeNode *> nodes, const Eigen::Affine3d &world2Trajectory) const
 {    
     std::vector<base::Trajectory> result;
 	
@@ -488,91 +476,49 @@ std::vector< base::Trajectory > Tree::buildTrajectoriesTo(std::vector<const vfh_
     
     base::Angle posDir;
     base::Angle nodeDir;
-    bool lastNodeIsForward = true;
+    //HACK  we don't actuall know the current drive mode of the robot.
+    //we set it to the drivemode of the first node of the generated
+    //trajectory
+    int lastDriveMode = 0;
     if(!nodes.empty())
     {
-// 	posDir = (*it)->getYaw();
-// 	nodeDir = (*it)->getDirection();
-// 	lastNodeIsForward = fabs((posDir - nodeDir).rad) < 4.0/5.0 * M_PI;
-
-	const Eigen::Affine3d body2Planner((*it)->getPose().toTransform());
-	const Eigen::Affine3d trajectory2Planner(body2Planner * body2Trajectory.inverse());
-	as_points.push_back((trajectory2Planner * Eigen::Vector3d(0,0,0)));
+	const Eigen::Affine3d body2Tree((*it)->getPose().toTransform());
+        const Eigen::Affine3d tree2Trajectory(world2Trajectory * tree2World);
+	const Eigen::Affine3d body2Trajectory(tree2Trajectory * body2Tree);
+	as_points.push_back((body2Trajectory * Eigen::Vector3d(0,0,0)));
 	it++;
         //HACK we don't actuall know the direction of the root node
         //we set it to the direction of the first node of the generated
         //trajectory
-        lastNodeIsForward = (*it)->getDriveMode() == 0;
+        lastDriveMode = (*it)->getDriveMode();
     }
   
     for(;it != nodes.end(); it++)
     {
-	bool curNodeIsForward = (*it)->getDriveMode() == 0;
-// 	const vfh_star::TreeNode *curNode = *it;
-// 	bool curNodeIsForward = curNode->getDirection().isInRange(backIntervalStart, backIntervalEnd);
-        
+        int curDriveMode = (*it)->getDriveMode();
+                
 	//check if direction changed
-	if(lastNodeIsForward != curNodeIsForward)
+	if(lastDriveMode != curDriveMode)
 	{
 	    base::Trajectory tr;
-	    if(lastNodeIsForward)
-		//forward
-		tr.speed = 1.0;
-	    else
-		tr.speed = -1.0;
-		
+            driveModes[lastDriveMode]->setTrajectoryParameters(tr);
 	    tr.spline.interpolate(as_points);
-	    
 	    result.push_back(tr);
 	}
 
-	const Eigen::Affine3d body2Planner((*it)->getPose().toTransform());
-	const Eigen::Affine3d trajectory2Planner(body2Planner * body2Trajectory.inverse());
-	as_points.push_back((trajectory2Planner * Eigen::Vector3d(0,0,0)));
+        const Eigen::Affine3d body2Tree((*it)->getPose().toTransform());
+        const Eigen::Affine3d tree2Trajectory(world2Trajectory * tree2World);
+        const Eigen::Affine3d body2Trajectory(tree2Trajectory * body2Tree);
+        as_points.push_back((body2Trajectory * Eigen::Vector3d(0,0,0)));
 
-	lastNodeIsForward = curNodeIsForward;
+	lastDriveMode = curDriveMode;
     }
 
     base::Trajectory tr;
-    if(lastNodeIsForward)
-	//forward
-	tr.speed = 1.0;
-    else
-	//backwards
-	tr.speed = -1.0;
+    driveModes[lastDriveMode]->setTrajectoryParameters(tr);
 	
     tr.spline.interpolate(as_points);
     result.push_back(tr);
-
-    return result;
-}
-
-std::vector<base::Waypoint> Tree::buildTrajectoryTo(TreeNode const* node) const
-{
-    std::vector< base::Waypoint > result; 
-    
-    if(!node)
-        return result;
-    
-    int size = node->getDepth() + 1;
-    result.resize(size);
-    for (int i = 0; i < size; ++i)
-    {
-        base::Pose p = node->getPose();
-        base::Waypoint& wp = result[size-1-i];
-        wp.heading  = p.getYaw();
-        wp.position = p.position;
-        wp.tol_position = node->getPositionTolerance();
-        wp.tol_heading  = node->getHeadingTolerance();
-
-        if (node->isRoot() && i != size - 1)
-            throw std::runtime_error("internal error in buildTrajectoryTo: found a root node even though the trajectory is not finished");
-        node = node->getParent();
-    }
-
-    // Small sanity check. The last node should be the root node
-    if (!node->isRoot())
-        throw std::runtime_error("internal error in buildTrajectoryTo: final node is not root");
 
     return result;
 }

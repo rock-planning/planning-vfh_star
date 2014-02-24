@@ -174,10 +174,6 @@ class Tree
         const TreeNode *getRootNode() const;
         TreeNode *getRootNode();
 
-        std::vector<base::Waypoint> buildTrajectoryTo(TreeNode const* leaf) const;
-	std::vector<base::Trajectory> buildTrajectoriesTo(TreeNode const* leaf, const Eigen::Affine3d &body2Trajectory) const;
-        std::vector<base::Trajectory> buildTrajectoriesTo(std::vector<const vfh_star::TreeNode *> nodes, const Eigen::Affine3d &body2Trajectory) const;
-
         int getSize() const;
         void clear();
         void verifyHeuristicConsistency(const TreeNode* from) const;
@@ -260,21 +256,9 @@ class TreeSearch
 	TreeSearch();
         virtual ~TreeSearch();
 
-        static base::geometry::Spline<3> waypointsToSpline(const std::vector<base::Waypoint>& waypoints);
+        std::vector<base::Trajectory> buildTrajectoriesTo(TreeNode const* leaf, const Eigen::Affine3d &world2Trajectory) const;
+        std::vector<base::Trajectory> buildTrajectoriesTo(std::vector<const vfh_star::TreeNode *> nodes, const Eigen::Affine3d &world2Trajectory) const;
 
-        /** This is a version of getWaypoints where the returned set of
-         * waypoints is converted into a spline
-         */
-        base::geometry::Spline<3> getTrajectory(const base::Pose& start);
-
-        /** Computes the optimal path as a set of waypoints
-         */
-        std::vector<base::Waypoint> getWaypoints(const base::Pose& start);
-
-        /** Generates a search tree that reaches the desired goal, and returns
-         * the goal node
-         */
-        TreeNode const* compute(const base::Pose& start);
 
         void setSearchConf(const TreeSearchConf& conf);
         const TreeSearchConf& getSearchConf() const;
@@ -287,7 +271,23 @@ class TreeSearch
          * */
         void configChanged();
         
+        /**
+         * Transformation from the node tree to the world
+         * coordinate system. 
+         * */
+        void setTreeToWorld(Eigen::Affine3d tree2World);
+        
+        const Eigen::Affine3d &getTreeToWorld() const;
+        
     protected:
+        /** Generates a search tree that reaches the desired goal, and returns
+         * the goal node
+         * Warning, the returned treeNode is in tree cooridinates,
+         * not in world coordinates
+         */
+        TreeNode const* compute(const base::Pose& start_world);
+
+        
 	Angles getDirectionsFromIntervals(const base::Angle &curDir, const AngleIntervals& intervals);
 
         // The tree generated at the last call to getTrajectory
@@ -365,6 +365,7 @@ class TreeSearch
 	void updateNodeCosts(TreeNode *node);
 	void removeSubtreeFromSearch(TreeNode *node);
         
+	Eigen::Affine3d tree2World;
 	
 	std::multimap<double, TreeNode *> expandCandidates;
         std::vector<DriveMode *> driveModes;

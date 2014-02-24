@@ -14,26 +14,15 @@ HorizonPlanner::~HorizonPlanner()
 {
 }
 
-base::geometry::Spline<3> HorizonPlanner::getTrajectory(base::Pose const& start, const base::Angle &mainHeading, double horizon)
-{
-    return TreeSearch::waypointsToSpline(getWaypoints(start, mainHeading, horizon));
-}
-
-std::vector<base::Waypoint> HorizonPlanner::getWaypoints(base::Pose const& start, const base::Angle &mainHeading, double horizon)
-{
-    const TreeNode *node = computePath(start, mainHeading, horizon, Affine3d::Identity());
-    return tree.buildTrajectoryTo(node);
-}
-
 std::vector< base::Trajectory > HorizonPlanner::getTrajectories(const base::Pose& start, const base::Angle &mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
 {
     const TreeNode *node = computePath(start, mainHeading, horizon, body2Trajectory);
-    return tree.buildTrajectoriesTo(node, body2Trajectory);
+    return buildTrajectoriesTo(node, body2Trajectory);
 }
 
 const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base::Angle &mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
-{
-    this->mainHeading = mainHeading;
+{    
+    this->mainHeading = mainHeading + base::Angle::fromRad(base::Pose(getTreeToWorld().inverse()).getYaw());
 
     // Used for heuristics
     this->targetLineNormal =
