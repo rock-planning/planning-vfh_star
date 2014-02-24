@@ -54,18 +54,6 @@ namespace vfh_star
          * Maximum yaw diviantion of two node for identitiy check
          * */
         double identityYawThreshold;
-        
-        /**
-         * Max height of step between two cells in height map,
-         * that will caount as traversable
-         * */
-        double maxStepSize;
-
-        /**
-         * Maximum slope of the terrain, the robot is allowed
-         * to drive onto.
-         * */
-        double maxSlop;
 
         base::Time maxSeekTime;
         
