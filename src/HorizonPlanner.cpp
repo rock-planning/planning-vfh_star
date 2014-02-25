@@ -31,23 +31,22 @@ std::vector< base::Trajectory > HorizonPlanner::getTrajectories(const base::Pose
     return buildTrajectoriesTo(node, body2Trajectory);
 }
 
-const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base::Angle &mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
+const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base::Angle &mainHeading_i, double horizon, const Eigen::Affine3d &body2Trajectory)
 {    
     startPose_w = start;
     mainHeading_w = mainHeading_i;
     horizonDistance = horizon;
-    this->mainHeading = mainHeading + base::Angle::fromRad(base::Pose(getTreeToWorld().inverse()).getYaw());
+
+    //convert to tree frame
+    const Affine3d world2Tree(getTreeToWorld().inverse());
+    Vector3d startPos_tree = world2Tree * start.position;
+    mainHeading = mainHeading_i + base::Angle::fromRad(base::Pose(world2Tree).getYaw());
 
     // Used for heuristics
-    this->targetLineNormal =
-        Eigen::Quaterniond(AngleAxisd(mainHeading.getRad(), Vector3d::UnitZ())) * Vector3d::UnitX();
-    this->targetLinePoint  =
-        start.position + targetLineNormal * horizon;
-        
-    this->targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading.getRad(), Vector3d::UnitZ())) * Vector3d::UnitY();
+    targetLineNormal = Eigen::Quaterniond(AngleAxisd(mainHeading.getRad(), Vector3d::UnitZ())) * Vector3d::UnitX();
+    targetLinePoint  = startPos_tree + targetLineNormal * horizon;
+    targetLine = Eigen::Quaterniond(AngleAxisd(mainHeading.getRad(), Vector3d::UnitZ())) * Vector3d::UnitY();
 
-    targetLineNormal +=  Vector3d(0, 0, start.position.z());
-    
     std::cout << "target:" << std::endl;
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
     std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
