@@ -137,8 +137,10 @@ double normalize(double ang)
 
 bool VFH::validPosition(const base::Pose& curPose) const
 {
+    //curPose is in map coordinates, as we converted it at the beginning
+    //of the planning
     const Vector3d curPos(curPose.position.x(), curPose.position.y(), 0);     
-    double distanceToCenter = (gridPos - curPos).norm();
+    double distanceToCenter = curPos.norm();
     
     return !(gridHeightHalf  - (distanceToCenter + config.obstacleSenseRadius) < 0) && !(gridWidthHalf - (distanceToCenter + config.obstacleSenseRadius) < 0);    
 }
