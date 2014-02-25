@@ -14,6 +14,17 @@ HorizonPlanner::~HorizonPlanner()
 {
 }
 
+const base::Vector3d HorizonPlanner::getHorizonOrigin() const
+{
+    return startPose_w.position + Eigen::Quaterniond(AngleAxisd(mainHeading_w.getRad(), Vector3d::UnitZ())) * Vector3d::UnitX() * horizonDistance;
+}
+
+const base::Vector3d HorizonPlanner::getHorizonVector() const
+{
+    return Eigen::Quaterniond(AngleAxisd(mainHeading_w.getRad(), Vector3d::UnitZ())) * Vector3d::UnitY();
+}
+
+
 std::vector< base::Trajectory > HorizonPlanner::getTrajectories(const base::Pose& start, const base::Angle &mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
 {
     const TreeNode *node = computePath(start, mainHeading, horizon, body2Trajectory);
@@ -22,6 +33,9 @@ std::vector< base::Trajectory > HorizonPlanner::getTrajectories(const base::Pose
 
 const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base::Angle &mainHeading, double horizon, const Eigen::Affine3d &body2Trajectory)
 {    
+    startPose_w = start;
+    mainHeading_w = mainHeading_i;
+    horizonDistance = horizon;
     this->mainHeading = mainHeading + base::Angle::fromRad(base::Pose(getTreeToWorld().inverse()).getYaw());
 
     // Used for heuristics
@@ -46,7 +60,6 @@ HorizonPlannerDebugData HorizonPlanner::getDebugData() const
     HorizonPlannerDebugData ret;
     ret.horizonOrigin = getHorizonOrigin();
     ret.horizonVector = getHorizonVector();
-    ret.planningTree = &tree;
     
     return ret;
 }

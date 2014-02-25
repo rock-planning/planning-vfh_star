@@ -149,7 +149,6 @@ namespace vfh_star
     };
 
     struct HorizonPlannerDebugData {
-        const vfh_star::Tree *planningTree;
         base::Vector3d horizonOrigin;
         base::Vector3d horizonVector;   
     };

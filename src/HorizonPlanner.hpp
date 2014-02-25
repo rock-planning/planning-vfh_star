@@ -16,20 +16,19 @@ class HorizonPlanner : public TreeSearch
         std::vector<base::Trajectory> getTrajectories(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory = Eigen::Affine3d::Identity());
         const TreeNode* computePath(const base::Pose& start, const base::Angle& mainHeading, double horizon, const Eigen::Affine3d& body2Trajectory = Eigen::Affine3d::Identity());
         
-        const base::Vector3d &getHorizonOrigin() const
-        {
-            return targetLinePoint;
-        }
+        const base::Vector3d getHorizonOrigin() const;
 
-        const base::Vector3d &getHorizonVector() const
-        {
-            return targetLine;
-        }
+        const base::Vector3d getHorizonVector() const;
 
         HorizonPlannerDebugData getDebugData() const;
         
     protected:
         base::Angle mainHeading;
+        //start pose in world coordinates
+        base::Pose startPose_w;
+        //target heading in world frame
+        base::Angle mainHeading_w;
+        double horizonDistance;
         base::Vector3d targetLinePoint;
         base::Vector3d targetLineNormal;
         base::Vector3d targetLine;
