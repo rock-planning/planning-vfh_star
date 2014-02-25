@@ -48,11 +48,16 @@ void VFH::setNewTraversabilityGrid(const envire::TraversabilityGrid* trGrid)
     //precompute distances
     lut.recompute(traversabillityGrid->getScaleX(), 5.0);
 
-    const envire::FrameNode *gridPose = traversabillityGrid->getFrameNode();
-    
-    gridPos = Vector3d(gridPose->getTransform().translation().x(), gridPose->getTransform().translation().y(), 0);
     gridWidthHalf = traversabillityGrid->getWidth() / 2.0 * traversabillityGrid->getScaleX();
-    gridHeightHalf = traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY();    
+    gridHeightHalf = traversabillityGrid->getHeight() / 2.0 * traversabillityGrid->getScaleY();
+    
+    const std::vector<envire::TraversabilityClass> &trClasses(traversabillityGrid->getTraversabilityClasses());
+    obstacleLookup.clear();
+    obstacleLookup.reserve(trClasses.size());
+    for(std::vector<envire::TraversabilityClass>::const_iterator it = trClasses.begin(); it != trClasses.end();it++)
+    {
+        obstacleLookup.push_back(!it->isTraversable());
+    }
 }
 
 const envire::TraversabilityGrid* VFH::getTraversabilityGrid() const
@@ -200,17 +205,8 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 // 	    std::cout << "rx " << rx << " ry " << ry << std::endl;
 
             bool inGrid = traversabillityGrid->inGrid(rx, ry);
-            if(!inGrid)
-            {
-                std::cout << "not in Grid exit x:" << rx << " y:" << ry << std::endl;
-                std::cout << "Grid size x:" << traversabillityGrid->getWidth() << " y:" << traversabillityGrid->getHeight() << std::endl;
-                std::cout << "Sense size x:" << senseSize << " sense radius" << config.obstacleSenseRadius << std::endl;
-                
-                throw std::runtime_error("Accessed cell outside of grid");
-            }
-            
-	    //go safe, if we do not know anything about something, it is an obstacle
-	    if(gridData[ry][rx] == OBSTACLE)
+            //go safe, if we do not know anything about something, it is an obstacle
+            if(!inGrid || obstacleLookup[gridData[ry][rx]])
 	    {
 		double angleToObstace = lut.getAngle(x, y); // atan2(y, x);
 		

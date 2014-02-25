@@ -87,8 +87,8 @@ namespace vfh_star
         void getBinaryHistogram(const std::vector< double >& histogram, std::vector< bool >& binHistogram) const;
         void addDir(std::vector< base::AngleSegment >& drivableDirections, int start, int end) const;
 	RadialLookUpTable lut;
+        std::vector<bool> obstacleLookup;
         const envire::TraversabilityGrid *traversabillityGrid;
-        Eigen::Vector3d gridPos;
         double gridWidthHalf;
         double gridHeightHalf;
 
