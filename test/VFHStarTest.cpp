@@ -75,13 +75,13 @@ int main()
 
     envire::TraversabilityGrid::ArrayType &trData(trGrid.getGridData(envire::TraversabilityGrid::TRAVERSABILITY));
     
-    for(size_t y = 0; y < trGrid.getCellSizeY(); y++)
-    {
-        for(size_t x = 0; x < trGrid.getCellSizeX(); x++)
-        {
-            trData[y][x] = vfh_star::TRAVERSABLE;
-        }
-    }
+//     for(size_t y = 0; y < trGrid.getCellSizeY(); y++)
+//     {
+//         for(size_t x = 0; x < trGrid.getCellSizeX(); x++)
+//         {
+//             trData[y][x] = vfh_star::TRAVERSABLE;
+//         }
+//     }
     
     
     Vector3d obstaclePos(1.5,0,0);
@@ -99,7 +99,7 @@ int main()
         {
             assert((obstX + x > 0) && (obstX + x < trGrid.getCellSizeX()));
             assert((obstY + y > 0) && (obstY + y < trGrid.getCellSizeY()));
-            trData[obstY + y][obstX + x] = vfh_star::OBSTACLE;
+//             trData[obstY + y][obstX + x] = vfh_star::OBSTACLE;
         }
     }
     
