@@ -445,6 +445,7 @@ Tree& Tree::operator = (Tree const& other)
         copyNodeChilds(other.root_node, root_node, other);
     }
     
+    this->tree2World = other.tree2World;
 //     std::cout << "Copied " << getSize() << " Nodes " << std::endl;
     
     return *this;
