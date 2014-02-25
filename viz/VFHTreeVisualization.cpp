@@ -27,13 +27,14 @@ struct VFHTreeVisualization::Data {
     // actual node cost is displayed. False by default
     VFHTreeVisualization::COST_MODE costMode;
 
-    bool hasSegment;
-    std::vector<base::Vector3d> segment;
-
+    bool hasHorizon;
+    base::Vector3d horizonOrigin;
+    base::Vector3d horizonVector;
+    
     int treeNodeCount;
 
     Data()
-        : removeLeaves(false), costMode(VFHTreeVisualization::SHOW_COST), hasSegment(false), treeNodeCount(0) {}
+        : removeLeaves(false), costMode(VFHTreeVisualization::SHOW_COST), hasHorizon(false), treeNodeCount(0) {}
 };
 
 
@@ -329,18 +330,18 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     transform->setPosition(eigenVectorToOsgVec3(p->data.getTreeToWorld().translation()));
     transform->setAttitude(eigenQuatToOsgQuat(Eigen::Quaterniond(p->data.getTreeToWorld().linear())));
     
+    std::cout << "VFHTreeVisualization : Tree2World " << p->data.getTreeToWorld().translation().transpose() << std::endl;
+    
     osg::Geode* geode = transform->getChild(0)->asGeode();
     while(geode->removeDrawables(0));
 
-    if (p->hasSegment)
+    if (p->hasHorizon)
     {
         osg::Geometry* geom = new osg::Geometry;
         osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
         osg::ref_ptr<osg::Vec4Array> colors   = new osg::Vec4Array;
-        base::Vector3d pt = p->segment[0];
-        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
-        pt = p->segment[1];
-        vertices->push_back(osg::Vec3(pt.x(), pt.y(), pt.z()));
+        vertices->push_back(eigenVectorToOsgVec3(p->horizonOrigin + p->horizonVector * 0.5));
+        vertices->push_back(eigenVectorToOsgVec3(p->horizonOrigin - p->horizonVector * 0.5));
         colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
 
         geom->setColorArray(colors);
@@ -378,9 +379,10 @@ void VFHTreeVisualization::updateDataIntern(vfh_star::Tree const& value)
     p->data = value;
 }
 
-void VFHTreeVisualization::updateDataIntern(std::vector<base::Vector3d> const& segment)
+void VFHTreeVisualization::updateDataIntern(const vfh_star::HorizonPlannerDebugData& data)
 {
-    p->segment = segment;
-    p->hasSegment = true;
+    p->horizonOrigin = data.horizonOrigin;
+    p->horizonVector = data.horizonVector;
+    p->hasHorizon = true;
 }
 
