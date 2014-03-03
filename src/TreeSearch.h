@@ -205,10 +205,26 @@ class Tree
          */
         int size; 
 
-        /** The set of tree nodes */
+        /**
+         * Node Storage
+         * */
         std::list<TreeNode> nodes;
 
-        /** The set of tree nodes */
+        /**
+         * Iterator pointing to the next node in there
+         * storage that is 'free'
+         * */
+        std::list<TreeNode>::iterator nextNodePos;
+
+        /**
+         * Number of unused nodes in the storage.
+         * */
+        size_t nodesLeftInStorage;
+
+        /**
+         * Temporary storage for nodes that were
+         * removed from the tree.
+         * */
         std::list<TreeNode *> free_nodes;
 
         /** The final node (0 if none has been found) */

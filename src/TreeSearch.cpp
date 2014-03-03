@@ -402,6 +402,7 @@ Tree::Tree()
     , root_node(0)
     , tree2World(Eigen::Affine3d::Identity())
 {
+    clear();
 }
 
 Tree::~Tree()
@@ -563,8 +564,18 @@ TreeNode* Tree::createNode(base::Pose const& pose, const base::Angle &dir)
     }
     else
     {
-        nodes.push_back(TreeNode());
-        n = &nodes.back();
+        //use free node as long as possible
+        if(nodesLeftInStorage)
+        {
+            n = &(*nextNodePos);
+            nodesLeftInStorage--;
+            nextNodePos++;
+        }
+        else
+        {
+            nodes.push_back(TreeNode());
+            n = &nodes.back();
+        }
     }
 
     n->clear();
@@ -613,10 +624,8 @@ int Tree::getSize() const
 void Tree::clear()
 {
     free_nodes.clear();
-    for(std::list<TreeNode>::iterator it = nodes.begin(); it != nodes.end(); it++)
-    {
-        free_nodes.push_back(&(*it));
-    }
+    nodesLeftInStorage = nodes.size();
+    nextNodePos = nodes.begin();
     final_node = 0;
     root_node = 0;
     size = 0;
