@@ -687,8 +687,10 @@ void NNLookup::clear()
     freeBoxes.splice(freeBoxes.begin(), usedBoxes);
     for(std::vector<std::vector<NNLookupBox *> >::iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
     {
-	for(std::vector<NNLookupBox *>::iterator it2 = it->begin(); it2 != it->end(); it2++)
-	    *it2 = NULL;
+        //ugly fast way to clear the vector
+        memset(it->data(), 0, sizeof(NNLookupBox *) * it->size());
+// 	for(std::vector<NNLookupBox *>::iterator it2 = it->begin(); it2 != it->end(); it2++)
+// 	    *it2 = NULL;
     }
     usedBoxes.clear();
 }
