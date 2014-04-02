@@ -14,6 +14,8 @@ using namespace std;
 using vfh_star::TreeNode;
 
 struct VFHTreeVisualization::Data {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     // Copy of the value given to updateDataIntern.
     //
     // Making a copy is required because of how OSG works

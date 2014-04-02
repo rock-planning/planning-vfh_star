@@ -160,8 +160,9 @@ class Tree
         friend class TreeSearch;
 
     public:
-	Tree();
-	~Tree();
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        Tree();
+        ~Tree();
 
         Tree(Tree const& other);
         Tree& operator = (Tree const& other);
@@ -241,6 +242,7 @@ class Tree
 class ProjectedPose 
 {
     public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         ProjectedPose(): nextPoseExists(true), driveMode(0), angleTurned(0) {};
         base::Pose pose;
         bool nextPoseExists;
@@ -274,6 +276,8 @@ public:
 class TreeSearch
 {
     public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
         typedef std::vector<base::Angle> Angles;
         typedef std::vector<base::AngleSegment> AngleIntervals;
 

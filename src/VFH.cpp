@@ -165,30 +165,30 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
 
 //     std::cout << "senseSize " << senseSize << std::endl;
     
-    /*//Debug code for printing local obstacle map  
+    //Debug code for printing local obstacle map  
 
-    std::cout <<  std::endl;
-
-    for(int y = senseSize; y >= -senseSize; y--)
-    {
-	std::cout << std::setw(4) << y;
-	for(int x = -senseSize; x <= senseSize; x++)
-	{
-	    int rx = robotX + x;
-	    int ry = robotY + y;
-	    
-	    if(!traversabillityGrid->inGrid(rx, ry))
-		continue;
-
-	    //go safe, if we do not know anything about something, it is an obstacle
-	    if(gridData[rx][ry] == OBSTACLE)
-		std::cout <<  "O";		
-	    else
-		std::cout <<  "T";
-		
-	}
-	std::cout <<  std::endl;
-    }*/
+//     std::cout <<  std::endl;
+// 
+//     for(int y = senseSize; y >= -senseSize; y--)
+//     {
+// 	std::cout << std::setw(4) << y;
+// 	for(int x = -senseSize; x <= senseSize; x++)
+// 	{
+// 	    int rx = robotX + x;
+// 	    int ry = robotY + y;
+// 	    
+// 	    if(!traversabillityGrid->inGrid(rx, ry))
+// 		continue;
+// 
+// 	    //go safe, if we do not know anything about something, it is an obstacle
+// 	    if(obstacleLookup[gridData[ry][rx]])
+//                 std::cout <<  "O";		
+//             else
+//                 std::cout <<  "T";
+// 		
+// 	}
+// 	std::cout <<  std::endl;
+//     }
     
     //walk over area of grid within of circle with radius config.obstacleSenseRadius around the robot
     for(int y = -senseSize; y <= senseSize; y++)

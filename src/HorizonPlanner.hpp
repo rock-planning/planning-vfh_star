@@ -10,6 +10,8 @@ namespace vfh_star
 class HorizonPlanner : public TreeSearch
 {
     public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
         HorizonPlanner();
         virtual ~HorizonPlanner();
 
