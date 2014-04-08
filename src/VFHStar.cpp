@@ -75,6 +75,11 @@ TreeSearch::AngleIntervals VFHStar::getNextPossibleDirections(const vfh_star::Tr
     return vfh.getNextPossibleDirections(curNode.getPose());
 }
 
+bool VFHStar::validateNode(const TreeNode& node) const
+{
+    return vfh.validPosition(node.getPose());
+}
+
 VFHStarDebugData VFHStar::getVFHStarDebugData(const std::vector< base::Waypoint >& trajectory)
 {
     VFHStarDebugData dd_out;

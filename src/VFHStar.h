@@ -47,7 +47,9 @@ class VFHStar : public HorizonPlanner
          * 
          * One could say this is a clever heuristic for reducing the sample space of the planner.
          * */
-        AngleIntervals getNextPossibleDirections(const vfh_star::TreeNode& curNode) const;        
+        AngleIntervals getNextPossibleDirections(const vfh_star::TreeNode& curNode) const;
+        
+        virtual bool validateNode(const TreeNode& node) const;
 };
 } // vfh_star namespace
 
