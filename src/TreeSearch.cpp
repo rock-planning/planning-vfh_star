@@ -173,6 +173,12 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
     {
         throw std::runtime_error("TreeSearch:: Error, no drive mode was registered");
     }
+
+    if(tree.debugTree)
+    {
+        tree.debugTree->nodes.clear();
+        tree.debugTree->nodes.reserve(search_conf.maxTreeSize);
+    }
     
     base::Pose start(tree2World.inverse() * start_world.toTransform());
     tree.clear();
@@ -189,6 +195,15 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
     
     int max_depth = search_conf.maxTreeSize;
     
+    if(tree.debugTree)
+    {
+        tree.debugTree->finalNode = -1;
+        tree.debugTree->startNode = curNode->getIndex();
+        tree.debugTree->treePos = tree2World;
+    }
+    
+    int candidateNr = 0;
+    
     base::Time startTime = base::Time::now();
     
     while(!expandCandidates.empty()) 
@@ -204,14 +219,21 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
         expandCandidates.erase(expandCandidates.begin());
         curNode->candidate_it = expandCandidates.end();
 
-
+        if(tree.debugTree)
+        {
+            tree.debugTree->nodes[curNode->getIndex()].expansionOrder = candidateNr;
+        }
+        candidateNr ++;
 	
 	if(!search_conf.maxSeekTime.isNull() && base::Time::now() - startTime > search_conf.maxSeekTime)
 	    break;
 	
         if (!validateNode(*curNode))
         {
-            curNode->heuristic = -1;
+            if(tree.debugTree)
+            {
+                tree.debugTree->nodes[curNode->getIndex()].isValid = false;
+            }
 	    nnLookup->clearIfSame(curNode);
             continue;
         }
@@ -319,6 +341,12 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
                 // Add it to the expand list
                 newNode->candidate_it = expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
 
+                if(tree.debugTree)
+                {
+                    DebugNode &dbg(tree.debugTree->nodes[newNode->getIndex()]);
+                    dbg.cost = newNode->getCost();
+                }
+                
                 //add new node to nearest neighbour lookup
                 nnLookup->setNode(newNode);
             }
@@ -401,6 +429,7 @@ Tree::Tree()
     , final_node(0)
     , root_node(0)
     , tree2World(Eigen::Affine3d::Identity())
+    , debugTree(0)
 {
     clear();
 }
@@ -454,6 +483,9 @@ Tree& Tree::operator = (Tree const& other)
 
 std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(const vfh_star::TreeNode* node, const Eigen::Affine3d& world2Trajectory) const
 {
+    if(!node)
+        return std::vector< base::Trajectory >();
+    
     std::vector<const vfh_star::TreeNode *> nodes;
     const vfh_star::TreeNode* nodeTmp = node;
     int size = node->getDepth() + 1;
@@ -527,6 +559,19 @@ std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(std::vector<cons
     return result;
 }
 
+const DebugTree* TreeSearch::getDebugTree() const
+{
+    return tree.debugTree;
+}
+
+void TreeSearch::activateDebug()
+{
+    if(tree.debugTree)
+        return;
+    
+    tree.debugTree = new DebugTree();
+}
+
 const TreeNode* Tree::getRootNode() const
 {
     return root_node;
@@ -545,6 +590,10 @@ TreeNode* Tree::getFinalNode() const
 void Tree::setFinalNode(TreeNode* node)
 {
     final_node = node;
+    if(debugTree)
+    {
+        debugTree->finalNode = final_node->index;
+    }
 }
 
 void Tree::reserve(int size)
@@ -583,7 +632,12 @@ TreeNode* Tree::createNode(base::Pose const& pose, const base::Angle &dir)
     n->yaw = base::Angle::fromRad(pose.getYaw());
     n->direction = dir;
     n->index  = size;
-    ++size;
+    if(debugTree)
+    {
+        debugTree->nodes.push_back(DebugNode(size, pose));
+    }
+    
+    ++size;    
     return n;
 }
 
@@ -602,11 +656,24 @@ TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, const base
     TreeNode* child = createNode(pose, dir);
     child->depth  = parent->depth + 1;
     parent->addChild(child);
+    
+    if(debugTree)
+    {
+        DebugNode &dbgParent(debugTree->nodes[parent->index]);
+        DebugNode &dbgChild(debugTree->nodes[child->index]);
+        dbgChild.parent = parent->index;
+        dbgParent.childs.push_back(child->index);
+    }    
     return child;
 }
 
 void Tree::removeNode(TreeNode* node)
 {
+    if(debugTree)
+    {
+        debugTree->nodes[node->index].wasRemoved = true;
+    }
+
     node->childs.clear();
     free_nodes.push_back(node);
 }

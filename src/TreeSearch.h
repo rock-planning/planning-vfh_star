@@ -237,6 +237,7 @@ class Tree
         ///Pose of tree in world frame, only needed for displaying
         Eigen::Affine3d tree2World;
 
+        DebugTree *debugTree;
 };
 
 class ProjectedPose 
@@ -306,6 +307,10 @@ class TreeSearch
         void setTreeToWorld(Eigen::Affine3d tree2World);
         
         const Eigen::Affine3d &getTreeToWorld() const;
+        
+        const DebugTree *getDebugTree() const;
+        
+        void activateDebug(); 
         
     protected:
         /** Generates a search tree that reaches the desired goal, and returns
