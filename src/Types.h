@@ -9,6 +9,50 @@
 
 namespace vfh_star
 {
+    class DebugNode
+    {
+    public:
+        DebugNode(int creationOrder, base::Pose pose) : creationOrder(creationOrder), expansionOrder(-1), pose(pose), cost(0), isValid(true), wasRemoved(false), parent(0) {}
+        DebugNode() : creationOrder(-1), expansionOrder(-1), cost(0), isValid(true), wasRemoved(false), parent(0) {}
+        
+        //order in which the tree nodes were created (sampled)
+        int creationOrder;
+        //oder in which the tree was searched
+        int expansionOrder;
+        base::Pose pose;
+        ///cost from start to this node
+        float cost;
+        
+        bool isValid;
+        bool wasRemoved;
+        
+        int parent;
+        std::vector<int> childs;
+        
+        bool wasExpanded() const
+        {
+            return expansionOrder > 0;
+        }
+        
+    };
+
+    class DebugTree
+    {
+    public:
+        DebugTree(): startNode(-1), finalNode(-1) {}; 
+        
+        std::vector<DebugNode > nodes;
+        int startNode;
+        int finalNode;
+        
+        bool hasFinalNode() const
+        {
+            return finalNode > 0;
+        }
+        
+        base::Pose treePos;
+    };
+    
     class Tree;
     struct AngleSampleConf
     {
