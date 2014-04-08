@@ -5,61 +5,88 @@
 #include <vizkit3d/VFHTreeVisualization.hpp>
 #include <vizkit3d/EnvironmentItemVisualizer.hpp>
 #include <vizkit3d/EnvireVisualization.hpp>
+#include <vizkit3d/GridVisualization.hpp>
 
 using namespace Eigen;
 using namespace vfh_star;
 
+class StarTestDriveMode : public vfh_star::DriveMode
+{
+public:
+    StarTestDriveMode()
+    {
+        
+    }
+    virtual double getCostForNode(const ProjectedPose& projection, const base::Angle& direction, const TreeNode& parentNode) const
+    {
+        return (projection.pose.position - parentNode.getPosition()).norm();
+    }
+    
+    virtual bool projectPose(ProjectedPose &result, const TreeNode& curNode, const base::Angle& moveDirection, double distance) const
+    {
+        //super omnidirectional robot
+        base::Vector3d p(distance, 0, 0);
+        base::Angle curHeading = curNode.getYaw();
+
+        // Compute rate of turn for front to wanted heading
+        double angleDiffForward = fabs((moveDirection - curHeading).getRad());
+
+        //forward case
+        result.pose.orientation = Eigen::AngleAxisd(moveDirection.getRad(), base::Vector3d::UnitZ());
+        result.pose.position = curNode.getPose().position + result.pose.orientation * p;
+        result.angleTurned = angleDiffForward;
+        result.nextPoseExists = true;
+        
+        return true;
+    }
+    
+    virtual void setTrajectoryParameters(base::Trajectory& tr) const
+    {
+        tr.speed = 1.0;
+    };
+};
+
 class StarTest: public vfh_star::VFHStar
 {
     public:
-	StarTest();
-        virtual AngleIntervals getNextPossibleDirections(const vfh_star::TreeNode& curNode, double obstacleSafetyDist, double robotWidth) const;
-        virtual std::vector< vfh_star::ProjectedPose > getProjectedPoses(const TreeNode& curNode, const base::Angle &heading, double distance) const;
+        StarTest();
+        virtual double getHeuristic(const TreeNode& node) const;
+        virtual AngleIntervals getNextPossibleDirections(const TreeNode& curNode) const;
+        virtual bool validateNode(const TreeNode& node) const;
         base::Angle minSteerAngle;
         base::Angle maxSteerAngle;
+        StarTestDriveMode driveMode;
 };
 
 StarTest::StarTest()
 {
+    addDriveMode(driveMode);
     minSteerAngle = base::Angle::fromDeg(-30);
     maxSteerAngle = base::Angle::fromDeg(30);
 }
 
-vfh_star::TreeSearch::AngleIntervals StarTest::getNextPossibleDirections(const vfh_star::TreeNode& curNode, double obstacleSafetyDist, double robotWidth) const
+bool StarTest::validateNode(const TreeNode& node) const
 {
-    vfh_star::TreeSearch::AngleIntervals ret = vfh_star::VFHStar::getNextPossibleDirections(curNode);
+    if(node.getCost() == std::numeric_limits<double>::infinity())
+        return false;
     
-//     std::cout << "VFHStar returned these directions :" << std::endl;
-//     
-//     for(vfh_star::TreeSearch::AngleIntervals::iterator it = ret.begin(); it != ret.end(); it++)
-//     {
-//         std::cout << "From " << it->first << " to " << it->second << std::endl;
-//     }
-    
-    return ret;
+    if(!vfh.validPosition(node.getPose())) {
+        return false;
+    }
+    return true;
 }
 
 
-std::vector< vfh_star::ProjectedPose > StarTest::getProjectedPoses(const TreeNode& curNode, const base::Angle& heading, double distance) const
+TreeSearch::AngleIntervals StarTest::getNextPossibleDirections(const TreeNode& curNode) const
 {
-    std::vector< vfh_star::ProjectedPose > ret;
-    //super omnidirectional robot
-    Vector3d p(distance, 0, 0);
-    
-    base::Pose pose;
-    pose.orientation = AngleAxisd(heading.getRad(), Vector3d::UnitZ());
-    pose.position = curNode.getPose().position + pose.orientation * p;
-
-    vfh_star::ProjectedPose proj;
-    proj.pose = pose;
-    proj.nextPoseExists = true;
-    proj.driveMode = 0;
-    proj.angleTurned = heading.getRad();
-    
-    ret.push_back(proj);
-    
-    return ret;
+    return vfh.getNextPossibleDirections(curNode.getPose());
 }
+
+double StarTest::getHeuristic(const TreeNode& node) const
+{
+    return HorizonPlanner::getHeuristic(node);
+}
+
 
 
 int main()
@@ -67,22 +94,28 @@ int main()
     StarTest t;
      
 //     t.setSearchConf(t.getSearchConf());
+    const int UNKNOWN = 0;
+    const int OBSTACLE = 1;
+    const int TRAVERSABLE = 2;
     
     envire::Environment env;
-    envire::TraversabilityGrid trGrid(400, 400, 0.05, 0.05, -10.0, -10.0);
-    envire::FrameNode gridFrame();
-    env.attachItem(&trGrid);
 
+    envire::TraversabilityClass unknown;
+    envire::TraversabilityClass drivable(1.0);
+    envire::TraversabilityClass obstacle(0.0);
+
+    envire::TraversabilityGrid trGrid(400, 400, 0.05, 0.05, -10.0, -10.0);
+    trGrid.setTraversabilityClass(UNKNOWN, unknown);
+    trGrid.setTraversabilityClass(OBSTACLE, obstacle);
+    trGrid.setTraversabilityClass(TRAVERSABLE, drivable);
+    
+    envire::FrameNode gridFrame(Eigen::Affine3d::Identity());
+    env.attachItem(&trGrid);
+    env.setFrameNode(&trGrid, &gridFrame);
+    env.getRootNode()->addChild(&gridFrame);
+    
     envire::TraversabilityGrid::ArrayType &trData(trGrid.getGridData(envire::TraversabilityGrid::TRAVERSABILITY));
-    
-//     for(size_t y = 0; y < trGrid.getCellSizeY(); y++)
-//     {
-//         for(size_t x = 0; x < trGrid.getCellSizeX(); x++)
-//         {
-//             trData[y][x] = vfh_star::TRAVERSABLE;
-//         }
-//     }
-    
+    std::fill(trData.data(), trData.data() + trData.num_elements(), TRAVERSABLE);
     
     Vector3d obstaclePos(1.5,0,0);
     double obstWidth = 1.0;
@@ -92,6 +125,7 @@ int main()
     
     std::cout << "Scale " << trGrid.getScaleY() << " result " << -(obstHeight / trGrid.getScaleY() / 2.0) << std::endl;
     
+    
     //add obstacle in front of robot
     for(int y = -(obstWidth / trGrid.getScaleY() / 2.0) ; y < (obstWidth / trGrid.getScaleY() / 2.0); y++)
     {
@@ -99,7 +133,7 @@ int main()
         {
             assert((obstX + x > 0) && (obstX + x < trGrid.getCellSizeX()));
             assert((obstY + y > 0) && (obstY + y < trGrid.getCellSizeY()));
-//             trData[obstY + y][obstX + x] = vfh_star::OBSTACLE;
+            trData[obstY + y][obstX + x] = OBSTACLE;
         }
     }
     
@@ -118,18 +152,19 @@ int main()
     t.setNewTraversabilityGrid(&trGrid);
     
     vfh_star::TreeSearchConf conf = t.getSearchConf();
-    conf.maxTreeSize = 1000000;
+    conf.maxTreeSize = 100000;
     conf.stepDistance = 0.1;
     
     AngleSampleConf global;
-    //0.5° min steps
+    //5° min steps
     global.angularSamplingMin = 5 * M_PI / 360.0;
-    //1° max between steps
+    //10° max between steps
     global.angularSamplingMax = 10 * M_PI / 180.0;
     global.angularSamplingNominalCount = 5;
     global.intervalStart = 0;
     global.intervalWidth = 2* M_PI;
     
+    conf.sampleAreas.clear();
     conf.sampleAreas.push_back(global);
     
     conf.identityPositionThreshold = 0.06;
@@ -141,16 +176,18 @@ int main()
     starConf.vfhConf.obstacleSafetyDistance = 0.1;
     starConf.vfhConf.robotWidth = 0.5;
     starConf.vfhConf.obstacleSenseRadius = 1.0;
+    starConf.vfhConf.histogramSize = 180;
+    starConf.vfhConf.lowThreshold = 2000.0;
     
     starConf.mainHeadingWeight = 0;
     starConf.turningWeight = 2;
     
     t.setCostConf(starConf);
-    
+    t.activateDebug();
     
     base::Pose start;
     start.orientation = Eigen::Quaterniond::Identity();
-    base::Angle mainHeading;
+    base::Angle mainHeading = base::Angle::fromDeg(0.0);
     
     base::Time startTime = base::Time::now();
     
@@ -175,14 +212,20 @@ int main()
 //     }
     
     QtThreadedWidget<vizkit3d::Vizkit3DWidget> app;
+    
+    vizkit3d::GridVisualization gridViz;
     vizkit3d::VFHTreeVisualization treeViz;
     envire::EnvireVisualization envViz;
 
     app.start();
     app.getWidget()->addPlugin(&treeViz);
     app.getWidget()->addPlugin(&envViz);
+    app.getWidget()->addPlugin(&gridViz);
     
-    treeViz.updateData(t.getTree());
+    if(t.getDebugTree())
+    {
+        treeViz.updateData(*(t.getDebugTree()));
+    }
     treeViz.removeLeaves(false);
     
     envViz.updateData(&env);
