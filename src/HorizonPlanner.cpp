@@ -33,7 +33,6 @@ std::vector< base::Trajectory > HorizonPlanner::getTrajectories(const base::Pose
 
 const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base::Angle &mainHeading_i, double horizon, const Eigen::Affine3d &body2Trajectory)
 {    
-    startPose_w = start;
     mainHeading_w = mainHeading_i;
     horizonDistance = horizon;
 
@@ -41,7 +40,11 @@ const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base:
     const Affine3d world2Tree(getTreeToWorld().inverse());
     Vector3d startPos_tree = world2Tree * start.position;
     mainHeading = mainHeading_i + base::Angle::fromRad(base::Pose(world2Tree).getYaw());
-
+    
+    //set z to 0.05 this is a hack for the visualization, 
+    //so that the searchtree will allways be displayed above the traversability map
+    startPos_tree.z() = 0.05;
+    
     // Used for heuristics
     targetLineNormal = Eigen::Quaterniond(AngleAxisd(mainHeading.getRad(), Vector3d::UnitZ())) * Vector3d::UnitX();
     targetLinePoint  = startPos_tree + targetLineNormal * horizon;
@@ -51,7 +54,10 @@ const TreeNode* HorizonPlanner::computePath(base::Pose const& start, const base:
     std::cout << "  point: "  << targetLinePoint.x() << " " << targetLinePoint.y() << " " << targetLinePoint.z() << std::endl;
     std::cout << "  normal: " << targetLineNormal.x() << " " << targetLineNormal.y() << " " << targetLineNormal.z() << std::endl;
     
-    return compute(start);
+    base::Pose start_w(world2Tree.inverse() * startPos_tree, start.orientation);
+    startPose_w = start_w;
+    
+    return compute(start_w);
 }
 
 HorizonPlannerDebugData HorizonPlanner::getDebugData() const
