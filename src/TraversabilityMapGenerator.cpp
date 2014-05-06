@@ -608,7 +608,7 @@ bool TraversabilityMapGenerator::getMeanHeightOfNeighbourhood(const vfh_star::El
 }
 
 
-void TraversabilityMapGenerator::computeSmoothElevelationGrid(const vfh_star::ElevationGrid& source, vfh_star::Grid< double, 600, 12 >& target) const
+void TraversabilityMapGenerator::computeSmoothElevelationGrid(const vfh_star::ElevationGrid& source, vfh_star::Grid< double, 1200, 24 >& target) const
 {
     target.setGridPosition(source.getGridPosition());
     
