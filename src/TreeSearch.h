@@ -263,9 +263,14 @@ public:
      * Returns the pose in which the robot will be after traveling from the curNode
      * over a distance of 'distance' towards the moveDirection, using this drive mode.
      * 
+     * @param resultInWorldFrame Next projected pose in world frame.
+     * @param curNode Current node. Position in here is also in world frame
+     * @param moveDirectionInRobotFrame is in Robot Coordinates, meaning an angle of zero is forward.
+     * @param distance the distance the robot should travel
+     * 
      * returns false if pose could not be projected using this drive mode
      * */
-    virtual bool projectPose(ProjectedPose &result, const TreeNode& curNode, const base::Angle& moveDirection, double distance) const = 0;
+    virtual bool projectPose(ProjectedPose &resultInWorldFrame, const TreeNode& curNode, const base::Angle& moveDirectionInRobotFrame, double distance) const = 0;
     
     /**
      * Returns the cost of driving from the parentNode to the projected position using this drive mode;

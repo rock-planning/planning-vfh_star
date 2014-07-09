@@ -165,9 +165,10 @@ std::vector< ProjectedPose > TreeSearch::getProjectedPoses(const TreeNode& curNo
     for(std::vector<DriveMode *>::const_iterator it = driveModes.begin(); it != driveModes.end(); it++)
     {
         ProjectedPose newPose;
-        if((*it)->projectPose(newPose, curNode, heading, distance))
+        if((*it)->projectPose(newPose, curNode, heading - curNode.getYaw() , distance))
         {
             newPose.driveMode = i;
+
             ret.push_back(newPose);
         }
         i++;
@@ -246,6 +247,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
                 tree.debugTree->nodes[curNode->getIndex()].isValid = false;
             }
 	    nnLookup->clearIfSame(curNode);
+//             std::cout << "Node is invalid" << std::endl;
             continue;
         }
 
@@ -352,6 +354,8 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
                 // Add it to the expand list
                 newNode->candidate_it = expandCandidates.insert(std::make_pair(newNode->getHeuristicCost(), newNode));
 
+//                 std::cout << "Added new node " << newNode->getPose().position.transpose() << " Yaw " << newNode->getYaw() << " Cost " << newNode->getCost() << " Heuristic " << newNode->getHeuristicCost() << std::endl;
+                
                 if(tree.debugTree)
                 {
                     DebugNode &dbg(tree.debugTree->nodes[newNode->getIndex()]);
