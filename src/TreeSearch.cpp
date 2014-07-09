@@ -96,11 +96,11 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const base::Angle &cur
     {
         for (AngleIntervals::const_iterator it = intervals.begin(); it != intervals.end(); it++) 
         {
-            std::cout << "Drivable Interval start " << it->startRad << " end " << it->endRad << std::endl; 
+            std::cout << "Drivable Interval start " << *it << std::endl; 
         }
     }
 
-    //sample the giben intervals with the different sampling policies
+    //sample the given intervals with the different sampling policies
     for(std::vector<AngleSampleConf>::const_iterator it = search_conf.sampleAreas.begin(); it != search_conf.sampleAreas.end(); it++)
     {
         //create a sample interval aligned to the robot direction
@@ -115,6 +115,14 @@ TreeSearch::Angles TreeSearch::getDirectionsFromIntervals(const base::Angle &cur
             const base::AngleSegment &interval(*it2);
 
             std::vector<base::AngleSegment> intersections = sampleInterval.getIntersections(interval);
+            if(printDebug)
+            {
+                for(std::vector<base::AngleSegment>::const_iterator pit = intersections.begin(); pit != intersections.end(); pit++)
+                {
+                    std::cout << "Intersection is " << *pit << std::endl;
+                }
+            }
+            
             for(std::vector<base::AngleSegment>::const_iterator it3 = intersections.begin(); it3 != intersections.end(); it3++)
             {
                 addDirections(ret, *it3, it->angularSamplingMin, it->angularSamplingMax, it->angularSamplingNominalCount);
@@ -226,8 +234,11 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
         candidateNr ++;
 	
 	if(!search_conf.maxSeekTime.isNull() && base::Time::now() - startTime > search_conf.maxSeekTime)
+        {
+            std::cout << "Quitting planning as max search time was reached" << std::endl;
 	    break;
-	
+        }
+        
         if (!validateNode(*curNode))
         {
             if(tree.debugTree)
