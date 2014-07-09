@@ -67,9 +67,9 @@ const TreeSearchConf& TreeSearch::getSearchConf() const
     return search_conf;
 }
 
-void TreeSearch::addDirections(TreeSearch::Angles& directions, const base::AngleSegment& segement, const double minStep, const double maxStep, const int minNodes) const
+void TreeSearch::addDirections(TreeSearch::Angles& directions, const base::AngleSegment& segment, const double minStep, const double maxStep, const int minNodes) const
 {
-    const double intervalOpening = segement.getWidth();
+    const double intervalOpening = segment.getWidth();
     
     double step = intervalOpening / minNodes;
     if (step < minStep)
@@ -77,9 +77,9 @@ void TreeSearch::addDirections(TreeSearch::Angles& directions, const base::Angle
     else if (step > maxStep)
         step = maxStep;
 
-    int intervalSize = floor(intervalOpening / step);
-    base::Angle delta = base::Angle::fromRad(step);
-    base::Angle result = segement.getStart();
+    int intervalSize = ceil(intervalOpening / step);
+    base::Angle delta = base::Angle::fromRad(intervalOpening / intervalSize);
+    base::Angle result = segment.getStart();
     for (int i = 0; i < intervalSize + 1; ++i)
     {
         directions.push_back(result);
