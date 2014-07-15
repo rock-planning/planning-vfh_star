@@ -5,7 +5,7 @@
 #include <envire/maps/TraversabilityGrid.hpp>
 #include <vector>
 #include <base/Pose.hpp>
-#include "RadialLookUpTable.hpp"
+#include <envire/tools/RadialLookUpTable.hpp>
 
 #include "Types.h"
 #include <base/Angle.hpp>
@@ -34,7 +34,7 @@ namespace vfh_star
 
         void getBinaryHistogram(const std::vector< double >& histogram, std::vector< bool >& binHistogram) const;
         void addDir(std::vector< base::AngleSegment >& drivableDirections, int start, int end) const;
-	RadialLookUpTable lut;
+	envire::RadialLookUpTable lut;
         std::vector<bool> obstacleLookup;
         const envire::TraversabilityGrid *traversabillityGrid;
         double gridWidthHalf;
