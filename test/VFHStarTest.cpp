@@ -13,7 +13,7 @@ using namespace vfh_star;
 class StarTestDriveMode : public vfh_star::DriveMode
 {
 public:
-    StarTestDriveMode()
+    StarTestDriveMode() : DriveMode("TestMode")
     {
         
     }
@@ -44,6 +44,11 @@ public:
     {
         tr.speed = 1.0;
     };
+    
+    virtual void setTrajectoryParameters(base::TrajectoryWithDriveMode& tr) const
+    {
+        ;
+    }
 };
 
 class StarTest: public vfh_star::VFHStar

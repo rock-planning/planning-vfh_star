@@ -186,7 +186,7 @@ namespace vfh_star
     };
 
     struct VFHStarDebugData {
-        std::vector<vfh_star::VFHDebugData> steps;
+        std::vector<VFHDebugData> steps;
         std::vector<base::Waypoint> generatedTrajectory;
         base::Vector3d horizonOrigin;
         base::Vector3d horizonVector;   

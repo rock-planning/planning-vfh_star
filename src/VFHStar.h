@@ -39,7 +39,7 @@ class VFHStar : public HorizonPlanner
         /** Returns the cost of travelling from \c parent to \c node. It might
          * include a cost of "being at" \c node as well
          */
-        virtual double getCostForNode(const vfh_star::ProjectedPose& projection, const base::Angle& direction, const vfh_star::TreeNode& parentNode) const;
+        virtual double getCostForNode(const ProjectedPose& projection, const base::Angle& direction, const TreeNode& parentNode) const;
     
         /**
          * Uses the VFH Algorithm to determine the next possible direction were the 
@@ -47,7 +47,7 @@ class VFHStar : public HorizonPlanner
          * 
          * One could say this is a clever heuristic for reducing the sample space of the planner.
          * */
-        AngleIntervals getNextPossibleDirections(const vfh_star::TreeNode& curNode) const;
+        AngleIntervals getNextPossibleDirections(const TreeNode& curNode) const;
         
         virtual bool validateNode(const TreeNode& node) const;
 };

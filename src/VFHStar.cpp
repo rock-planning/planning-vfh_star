@@ -42,7 +42,7 @@ void VFHStar::setNewTraversabilityGrid(const envire::TraversabilityGrid* trGrid)
     vfh.setNewTraversabilityGrid(trGrid);
 }
 
-double VFHStar::getCostForNode(const vfh_star::ProjectedPose& projection, const base::Angle &direction, const vfh_star::TreeNode& parentNode) const
+double VFHStar::getCostForNode(const ProjectedPose& projection, const base::Angle &direction, const TreeNode& parentNode) const
 {
     /**
     * cost is build from three factors:
@@ -70,7 +70,7 @@ double VFHStar::getCostForNode(const vfh_star::ProjectedPose& projection, const 
     return a * aPart + b * bPart + c * cPart;
 }
 
-TreeSearch::AngleIntervals VFHStar::getNextPossibleDirections(const vfh_star::TreeNode& curNode) const
+TreeSearch::AngleIntervals VFHStar::getNextPossibleDirections(const TreeNode& curNode) const
 {
     return vfh.getNextPossibleDirections(curNode.getPose());
 }
@@ -88,7 +88,7 @@ VFHStarDebugData VFHStar::getVFHStarDebugData(const std::vector< base::Waypoint 
 //     for(std::vector<base::Waypoint>::const_iterator it = trajectory.begin(); it != trajectory.end(); it++)
 //     {
 //         bool found = false;
-//         for(std::vector<vfh_star::VFHDebugData>::const_iterator it2 = debugData.steps.begin(); it2 != debugData.steps.end(); it2++) 
+//         for(std::vector<VFHDebugData>::const_iterator it2 = debugData.steps.begin(); it2 != debugData.steps.end(); it2++) 
 //         {
 //             if(it->position == base::Vector3d(it2->pose.position))
 //             {

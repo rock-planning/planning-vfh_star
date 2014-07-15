@@ -6,7 +6,7 @@
 #include <base/Angle.hpp>
 #include <base/Float.hpp>
 
-using namespace vfh_star;
+namespace vfh_star {
 
 bool printDebug = false;
             
@@ -155,7 +155,7 @@ void TreeSearch::clearDriveModes()
 
 double TreeSearch::getCostForNode(const ProjectedPose& projection, const base::Angle& direction, const TreeNode& parentNode)
 {
-    return driveModes[projection.driveMode]->getCostForNode(projection, direction, parentNode);
+    return projection.driveMode->getCostForNode(projection, direction, parentNode);
 }
 
 std::vector< ProjectedPose > TreeSearch::getProjectedPoses(const TreeNode& curNode, const base::Angle& heading, double distance)
@@ -165,9 +165,10 @@ std::vector< ProjectedPose > TreeSearch::getProjectedPoses(const TreeNode& curNo
     for(std::vector<DriveMode *>::const_iterator it = driveModes.begin(); it != driveModes.end(); it++)
     {
         ProjectedPose newPose;
+        newPose.driveModeNr = i;
         if((*it)->projectPose(newPose, curNode, heading - curNode.getYaw() , distance))
         {
-            newPose.driveMode = i;
+            newPose.driveMode = *it;
 
             ret.push_back(newPose);
         }
@@ -319,7 +320,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
                 // Check that we are not doing the same work multiple times.
                 //
                 // searchNode should be used only here !
-                TreeNode searchNode(projected->pose, curDirection, projected->driveMode);
+                TreeNode searchNode(projected->pose, curDirection, projected->driveMode, projected->driveModeNr);
                 
                 const double searchNodeCost = nodeCost + curNode->getCost();
                 TreeNode *closest_node = nnLookup->getNodeWithinBounds(searchNode);
@@ -496,13 +497,13 @@ Tree& Tree::operator = (Tree const& other)
     return *this;
 }
 
-std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(const vfh_star::TreeNode* node, const Eigen::Affine3d& world2Trajectory) const
+std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(const TreeNode* node, const Eigen::Affine3d& world2Trajectory) const
 {
     if(!node)
         return std::vector< base::Trajectory >();
     
-    std::vector<const vfh_star::TreeNode *> nodes;
-    const vfh_star::TreeNode* nodeTmp = node;
+    std::vector<const TreeNode *> nodes;
+    const TreeNode* nodeTmp = node;
     int size = node->getDepth() + 1;
     for (int i = 0; i < size; ++i)
     {
@@ -515,14 +516,14 @@ std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(const vfh_star::
     return buildTrajectoriesTo(nodes, world2Trajectory);
 }
 
-std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(std::vector<const vfh_star::TreeNode *> nodes, const Eigen::Affine3d &world2Trajectory) const
+std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(std::vector<const TreeNode *> nodes, const Eigen::Affine3d &world2Trajectory) const
 {    
     std::vector<base::Trajectory> result;
 	
     if(nodes.empty())
 	return result;
     
-    std::vector<const vfh_star::TreeNode *>::const_iterator it = nodes.begin();
+    std::vector<const TreeNode *>::const_iterator it = nodes.begin();
     std::vector<base::Vector3d> as_points;
     
     base::Angle posDir;
@@ -530,7 +531,7 @@ std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(std::vector<cons
     //HACK  we don't actuall know the current drive mode of the robot.
     //we set it to the drivemode of the first node of the generated
     //trajectory
-    int lastDriveMode = 0;
+    DriveMode const *lastDriveMode = 0;
     if(!nodes.empty())
     {
 	const Eigen::Affine3d body2Tree((*it)->getPose().toTransform());
@@ -546,13 +547,13 @@ std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(std::vector<cons
   
     for(;it != nodes.end(); it++)
     {
-        int curDriveMode = (*it)->getDriveMode();
+        DriveMode const *curDriveMode = (*it)->getDriveMode();
                 
 	//check if direction changed
 	if(lastDriveMode != curDriveMode)
 	{
 	    base::Trajectory tr;
-            driveModes[lastDriveMode]->setTrajectoryParameters(tr);
+            lastDriveMode->setTrajectoryParameters(tr);
 	    tr.spline.interpolate(as_points);
 	    result.push_back(tr);
 	}
@@ -566,7 +567,7 @@ std::vector< base::Trajectory > TreeSearch::buildTrajectoriesTo(std::vector<cons
     }
 
     base::Trajectory tr;
-    driveModes[lastDriveMode]->setTrajectoryParameters(tr);
+    lastDriveMode->setTrajectoryParameters(tr);
 	
     tr.spline.interpolate(as_points);
     result.push_back(tr);
@@ -587,585 +588,5 @@ void TreeSearch::activateDebug()
     tree.debugTree = new DebugTree();
 }
 
-const TreeNode* Tree::getRootNode() const
-{
-    return root_node;
-}
-
-TreeNode* Tree::getRootNode()
-{
-    return root_node;
-}
-
-TreeNode* Tree::getFinalNode() const
-{
-    return final_node;
-}
-
-void Tree::setFinalNode(TreeNode* node)
-{
-    final_node = node;
-    if(debugTree)
-    {
-        debugTree->finalNode = final_node->index;
-    }
-}
-
-void Tree::reserve(int size)
-{
-    int diff = nodes.size() - size;
-    for (int i = 0; i < diff; ++i)
-        nodes.push_back(TreeNode());
-}
-
-TreeNode* Tree::createNode(base::Pose const& pose, const base::Angle &dir)
-{
-    TreeNode* n;
-    if (!free_nodes.empty())
-    {
-        n = free_nodes.front();
-        free_nodes.pop_front();
-    }
-    else
-    {
-        //use free node as long as possible
-        if(nodesLeftInStorage)
-        {
-            n = &(*nextNodePos);
-            nodesLeftInStorage--;
-            nextNodePos++;
-        }
-        else
-        {
-            nodes.push_back(TreeNode());
-            n = &nodes.back();
-        }
-    }
-
-    n->clear();
-    n->pose = pose;
-    n->yaw = base::Angle::fromRad(pose.getYaw());
-    n->direction = dir;
-    n->index  = size;
-    if(debugTree)
-    {
-        debugTree->nodes.push_back(DebugNode(size, pose));
-    }
-    
-    ++size;    
-    return n;
-}
-
-TreeNode* Tree::createRoot(base::Pose const& pose, const base::Angle &dir)
-{
-    if (root_node)
-        throw std::runtime_error("trying to create a root node of an non-empty tree");
-
-    root_node = createNode(pose, dir);
-    
-    return root_node;
-}
-
-TreeNode* Tree::createChild(TreeNode* parent, base::Pose const& pose, const base::Angle &dir)
-{
-    TreeNode* child = createNode(pose, dir);
-    child->depth  = parent->depth + 1;
-    parent->addChild(child);
-    
-    if(debugTree)
-    {
-        DebugNode &dbgParent(debugTree->nodes[parent->index]);
-        DebugNode &dbgChild(debugTree->nodes[child->index]);
-        dbgChild.parent = parent->index;
-        dbgParent.childs.push_back(child->index);
-    }    
-    return child;
-}
-
-void Tree::removeNode(TreeNode* node)
-{
-    if(debugTree)
-    {
-        debugTree->nodes[node->index].wasRemoved = true;
-    }
-
-    node->childs.clear();
-    free_nodes.push_back(node);
-}
-
-TreeNode *Tree::getParent(TreeNode* child)
-{
-    return child->parent;
-}
-
-int Tree::getSize() const
-{
-    return size;
-}
-
-void Tree::clear()
-{
-    free_nodes.clear();
-    nodesLeftInStorage = nodes.size();
-    nextNodePos = nodes.begin();
-    final_node = 0;
-    root_node = 0;
-    size = 0;
-}
-
-const Eigen::Affine3d& Tree::getTreeToWorld() const
-{
-    return tree2World;
-}
-
-void Tree::setTreeToWorld(Eigen::Affine3d tree2World)
-{
-    this->tree2World = tree2World;
-}
-
-std::list<TreeNode> const& Tree::getNodes() const
-{
-    return nodes;
-}
-
-void Tree::verifyHeuristicConsistency(const TreeNode* from) const
-{
-    bool alright = true;
-
-    base::Position leaf_p = from->getPose().position;
-
-    const TreeNode* node = from;
-    double actual_cost = node->getCost();
-    while (!node->isRoot())
-    {
-        if (node->getHeuristicCost() > actual_cost && fabs(node->getHeuristicCost() - actual_cost) > 0.0001)
-        {
-            base::Position p = node->getPose().position;
-            std::cerr << "found invalid heuristic cost\n"
-                << "  node at " << p.x() << " " << p.y() << " " << p.z() << " has c=" << node->getCost() << " h=" << node->getHeuristic() << " hc=" << node->getHeuristicCost() << "\n"
-                << "  the corresponding leaf at " << leaf_p.x() << " " << leaf_p.y() << " " << leaf_p.z() << " has cost " << actual_cost << std::endl;
-            alright = false;
-        }
-        node = node->getParent();
-    }
-
-    if (!alright)
-        std::cerr << "WARN: the chosen heuristic does not seem to be a minorant" << std::endl;
-}
-
-NNLookup::NNLookup(double boxSize, double boxResolutionXY, double boxResolutionTheta, uint8_t maxDriveModes): 
-        curSize(0), curSizeHalf(0), boxSize(boxSize), boxResolutionXY(boxResolutionXY), 
-        boxResolutionTheta(boxResolutionTheta), maxDriveModes(maxDriveModes)
-{
-    std::cout << "NNLookup created with boxSize " << boxSize << " boxResolutionXY " << boxResolutionXY << " boxResolutionTheta " << boxResolutionTheta << " maxDriveModes " << ((int) maxDriveModes) << std::endl;
-}
-
-NNLookup::~NNLookup()
-{
-    for(std::list<NNLookupBox *>::const_iterator it = freeBoxes.begin(); it != freeBoxes.end(); it++)
-    {
-        delete *it;
-    }
-
-    for(std::list<NNLookupBox *>::const_iterator it = usedBoxes.begin(); it != usedBoxes.end(); it++)
-    {
-        delete *it;
-    }
-}
-
-void NNLookup::clear()
-{
-    freeBoxes.splice(freeBoxes.begin(), usedBoxes);
-    for(std::vector<std::vector<NNLookupBox *> >::iterator it = globalGrid.begin(); it != globalGrid.end(); it++)
-    {
-        //ugly fast way to clear the vector
-        memset(it->data(), 0, sizeof(NNLookupBox *) * it->size());
-// 	for(std::vector<NNLookupBox *>::iterator it2 = it->begin(); it2 != it->end(); it2++)
-// 	    *it2 = NULL;
-    }
-    usedBoxes.clear();
-}
-
-bool NNLookup::getIndex(const vfh_star::TreeNode& node, int& x, int& y)
-{
-    //calculate position in global grid
-    x = floor(node.getPosition().x() / boxSize) + curSizeHalf;
-    y = floor(node.getPosition().y() / boxSize) + curSizeHalf;
-
-    if((x < 0) || (x >= curSize) || (y < 0) || (y >= curSize))
-	return false;
-
-    return true;
-}
-
-TreeNode* NNLookup::getNodeWithinBounds(const vfh_star::TreeNode& node)
-{
-    int x,y;
-    if(!getIndex(node, x, y))
-	return NULL;
-    
-    NNLookupBox *box = globalGrid[x][y];
-    if(box == NULL)
-	return NULL;
-    
-    return box->getNearestNode(node);
-}
-
-
-void NNLookup::clearIfSame(const vfh_star::TreeNode* node)
-{
-    int x,y;
-    if(!getIndex(*node, x, y))
-	return;
-    
-    NNLookupBox *box = globalGrid[x][y];
-    if(box == NULL)
-	return;
-
-    box->clearIfSame(node);
-}
-
-void NNLookup::extendGlobalGrid(int requestedSize)
-{
-    const int oldSize = curSize;
-    int newSize = requestedSize * 2;
-    curSize = newSize;
-    curSizeHalf = requestedSize;
-    globalGrid.resize(newSize);
-    
-    std::vector<std::vector<NNLookupBox *> >newGrid;
-    newGrid.resize(newSize);    
-    for(std::vector<std::vector<NNLookupBox *> >:: iterator it = newGrid.begin(); it != newGrid.end(); it++)
-    {
-	(*it).resize(newSize, NULL);
-    }
-    
-    const int diffHalf = (newSize - oldSize) / 2;
-    
-    for(int x = 0; x < oldSize; x++)
-    {
-        const int newX = x + diffHalf;
-        for(int y = 0; y < oldSize; y++)
-        {
-            const int newY = y + diffHalf;
-            newGrid[newX][newY] = globalGrid[x][y];
-        }
-    }
-    
-    globalGrid.swap(newGrid);
-    
-}
-
-
-void NNLookup::setNode(TreeNode* node)
-{
-    int x,y;
-    if(!getIndex(*node, x, y))
-    {	
-	int newSizeHalf = std::max(abs(floor(node->getPosition().x() / boxSize)),
-				abs(floor(node->getPosition().y() / boxSize))) + 1;
-    	extendGlobalGrid(newSizeHalf);
-        assert(getIndex(*node, x, y));
-    }
-
-    NNLookupBox *box = globalGrid[x][y];
-    if(box == NULL)
-    {
-	const Eigen::Vector3d boxPos = Eigen::Vector3d(floor(node->getPosition().x()),
-						 floor(node->getPosition().y()),
-						0) + Eigen::Vector3d(boxSize / 2.0, boxSize / 2.0, 0);
-                                                
-	if(!freeBoxes.empty())
-	{
-	    box = (freeBoxes.front());
-	    freeBoxes.pop_front();
-	    box->clear();
-	    box->setNewPosition(boxPos);
-	}
-	else
-	{
-	    box = new NNLookupBox(boxResolutionXY, boxResolutionTheta, boxSize, boxPos, maxDriveModes);
-	}
-	usedBoxes.push_back(box);
-	globalGrid[x][y] = box;
-    }
-    
-    box->setNode(node);
-}
-
-
-NNLookupBox::NNLookupBox(double resolutionXY, double angularResoultion, double size, const Eigen::Vector3d& centerPos, uint8_t maxDriveModes) : resolutionXY(resolutionXY), angularResolution(angularResoultion), size(size), maxDriveModes(maxDriveModes)
-{
-    xCells = size / resolutionXY + 1;
-    yCells = xCells;
-    aCells = M_PI / angularResoultion * 2 + 1;
-
-    hashMap.resize(xCells);
-    for(int x = 0; x < xCells; x++)
-    {
-	hashMap[x].resize(yCells);
-	for(int y = 0; y < yCells; y++)
-	{
-	    hashMap[x][y].resize(aCells);
-            for(int a = 0; a < aCells; a++)
-            {
-                hashMap[x][y][a].resize(maxDriveModes, NULL);
-            }
-	}
-    }
-    
-    toWorld = centerPos - Eigen::Vector3d(size/2.0, size/2.0,0);
-}
-
-void NNLookupBox::setNewPosition(const Eigen::Vector3d& centerPos)
-{
-    toWorld = centerPos - Eigen::Vector3d(size/2.0, size/2.0,0);
-}
-
-void NNLookupBox::clear()
-{
-    for(int x = 0; x < xCells; x++)
-    {
-	for(int y = 0; y < yCells; y++)
-	{
-	    for(int a = 0; a < aCells; a++)
-	    {
-                for(int dm= 0; dm < maxDriveModes; dm++)
-                    hashMap[x][y][a][dm] = NULL;
-	    }
-	}
-    }
-}
-
-bool NNLookupBox::getIndixes(const vfh_star::TreeNode &node, int& x, int& y, int& a) const
-{
-    const Eigen::Vector3d mapPos = node.getPosition() - toWorld;
-//     std::cout << "NodePos " << node.getPosition().transpose() << " mapPos " << mapPos.transpose() << std::endl;
-    x = mapPos.x() / resolutionXY;
-    y = mapPos.y() / resolutionXY;
-    a = node.getYaw().getRad() / angularResolution;
-    if(a < 0)
-	a+= M_PI/angularResolution * 2.0;
-
-//     std::cout << "X " << x << " Y " << y << " A " << a << std::endl;
-    
-    assert((x >= 0) && (x < xCells) &&
-	    (y >= 0) && (y < yCells) &&
-	    (a >= 0) && (a < aCells));
-    
-    return true;
-}
-
-void NNLookupBox::clearIfSame(const vfh_star::TreeNode* node)
-{
-    int x, y, a;
-    bool valid = getIndixes(*node, x, y, a);
-    if(!valid)
-	throw std::runtime_error("NNLookup::clearIfSame:Error, accessed node outside of lookup box");
-
-    assert(node->getDriveMode() < maxDriveModes);
-    if(hashMap[x][y][a][node->getDriveMode()] == node)
-	hashMap[x][y][a][node->getDriveMode()] = NULL;
-}
-
-TreeNode* NNLookupBox::getNearestNode(const vfh_star::TreeNode& node)
-{
-    int x, y, a;
-    bool valid = getIndixes(node, x, y, a);
-    if(!valid)
-	throw std::runtime_error("NNLookup::getNearestNode:Error, accessed node outside of lookup box");
-    
-    assert(node.getDriveMode() < maxDriveModes);
-    TreeNode *ret = hashMap[x][y][a][node.getDriveMode()];
-    return ret;
-}
-
-void NNLookupBox::setNode(TreeNode* node)
-{
-    int x, y, a;
-    bool valid = getIndixes(*node, x, y, a);
-    if(!valid)
-	throw std::runtime_error("NNLookup::setNode:Error, accessed node outside of lookup box");
-    
-    assert(node->getDriveMode() < maxDriveModes);
-    hashMap[x][y][a][node->getDriveMode()] = node;
-}
-
-
-TreeNode::TreeNode()
-{
-    clear();
-}
-
-TreeNode::TreeNode(const base::Pose& pose, const base::Angle &dir, uint8_t driveMode)
-    : parent(this)
-    , is_leaf(true)
-    , pose(pose)
-    , yaw(base::Angle::fromRad(pose.getYaw()))
-    , direction(dir)
-    , cost(0)
-    , heuristic(0)
-    , costFromParent(0)
-    , driveMode(driveMode)
-    , depth(0)
-    , index(0)
-    , updated_cost(false)
-    , positionTolerance(0)
-    , headingTolerance(0)
-{
-    clear();
-    direction = dir;
-    this->pose = pose;
-//     yaw = pose.getYaw();
-    this->driveMode=driveMode;
-    yaw = base::Angle::fromRad(pose.getYaw());
-}
-
-void TreeNode::clear()
-{
-    parent = this;
-    pose = base::Pose();
-    yaw = base::Angle();
-    is_leaf = true;
-    cost = 0;
-    heuristic = 0;
-    costFromParent = 0;
-    driveMode = 0;
-    depth = 0;
-    index = 0;
-    updated_cost = false;
-    positionTolerance = 0;
-    headingTolerance = 0;
-    direction = base::Angle();
-    childs.clear();
-}
-
-const base::Vector3d &TreeNode::getPosition() const
-{
-    return pose.position;
-}
-
-const base::Angle &TreeNode::getYaw() const
-{
-    return yaw;
-}
-
-double TreeNode::getHeuristic() const
-{
-    return heuristic;
-}
-
-void TreeNode::setHeuristic(double value)
-{
-    heuristic = value;
-}
-
-double TreeNode::getHeuristicCost() const
-{
-    return cost + heuristic;
-}
-
-uint8_t TreeNode::getDriveMode() const
-{
-    return driveMode;
-}
-
-void TreeNode::setDriveMode(uint8_t mode)
-{
-    driveMode = mode;
-}
-
-double TreeNode::getCost() const
-{
-    return cost;
-}
-void TreeNode::setCost(double value)
-{
-    cost = value;
-}
-
-void TreeNode::setCostFromParent(double value)
-{
-    costFromParent = value;
-}
-
-double TreeNode::getCostFromParent() const
-{
-    return costFromParent;
-}
-
-void TreeNode::addChild(TreeNode* child)
-{
-    is_leaf = false;
-    child->parent = this;
-    childs.push_back(child);
-}
-
-void TreeNode::removeChild(TreeNode* child)
-{
-    std::vector<TreeNode *>::iterator it = std::find(childs.begin(), childs.end(), child);
-    if(it != childs.end())
-    {
-	childs.erase(it);
-    }
-    if(childs.empty())
-        is_leaf = true;
-}
-
-const std::vector< TreeNode* >& TreeNode::getChildren() const
-{
-    return childs;
-}
-
-const TreeNode* TreeNode::getParent() const
-{
-    return parent;
-}
-
-const base::Pose& TreeNode::getPose() const
-{
-    return pose;
-}
-
-int TreeNode::getDepth() const
-{
-    return depth;
-}
-
-bool TreeNode::isRoot() const
-{
-    return parent == this;
-}
-
-bool TreeNode::isLeaf() const
-{
-    return is_leaf;
-}
-
-const base::Angle &TreeNode::getDirection() const
-{
-    return direction;
-}
-
-int TreeNode::getIndex() const
-{
-    return index;
-}
-
-double TreeNode::getPositionTolerance() const
-{
-    return positionTolerance;
-}
-void TreeNode::setPositionTolerance(double tol)
-{
-    positionTolerance = tol;
-}
-double TreeNode::getHeadingTolerance() const
-{
-    return headingTolerance;
-}
-void TreeNode::setHeadingTolerance(double tol)
-{
-    headingTolerance = tol;
 }
 
