@@ -47,6 +47,7 @@ class TreeNode
         DriveMode const *getDriveMode() const;
 
         uint8_t getDriveModeNr() const;
+        void setDriveModeNr(uint8_t nr);
         
         void setCostFromParent(double value);
         double getCostFromParent() const;

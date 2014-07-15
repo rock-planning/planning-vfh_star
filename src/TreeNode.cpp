@@ -29,6 +29,7 @@ TreeNode::TreeNode(const base::Pose& pose, const base::Angle& dir, const DriveMo
     this->pose = pose;
 //     yaw = pose.getYaw();
     this->driveMode=driveMode;
+    this->driveModeNr=driveModeNr;
     yaw = base::Angle::fromRad(pose.getYaw());
 }
 
@@ -75,6 +76,11 @@ void TreeNode::setHeuristic(double value)
 double TreeNode::getHeuristicCost() const
 {
     return cost + heuristic;
+}
+
+void TreeNode::setDriveModeNr(uint8_t nr)
+{
+    driveModeNr = nr;
 }
 
 uint8_t TreeNode::getDriveModeNr() const

@@ -165,10 +165,10 @@ std::vector< ProjectedPose > TreeSearch::getProjectedPoses(const TreeNode& curNo
     for(std::vector<DriveMode *>::const_iterator it = driveModes.begin(); it != driveModes.end(); it++)
     {
         ProjectedPose newPose;
-        newPose.driveModeNr = i;
         if((*it)->projectPose(newPose, curNode, heading - curNode.getYaw() , distance))
         {
             newPose.driveMode = *it;
+            newPose.driveModeNr = i;
 
             ret.push_back(newPose);
         }
@@ -199,6 +199,11 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
     TreeNode *curNode = tree.createRoot(start, base::Angle::fromRad(start.getYaw()));
     curNode->setHeuristic(getHeuristic(*curNode));
     curNode->setCost(0.0);
+    
+    //FIXME what is the current drive mode ?
+    curNode->setDriveModeNr(0);
+    curNode->setDriveMode(driveModes.at(0));
+    
     nnLookup->setNode(curNode);
 
     curNode->candidate_it = expandCandidates.insert(std::make_pair(curNode->getHeuristicCost(), curNode));
@@ -346,6 +351,7 @@ TreeNode const* TreeSearch::compute(const base::Pose& start_world)
                 // Finally, create the new node and add it in the tree
                 TreeNode *newNode = tree.createChild(curNode, projected->pose, curDirection);
                 newNode->setDriveMode(projected->driveMode);
+                newNode->setDriveModeNr(projected->driveModeNr);
                 newNode->setCost(curNode->getCost() + nodeCost);
                 newNode->setCostFromParent(nodeCost);
                 newNode->setPositionTolerance(std::numeric_limits< double >::signaling_NaN());
