@@ -45,10 +45,10 @@ public:
         tr.speed = 1.0;
     };
     
-    virtual void setTrajectoryParameters(base::TrajectoryWithDriveMode& tr) const
-    {
-        ;
-    }
+    // virtual void setTrajectoryParameters(base::TrajectoryWithDriveMode& tr) const
+    // {
+    //     ;
+    // }
 };
 
 class StarTest: public vfh_star::VFHStar
