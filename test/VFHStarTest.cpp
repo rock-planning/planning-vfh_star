@@ -125,7 +125,7 @@ int main()
     Vector3d obstaclePos(1.5,0,0);
     double obstWidth = 1.0;
     double obstHeight = 0.2;
-    size_t obstX, obstY;
+    size_t obstX = 0, obstY = 0;
     assert(trGrid.toGrid(obstaclePos, obstX, obstY));
     
     std::cout << "Scale " << trGrid.getScaleY() << " result " << -(obstHeight / trGrid.getScaleY() / 2.0) << std::endl;

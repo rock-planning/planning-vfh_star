@@ -40,7 +40,8 @@ int main()
     {
 	TreeNode *otherNode = l.getNodeWithinBounds(nodes[i]);
 	
-	assert(otherNode->getPosition() == nodes[i].getPosition());
+	bool correct __attribute__((unused)) = otherNode->getPosition() == nodes[i].getPosition();
+	assert(correct);
     }
 	
 };
