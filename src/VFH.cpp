@@ -157,8 +157,9 @@ void VFH::generateHistogram(std::vector< double >& histogram, const base::Pose& 
     std::vector<double> &dirs(histogram);    
     
     //calculate robot pos in grid coordinates
-    size_t robotX, robotY;    
-    assert(traversabillityGrid->toGrid(curPose.position.x(), curPose.position.y(), robotX, robotY));
+    size_t robotX, robotY;
+    if(!traversabillityGrid->toGrid(curPose.position.x(), curPose.position.y(), robotX, robotY))
+      throw std::runtime_error("Internal Error, position is out of grid, this should be impossible");
     
     const envire::TraversabilityGrid::ArrayType &gridData = traversabillityGrid->getGridData();    
     const int senseSize = config.obstacleSenseRadius / traversabillityGrid->getScaleX();
