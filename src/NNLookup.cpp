@@ -114,7 +114,10 @@ void NNLookup::setNode(TreeNode* node)
         int newSizeHalf = std::max(abs(floor(node->getPosition().x() / boxSize)),
                                 abs(floor(node->getPosition().y() / boxSize))) + 1;
         extendGlobalGrid(newSizeHalf);
-        assert(getIndex(*node, x, y));
+        if(!getIndex(*node, x, y))
+        {
+            throw std::runtime_error("Internal Error, max was increased but node is still out of map. This should never happen");
+        }
     }
 
     NNLookupBox *box = globalGrid[x][y];
