@@ -30,7 +30,8 @@ int main()
 	nodes[i].pose.position.x() = x;
 	nodes[i].pose.position.y() = y;
 	nodes[i].direction = base::Angle::fromRad(0.1);
-	nodes[i].yaw = base::Angle::fromRad(0.1);
+        nodes[i].yaw = base::Angle::fromRad(0.1);
+        nodes[i].setDriveModeNr(0);
 	
 	l.setNode(&(nodes[i]));
     }
