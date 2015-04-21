@@ -8,6 +8,7 @@
   </description>
   <author>Janosch Machowinski/janosch.machowinski@dfki.de</author>
   <author>Sylvain Joyeux/sylvain.joyeux@dfki.de</author>
+  <maintainer>Janosch Machowinski/Janosch.Machowinski@dfki.de</maintainer>
   <license>LGPL v2 or later</license>
   <depend package="slam/envire" />
   <depend package="base/types" />
