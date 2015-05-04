@@ -91,7 +91,7 @@ pair<double, double> VFHTreeVisualization::computeColorMapping(const vfh_star::D
     for(std::vector<vfh_star::DebugNode>::const_iterator nodeIt = tree.nodes.begin(); nodeIt != tree.nodes.end(); nodeIt++)
     {
         const double curCost = nodeIt->cost;
-        if(isinf(curCost))
+        if(::isinf(curCost))
             continue;
         
         if(curCost > max_cost)
