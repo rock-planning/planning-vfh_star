@@ -1,5 +1,5 @@
 #include "VFHTreeVisualization.hpp"
-#include <../../../src/TreeSearch.h>
+#include <vfh_star/TreeSearch.h>
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/Point>

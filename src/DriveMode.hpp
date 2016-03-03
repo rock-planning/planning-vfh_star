@@ -31,6 +31,7 @@ private:
     std::string identifier;
 public:
     DriveMode(const std::string &identifier);
+    virtual ~DriveMode() {}
     
     /**
      * Sets the parameters of this drive mode on the trajectory
