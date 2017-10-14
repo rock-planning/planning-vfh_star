@@ -1,11 +1,11 @@
 #include "VFHTreeVisualization.hpp"
-#include <../../../src/TreeSearch.h>
+#include <vfh_star/TreeSearch.h>
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/Point>
 #include <boost/tuple/tuple.hpp>
 #include <osg/LineWidth>
-#include <base/float.h>
+#include <base/Float.hpp>
 #include <vizkit3d/Vizkit3DHelper.hpp>
 
 #include <iostream>
