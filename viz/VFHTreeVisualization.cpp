@@ -29,7 +29,7 @@ struct VFHTreeVisualization::Data {
     bool hasHorizon;
     base::Vector3d horizonOrigin;
     base::Vector3d horizonVector;
-    
+
     int treeNodeCount;
 
     Data()
@@ -91,9 +91,9 @@ pair<double, double> VFHTreeVisualization::computeColorMapping(const vfh_star::D
     for(std::vector<vfh_star::DebugNode>::const_iterator nodeIt = tree.nodes.begin(); nodeIt != tree.nodes.end(); nodeIt++)
     {
         const double curCost = nodeIt->cost;
-        if(::isinf(curCost))
+        if(isinf(curCost))
             continue;
-        
+
         if(curCost > max_cost)
         {
             max_cost = curCost;
@@ -110,7 +110,7 @@ pair<double, double> VFHTreeVisualization::computeColorMapping(const vfh_star::D
 osg::Geometry* VFHTreeVisualization::createSolutionNode(const vfh_star::DebugTree& tree, double color_a, double color_b)
 {
     osg::Geometry* geom = new osg::Geometry;
-    
+
     if(!tree.hasFinalNode())
         return geom;
 
@@ -122,8 +122,8 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(const vfh_star::DebugTre
     double step = 0;
 
     const vfh_star::DebugNode *curNode(&(tree.nodes[tree.finalNode]));
-    
-    
+
+
     while (curNode->creationOrder != tree.startNode)
     {
         const vfh_star::DebugNode &parent(tree.nodes[curNode->parent]);
@@ -131,14 +131,14 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(const vfh_star::DebugTre
         base::Position p = curNode->pose.position;
         if (step == 0)
             step = (parent_p - p).norm();
-        
-        
+
+
         vertices->push_back(osg::Vec3(parent_p.x(), parent_p.y(), parent_p.z() + 0.001));
         vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
         Eigen::Vector3d halfWay((p - parent_p ) / 2.0);
         Eigen::Vector3d middle(parent_p + halfWay);
         Eigen::Vector3d driveToPoint(middle + curNode->pose.orientation * Eigen::Vector3d(step / 2.0, 0, 0));
-        
+
         //make it an arrow
         Eigen::Vector3d left(middle - driveToPoint);
         left = left.normalized() * step * 0.3;
@@ -182,7 +182,7 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(const vfh_star::DebugTre
     Eigen::Vector3d halfWay((p - parent_p ) / 2.0);
     Eigen::Vector3d middle(parent_p + halfWay);
     Eigen::Vector3d driveToPoint(middle + curNode->pose.orientation * Eigen::Vector3d( step / 2.0, 0, 0));
-    
+
     //make it an arrow
     Eigen::Vector3d left(middle - driveToPoint);
     left = left.normalized() * step * 0.3;
@@ -197,7 +197,7 @@ osg::Geometry* VFHTreeVisualization::createSolutionNode(const vfh_star::DebugTre
     right += driveToPoint;
     vertices->push_back(osg::Vec3(driveToPoint.x(), driveToPoint.y(), driveToPoint.z() + 0.001));
     vertices->push_back(osg::Vec3(right.x(), right.y(), right.z() + 0.001));
-        
+
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
     colors->push_back(osg::Vec4(1.0, 1.0, 1.0, 1.0));
@@ -233,7 +233,7 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(DebugTree const &tree, doubl
     int count = p->treeNodeCount;
 
     int nodeCounter = 0;
-    
+
     for(std::vector<DebugNode>::const_iterator nodeIt = tree.nodes.begin(); nodeIt != tree.nodes.end(); nodeIt++)
     {
         if (count != 0 && nodeCounter > count)
@@ -247,9 +247,9 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(DebugTree const &tree, doubl
 
         if(p->removeLeaves && nodeIt->childs.empty())
             continue;
-        
+
         //draw line to parent node
-        
+
 //         for(std::vector<size_t>::const_iterator childIt = nodeIt->childs.begin(); childIt != nodeIt->childs.end(); childIt++)
 //         {
         const DebugNode &child(*nodeIt);
@@ -260,7 +260,7 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(DebugTree const &tree, doubl
         vertices->push_back(osg::Vec3(p.x(), p.y(), p.z() + 0.001));
 
 //         std::cout << "Child Id " << nodeIt->creationOrder << " Pos " << p.transpose() << " Parent Id " << nodeIt->parent << " Pos " << parent_p.transpose() << " " << std::endl;
-        
+
         if (!child.isValid)
         {
             colors->push_back(osg::Vec4(0, 0, 0, 1));
@@ -276,13 +276,13 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(DebugTree const &tree, doubl
             double alpha = 1.0;
             colors->push_back(osg::Vec4(red, green, blue, alpha));
             colors->push_back(osg::Vec4(red, green, blue, alpha));
-        }        
+        }
 //         }
         geom->setColorArray(colors);
         geom->setColorBinding( osg::Geometry::BIND_PER_VERTEX );
         geom->setVertexArray(vertices);
     }
-    
+
     // Draw the vertices as points
     osg::ref_ptr<osg::DrawArrays> drawArrays =
         new osg::DrawArrays( osg::PrimitiveSet::LINES, 0, vertices->size() );
@@ -305,10 +305,10 @@ osg::Geometry* VFHTreeVisualization::createTreeNode(DebugTree const &tree, doubl
 //     {
 // 	if (p->removeLeaves && (*it)->isLeaf())
 // 	    continue;
-//         
+//
 // 	addRecursive(sorted_nodes, *it);
 //     }
-//     
+//
 //     sorted_nodes.insert(std::make_pair(curNode->getIndex(), curNode));
 // }
 
@@ -317,9 +317,9 @@ void VFHTreeVisualization::updateMainNode ( osg::Node* node )
     osg::PositionAttitudeTransform* transform = dynamic_cast<osg::PositionAttitudeTransform*>(node);
     transform->setPosition(eigenVectorToOsgVec3(p->data.treePos.position));
     transform->setAttitude(eigenQuatToOsgQuat(p->data.treePos.orientation));
-    
+
     std::cout << "VFHTreeVisualization : Tree2World " << p->data.treePos.position.transpose() << std::endl;
-    
+
     osg::Geode* geode = transform->getChild(0)->asGeode();
     while(geode->removeDrawables(0));
 
@@ -362,4 +362,3 @@ void VFHTreeVisualization::updateDataIntern(const vfh_star::HorizonPlannerDebugD
     p->horizonVector = data.horizonVector;
     p->hasHorizon = true;
 }
-
